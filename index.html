@@ -4,7 +4,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
@@ -48,10 +47,10 @@
       z-index: 3; pointer-events: none;
     }
     .corner { position: absolute; width: 24px; height: 24px; border-color: #00FF88; border-style: solid; }
-    .corner.tl { top: 0; left: 0;    border-width: 3px 0 0 3px; }
-    .corner.tr { top: 0; right: 0;   border-width: 3px 3px 0 0; }
-    .corner.bl { bottom: 0; left: 0;  border-width: 0 0 3px 3px; }
-    .corner.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; }
+    .corner.tl { top: 0;    left: 0;   border-width: 3px 0 0 3px; }
+    .corner.tr { top: 0;    right: 0;  border-width: 3px 3px 0 0; }
+    .corner.bl { bottom: 0; left: 0;   border-width: 0 0 3px 3px; }
+    .corner.br { bottom: 0; right: 0;  border-width: 0 3px 3px 0; }
 
     #status {
       position: fixed; top: 20px; left: 50%;
@@ -64,6 +63,7 @@
     }
     #status.found { border-color: #00FF88; color: #00FF88; }
 
+    /* Mini card — tap to open explanation */
     #element-info {
       position: fixed; bottom: 170px; left: 50%;
       transform: translateX(-50%);
@@ -71,20 +71,58 @@
       padding: 14px 28px; border-radius: 14px;
       font-family: monospace; z-index: 10;
       display: none; text-align: center;
-      border: 1px solid rgba(0,255,136,0.4); min-width: 180px;
+      border: 1px solid rgba(0,255,136,0.4);
+      min-width: 180px; cursor: pointer;
     }
-    #element-info .symbol { font-size: 32px; font-weight: bold; color: #00FF88; line-height: 1; }
-    #element-info .name   { font-size: 14px; color: #ccc; margin-top: 4px; }
-    #element-info .number { font-size: 11px; color: #888; margin-top: 2px; }
+    #element-info .symbol   { font-size: 32px; font-weight: bold; color: #00FF88; line-height: 1; }
+    #element-info .name     { font-size: 14px; color: #ccc; margin-top: 4px; }
+    #element-info .number   { font-size: 11px; color: #888; margin-top: 2px; }
+    #element-info .tap-hint { font-size: 10px; color: rgba(0,255,136,0.5); margin-top: 6px; }
+
+    /* Explanation bottom sheet */
+    #explanation-panel {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(10,10,10,0.96);
+      border-top: 1px solid rgba(0,255,136,0.35);
+      border-radius: 18px 18px 0 0;
+      padding: 18px 20px 36px;
+      z-index: 25; display: none;
+      font-family: monospace;
+      max-height: 60%; overflow-y: auto;
+    }
+    .ep-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .ep-left { display: flex; align-items: baseline; gap: 10px; }
+    .ep-symbol { font-size: 28px; font-weight: bold; color: #00FF88; }
+    .ep-name   { font-size: 15px; color: #fff; }
+    .ep-close  {
+      color: #666; font-size: 24px; line-height: 1;
+      background: none; border: none; cursor: pointer; padding: 0 4px;
+    }
+    .ep-row {
+      display: flex; justify-content: space-between;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 12px;
+    }
+    .ep-label { color: #777; }
+    .ep-value { color: #eee; text-align: right; max-width: 60%; }
+    .ep-desc {
+      margin-top: 14px; padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 12px; color: #bbb; line-height: 1.8;
+    }
 
     #hint {
       position: fixed; bottom: 180px; left: 50%;
       transform: translateX(-50%);
-      color: rgba(255,255,255,0.45);
+      color: rgba(255,255,255,0.4);
       font-family: monospace; font-size: 11px;
       z-index: 10; text-align: center; pointer-events: none;
     }
-
     #debug-panel {
       position: fixed; bottom: 0; left: 0;
       width: 100%; max-height: 160px; overflow-y: auto;
@@ -105,7 +143,6 @@
     }
   </style>
 </head>
-
 <body>
   <video id="camera-feed" autoplay playsinline muted></video>
   <canvas id="overlay-canvas"></canvas>
@@ -129,17 +166,39 @@
   </div>
 
   <div id="status">Scanning...</div>
-  <div id="element-info">
-    <div class="symbol" id="info-symbol">Fe</div>
-    <div class="name"   id="info-name">Iron</div>
-    <div class="number" id="info-number">Atomic No. 26</div>
+
+  <!-- Mini card (tap to open explanation) -->
+  <div id="element-info" onclick="openExplanation()">
+    <div class="symbol" id="info-symbol">H</div>
+    <div class="name"   id="info-name">Hydrogen</div>
+    <div class="number" id="info-number">Atomic No. 1</div>
+    <div class="tap-hint">Tap for details</div>
   </div>
+
+  <!-- Explanation bottom sheet -->
+  <div id="explanation-panel">
+    <div class="ep-header">
+      <div class="ep-left">
+        <span class="ep-symbol" id="ep-symbol">H</span>
+        <span class="ep-name"   id="ep-name">Hydrogen</span>
+      </div>
+      <button class="ep-close" onclick="closeExplanation()">×</button>
+    </div>
+    <div class="ep-row"><span class="ep-label">Atomic Number</span><span class="ep-value" id="ep-number">1</span></div>
+    <div class="ep-row"><span class="ep-label">Atomic Mass</span>  <span class="ep-value" id="ep-mass">1.008 u</span></div>
+    <div class="ep-row"><span class="ep-label">Category</span>     <span class="ep-value" id="ep-category">Nonmetal</span></div>
+    <div class="ep-row"><span class="ep-label">State at RT</span>  <span class="ep-value" id="ep-state">Gas</span></div>
+    <div class="ep-row"><span class="ep-label">Period / Group</span><span class="ep-value" id="ep-period">Period 1 / Group 1</span></div>
+    <div class="ep-row"><span class="ep-label">Electron Config</span><span class="ep-value" id="ep-config">1s¹</span></div>
+    <div class="ep-desc" id="ep-desc">The lightest and most abundant element in the universe. Makes up about 75% of all baryonic mass. Essential in stars, water, and organic compounds.</div>
+  </div>
+
   <div id="hint">Point camera at an element cell</div>
   <div id="debug-panel"></div>
   <button id="debug-toggle" onclick="toggleDebug()">LOG</button>
 
   <script>
-    // ── Debug logger ──
+    // ── Debug ──
     const debugPanel = document.getElementById('debug-panel');
     let debugVisible = true;
     function toggleDebug() {
@@ -149,133 +208,393 @@
     function log(msg, color) {
       const line = document.createElement('div');
       line.style.color = color || '#00FF88';
-      const t = new Date().toLocaleTimeString('en-GB', { hour12: false });
-      line.textContent = '[' + t + '] ' + msg;
+      line.textContent = '[' + new Date().toLocaleTimeString('en-GB', { hour12: false }) + '] ' + msg;
       debugPanel.appendChild(line);
       while (debugPanel.children.length > 30) debugPanel.removeChild(debugPanel.firstChild);
       debugPanel.scrollTop = debugPanel.scrollHeight;
     }
 
+    // ── Explanation panel ──
+    function openExplanation() {
+      const sym = document.getElementById('info-symbol').textContent;
+      const el  = ELEMENTS[sym];
+      if (!el) return;
+      document.getElementById('ep-symbol').textContent   = sym;
+      document.getElementById('ep-name').textContent     = el.name;
+      document.getElementById('ep-number').textContent   = el.number;
+      document.getElementById('ep-mass').textContent     = el.mass;
+      document.getElementById('ep-category').textContent = el.category;
+      document.getElementById('ep-state').textContent    = el.state;
+      document.getElementById('ep-period').textContent   = el.period;
+      document.getElementById('ep-config').textContent   = el.config;
+      document.getElementById('ep-desc').textContent     = el.desc;
+      document.getElementById('explanation-panel').style.display = 'block';
+      document.getElementById('debug-panel').style.zIndex = '5';
+      document.getElementById('debug-toggle').style.zIndex = '5';
+    }
+    function closeExplanation() {
+      document.getElementById('explanation-panel').style.display = 'none';
+      document.getElementById('debug-panel').style.zIndex = '999';
+      document.getElementById('debug-toggle').style.zIndex = '1000';
+    }
+
     // ── All 118 elements ──
+    // Add mass, category, state, period, config, desc fields
     const ELEMENTS = {
-      'H':   { name: 'Hydrogen',      fullName: 'hydrogen',      number: 1,   color: '#FF6B6B', shape: 'sphere',   model: 'models/hydrogen.glb'      },
-      'HE':  { name: 'Helium',        fullName: 'helium',        number: 2,   color: '#FFD93D', shape: 'sphere',   model: 'models/helium.glb'        },
-      'LI':  { name: 'Lithium',       fullName: 'lithium',       number: 3,   color: '#6BCB77', shape: 'box',      model: 'models/lithium.glb'       },
-      'BE':  { name: 'Beryllium',     fullName: 'beryllium',     number: 4,   color: '#4D96FF', shape: 'box',      model: 'models/beryllium.glb'     },
-      'B':   { name: 'Boron',         fullName: 'boron',         number: 5,   color: '#FF8C00', shape: 'cone',     model: 'models/boron.glb'         },
-      'C':   { name: 'Carbon',        fullName: 'carbon',        number: 6,   color: '#555555', shape: 'box',      model: 'models/carbon.glb'        },
-      'N':   { name: 'Nitrogen',      fullName: 'nitrogen',      number: 7,   color: '#4D96FF', shape: 'sphere',   model: 'models/nitrogen.glb'      },
-      'O':   { name: 'Oxygen',        fullName: 'oxygen',        number: 8,   color: '#FF4444', shape: 'sphere',   model: 'models/oxygen.glb'        },
-      'F':   { name: 'Fluorine',      fullName: 'fluorine',      number: 9,   color: '#FFD93D', shape: 'sphere',   model: 'models/fluorine.glb'      },
-      'NE':  { name: 'Neon',          fullName: 'neon',          number: 10,  color: '#FF6EC7', shape: 'sphere',   model: 'models/neon.glb'          },
-      'NA':  { name: 'Sodium',        fullName: 'sodium',        number: 11,  color: '#6BCB77', shape: 'box',      model: 'models/sodium.glb'        },
-      'MG':  { name: 'Magnesium',     fullName: 'magnesium',     number: 12,  color: '#4D96FF', shape: 'cylinder', model: 'models/magnesium.glb'     },
-      'AL':  { name: 'Aluminum',      fullName: 'aluminum',      number: 13,  color: '#C0C0C0', shape: 'box',      model: 'models/aluminum.glb'      },
-      'SI':  { name: 'Silicon',       fullName: 'silicon',       number: 14,  color: '#A0522D', shape: 'box',      model: 'models/silicon.glb'       },
-      'P':   { name: 'Phosphorus',    fullName: 'phosphorus',    number: 15,  color: '#FF8C00', shape: 'cone',     model: 'models/phosphorus.glb'    },
-      'S':   { name: 'Sulfur',        fullName: 'sulfur',        number: 16,  color: '#FFD700', shape: 'sphere',   model: 'models/sulfur.glb'        },
-      'CL':  { name: 'Chlorine',      fullName: 'chlorine',      number: 17,  color: '#7CFC00', shape: 'sphere',   model: 'models/chlorine.glb'      },
-      'AR':  { name: 'Argon',         fullName: 'argon',         number: 18,  color: '#00CED1', shape: 'sphere',   model: 'models/argon.glb'         },
-      'K':   { name: 'Potassium',     fullName: 'potassium',     number: 19,  color: '#9B59B6', shape: 'box',      model: 'models/potassium.glb'     },
-      'CA':  { name: 'Calcium',       fullName: 'calcium',       number: 20,  color: '#F0E68C', shape: 'cylinder', model: 'models/calcium.glb'       },
-      'SC':  { name: 'Scandium',      fullName: 'scandium',      number: 21,  color: '#B0C4DE', shape: 'box',      model: 'models/scandium.glb'      },
-      'TI':  { name: 'Titanium',      fullName: 'titanium',      number: 22,  color: '#778899', shape: 'cylinder', model: 'models/titanium.glb'      },
-      'V':   { name: 'Vanadium',      fullName: 'vanadium',      number: 23,  color: '#8A2BE2', shape: 'box',      model: 'models/vanadium.glb'      },
-      'CR':  { name: 'Chromium',      fullName: 'chromium',      number: 24,  color: '#A9A9A9', shape: 'sphere',   model: 'models/chromium.glb'      },
-      'MN':  { name: 'Manganese',     fullName: 'manganese',     number: 25,  color: '#CD853F', shape: 'box',      model: 'models/manganese.glb'     },
-      'FE':  { name: 'Iron',          fullName: 'iron',          number: 26,  color: '#A0522D', shape: 'box',      model: 'models/iron.glb'          },
-      'CO':  { name: 'Cobalt',        fullName: 'cobalt',        number: 27,  color: '#4169E1', shape: 'sphere',   model: 'models/cobalt.glb'        },
-      'NI':  { name: 'Nickel',        fullName: 'nickel',        number: 28,  color: '#C0C0C0', shape: 'sphere',   model: 'models/nickel.glb'        },
-      'CU':  { name: 'Copper',        fullName: 'copper',        number: 29,  color: '#FF8C00', shape: 'cylinder', model: 'models/copper.glb'        },
-      'ZN':  { name: 'Zinc',          fullName: 'zinc',          number: 30,  color: '#708090', shape: 'box',      model: 'models/zinc.glb'          },
-      'GA':  { name: 'Gallium',       fullName: 'gallium',       number: 31,  color: '#C0C0C0', shape: 'box',      model: 'models/gallium.glb'       },
-      'GE':  { name: 'Germanium',     fullName: 'germanium',     number: 32,  color: '#A0522D', shape: 'box',      model: 'models/germanium.glb'     },
-      'AS':  { name: 'Arsenic',       fullName: 'arsenic',       number: 33,  color: '#808000', shape: 'cone',     model: 'models/arsenic.glb'       },
-      'SE':  { name: 'Selenium',      fullName: 'selenium',      number: 34,  color: '#FF6347', shape: 'sphere',   model: 'models/selenium.glb'      },
-      'BR':  { name: 'Bromine',       fullName: 'bromine',       number: 35,  color: '#8B0000', shape: 'sphere',   model: 'models/bromine.glb'       },
-      'KR':  { name: 'Krypton',       fullName: 'krypton',       number: 36,  color: '#00CED1', shape: 'sphere',   model: 'models/krypton.glb'       },
-      'RB':  { name: 'Rubidium',      fullName: 'rubidium',      number: 37,  color: '#9B59B6', shape: 'box',      model: 'models/rubidium.glb'      },
-      'SR':  { name: 'Strontium',     fullName: 'strontium',     number: 38,  color: '#F0E68C', shape: 'cylinder', model: 'models/strontium.glb'     },
-      'Y':   { name: 'Yttrium',       fullName: 'yttrium',       number: 39,  color: '#B0C4DE', shape: 'box',      model: 'models/yttrium.glb'       },
-      'ZR':  { name: 'Zirconium',     fullName: 'zirconium',     number: 40,  color: '#778899', shape: 'cylinder', model: 'models/zirconium.glb'     },
-      'NB':  { name: 'Niobium',       fullName: 'niobium',       number: 41,  color: '#8A2BE2', shape: 'box',      model: 'models/niobium.glb'       },
-      'MO':  { name: 'Molybdenum',    fullName: 'molybdenum',    number: 42,  color: '#A9A9A9', shape: 'sphere',   model: 'models/molybdenum.glb'    },
-      'TC':  { name: 'Technetium',    fullName: 'technetium',    number: 43,  color: '#CD853F', shape: 'box',      model: 'models/technetium.glb'    },
-      'RU':  { name: 'Ruthenium',     fullName: 'ruthenium',     number: 44,  color: '#C0C0C0', shape: 'sphere',   model: 'models/ruthenium.glb'     },
-      'RH':  { name: 'Rhodium',       fullName: 'rhodium',       number: 45,  color: '#E8E8E8', shape: 'sphere',   model: 'models/rhodium.glb'       },
-      'PD':  { name: 'Palladium',     fullName: 'palladium',     number: 46,  color: '#D4D4D4', shape: 'sphere',   model: 'models/palladium.glb'     },
-      'AG':  { name: 'Silver',        fullName: 'silver',        number: 47,  color: '#C0C0C0', shape: 'sphere',   model: 'models/silver.glb'        },
-      'CD':  { name: 'Cadmium',       fullName: 'cadmium',       number: 48,  color: '#808080', shape: 'cylinder', model: 'models/cadmium.glb'       },
-      'IN':  { name: 'Indium',        fullName: 'indium',        number: 49,  color: '#C0C0C0', shape: 'box',      model: 'models/indium.glb'        },
-      'SN':  { name: 'Tin',           fullName: 'tin',           number: 50,  color: '#808080', shape: 'box',      model: 'models/tin.glb'           },
-      'SB':  { name: 'Antimony',      fullName: 'antimony',      number: 51,  color: '#708090', shape: 'cone',     model: 'models/antimony.glb'      },
-      'TE':  { name: 'Tellurium',     fullName: 'tellurium',     number: 52,  color: '#FF6347', shape: 'sphere',   model: 'models/tellurium.glb'     },
-      'I':   { name: 'Iodine',        fullName: 'iodine',        number: 53,  color: '#8B008B', shape: 'sphere',   model: 'models/iodine.glb'        },
-      'XE':  { name: 'Xenon',         fullName: 'xenon',         number: 54,  color: '#00CED1', shape: 'sphere',   model: 'models/xenon.glb'         },
-      'CS':  { name: 'Cesium',        fullName: 'cesium',        number: 55,  color: '#9B59B6', shape: 'box',      model: 'models/cesium.glb'        },
-      'BA':  { name: 'Barium',        fullName: 'barium',        number: 56,  color: '#F0E68C', shape: 'cylinder', model: 'models/barium.glb'        },
-      'LA':  { name: 'Lanthanum',     fullName: 'lanthanum',     number: 57,  color: '#B0C4DE', shape: 'box',      model: 'models/lanthanum.glb'     },
-      'CE':  { name: 'Cerium',        fullName: 'cerium',        number: 58,  color: '#C0C0C0', shape: 'box',      model: 'models/cerium.glb'        },
-      'PR':  { name: 'Praseodymium',  fullName: 'praseodymium',  number: 59,  color: '#B0C4DE', shape: 'box',      model: 'models/praseodymium.glb'  },
-      'ND':  { name: 'Neodymium',     fullName: 'neodymium',     number: 60,  color: '#9370DB', shape: 'box',      model: 'models/neodymium.glb'     },
-      'PM':  { name: 'Promethium',    fullName: 'promethium',    number: 61,  color: '#8A2BE2', shape: 'box',      model: 'models/promethium.glb'    },
-      'SM':  { name: 'Samarium',      fullName: 'samarium',      number: 62,  color: '#7B68EE', shape: 'box',      model: 'models/samarium.glb'      },
-      'EU':  { name: 'Europium',      fullName: 'europium',      number: 63,  color: '#6A5ACD', shape: 'sphere',   model: 'models/europium.glb'      },
-      'GD':  { name: 'Gadolinium',    fullName: 'gadolinium',    number: 64,  color: '#B0C4DE', shape: 'box',      model: 'models/gadolinium.glb'    },
-      'TB':  { name: 'Terbium',       fullName: 'terbium',       number: 65,  color: '#B0C4DE', shape: 'box',      model: 'models/terbium.glb'       },
-      'DY':  { name: 'Dysprosium',    fullName: 'dysprosium',    number: 66,  color: '#B0C4DE', shape: 'box',      model: 'models/dysprosium.glb'    },
-      'HO':  { name: 'Holmium',       fullName: 'holmium',       number: 67,  color: '#B0C4DE', shape: 'box',      model: 'models/holmium.glb'       },
-      'ER':  { name: 'Erbium',        fullName: 'erbium',        number: 68,  color: '#B0C4DE', shape: 'box',      model: 'models/erbium.glb'        },
-      'TM':  { name: 'Thulium',       fullName: 'thulium',       number: 69,  color: '#B0C4DE', shape: 'box',      model: 'models/thulium.glb'       },
-      'YB':  { name: 'Ytterbium',     fullName: 'ytterbium',     number: 70,  color: '#B0C4DE', shape: 'box',      model: 'models/ytterbium.glb'     },
-      'LU':  { name: 'Lutetium',      fullName: 'lutetium',      number: 71,  color: '#B0C4DE', shape: 'box',      model: 'models/lutetium.glb'      },
-      'HF':  { name: 'Hafnium',       fullName: 'hafnium',       number: 72,  color: '#778899', shape: 'cylinder', model: 'models/hafnium.glb'       },
-      'TA':  { name: 'Tantalum',      fullName: 'tantalum',      number: 73,  color: '#708090', shape: 'box',      model: 'models/tantalum.glb'      },
-      'W':   { name: 'Tungsten',      fullName: 'tungsten',      number: 74,  color: '#808080', shape: 'box',      model: 'models/tungsten.glb'      },
-      'RE':  { name: 'Rhenium',       fullName: 'rhenium',       number: 75,  color: '#A9A9A9', shape: 'sphere',   model: 'models/rhenium.glb'       },
-      'OS':  { name: 'Osmium',        fullName: 'osmium',        number: 76,  color: '#696969', shape: 'sphere',   model: 'models/osmium.glb'        },
-      'IR':  { name: 'Iridium',       fullName: 'iridium',       number: 77,  color: '#D4D4D4', shape: 'sphere',   model: 'models/iridium.glb'       },
-      'PT':  { name: 'Platinum',      fullName: 'platinum',      number: 78,  color: '#E8E8E8', shape: 'sphere',   model: 'models/platinum.glb'      },
-      'AU':  { name: 'Gold',          fullName: 'gold',          number: 79,  color: '#FFD700', shape: 'sphere',   model: 'models/gold.glb'          },
-      'HG':  { name: 'Mercury',       fullName: 'mercury',       number: 80,  color: '#B0B0B0', shape: 'sphere',   model: 'models/mercury.glb'       },
-      'TL':  { name: 'Thallium',      fullName: 'thallium',      number: 81,  color: '#808080', shape: 'box',      model: 'models/thallium.glb'      },
-      'PB':  { name: 'Lead',          fullName: 'lead',          number: 82,  color: '#708090', shape: 'box',      model: 'models/lead.glb'          },
-      'BI':  { name: 'Bismuth',       fullName: 'bismuth',       number: 83,  color: '#FF69B4', shape: 'cone',     model: 'models/bismuth.glb'       },
-      'PO':  { name: 'Polonium',      fullName: 'polonium',      number: 84,  color: '#FF8C00', shape: 'sphere',   model: 'models/polonium.glb'      },
-      'AT':  { name: 'Astatine',      fullName: 'astatine',      number: 85,  color: '#8B008B', shape: 'sphere',   model: 'models/astatine.glb'      },
-      'RN':  { name: 'Radon',         fullName: 'radon',         number: 86,  color: '#00CED1', shape: 'sphere',   model: 'models/radon.glb'         },
-      'FR':  { name: 'Francium',      fullName: 'francium',      number: 87,  color: '#9B59B6', shape: 'box',      model: 'models/francium.glb'      },
-      'RA':  { name: 'Radium',        fullName: 'radium',        number: 88,  color: '#F0E68C', shape: 'cylinder', model: 'models/radium.glb'        },
-      'AC':  { name: 'Actinium',      fullName: 'actinium',      number: 89,  color: '#B0C4DE', shape: 'box',      model: 'models/actinium.glb'      },
-      'TH':  { name: 'Thorium',       fullName: 'thorium',       number: 90,  color: '#778899', shape: 'cylinder', model: 'models/thorium.glb'       },
-      'PA':  { name: 'Protactinium',  fullName: 'protactinium',  number: 91,  color: '#8A2BE2', shape: 'box',      model: 'models/protactinium.glb'  },
-      'U':   { name: 'Uranium',       fullName: 'uranium',       number: 92,  color: '#00FF7F', shape: 'cylinder', model: 'models/uranium.glb'       },
-      'NP':  { name: 'Neptunium',     fullName: 'neptunium',     number: 93,  color: '#4169E1', shape: 'box',      model: 'models/neptunium.glb'     },
-      'PU':  { name: 'Plutonium',     fullName: 'plutonium',     number: 94,  color: '#FF4500', shape: 'box',      model: 'models/plutonium.glb'     },
-      'AM':  { name: 'Americium',     fullName: 'americium',     number: 95,  color: '#9370DB', shape: 'box',      model: 'models/americium.glb'     },
-      'CM':  { name: 'Curium',        fullName: 'curium',        number: 96,  color: '#8A2BE2', shape: 'box',      model: 'models/curium.glb'        },
-      'BK':  { name: 'Berkelium',     fullName: 'berkelium',     number: 97,  color: '#7B68EE', shape: 'box',      model: 'models/berkelium.glb'     },
-      'CF':  { name: 'Californium',   fullName: 'californium',   number: 98,  color: '#6A5ACD', shape: 'box',      model: 'models/californium.glb'   },
-      'ES':  { name: 'Einsteinium',   fullName: 'einsteinium',   number: 99,  color: '#9B59B6', shape: 'box',      model: 'models/einsteinium.glb'   },
-      'FM':  { name: 'Fermium',       fullName: 'fermium',       number: 100, color: '#8A2BE2', shape: 'box',      model: 'models/fermium.glb'       },
-      'MD':  { name: 'Mendelevium',   fullName: 'mendelevium',   number: 101, color: '#7B68EE', shape: 'box',      model: 'models/mendelevium.glb'   },
-      'NO':  { name: 'Nobelium',      fullName: 'nobelium',      number: 102, color: '#6A5ACD', shape: 'box',      model: 'models/nobelium.glb'      },
-      'LR':  { name: 'Lawrencium',    fullName: 'lawrencium',    number: 103, color: '#9B59B6', shape: 'box',      model: 'models/lawrencium.glb'    },
-      'RF':  { name: 'Rutherfordium', fullName: 'rutherfordium', number: 104, color: '#778899', shape: 'cylinder', model: 'models/rutherfordium.glb' },
-      'DB':  { name: 'Dubnium',       fullName: 'dubnium',       number: 105, color: '#708090', shape: 'box',      model: 'models/dubnium.glb'       },
-      'SG':  { name: 'Seaborgium',    fullName: 'seaborgium',    number: 106, color: '#808080', shape: 'box',      model: 'models/seaborgium.glb'    },
-      'BH':  { name: 'Bohrium',       fullName: 'bohrium',       number: 107, color: '#A9A9A9', shape: 'box',      model: 'models/bohrium.glb'       },
-      'HS':  { name: 'Hassium',       fullName: 'hassium',       number: 108, color: '#696969', shape: 'box',      model: 'models/hassium.glb'       },
-      'MT':  { name: 'Meitnerium',    fullName: 'meitnerium',    number: 109, color: '#D4D4D4', shape: 'box',      model: 'models/meitnerium.glb'    },
-      'DS':  { name: 'Darmstadtium',  fullName: 'darmstadtium',  number: 110, color: '#E8E8E8', shape: 'box',      model: 'models/darmstadtium.glb'  },
-      'RG':  { name: 'Roentgenium',   fullName: 'roentgenium',   number: 111, color: '#FFD700', shape: 'box',      model: 'models/roentgenium.glb'   },
-      'CN':  { name: 'Copernicium',   fullName: 'copernicium',   number: 112, color: '#B0B0B0', shape: 'box',      model: 'models/copernicium.glb'   },
-      'NH':  { name: 'Nihonium',      fullName: 'nihonium',      number: 113, color: '#C0C0C0', shape: 'box',      model: 'models/nihonium.glb'      },
-      'FL':  { name: 'Flerovium',     fullName: 'flerovium',     number: 114, color: '#808080', shape: 'box',      model: 'models/flerovium.glb'     },
-      'MC':  { name: 'Moscovium',     fullName: 'moscovium',     number: 115, color: '#708090', shape: 'box',      model: 'models/moscovium.glb'     },
-      'LV':  { name: 'Livermorium',   fullName: 'livermorium',   number: 116, color: '#778899', shape: 'box',      model: 'models/livermorium.glb'   },
-      'TS':  { name: 'Tennessine',    fullName: 'tennessine',    number: 117, color: '#8B008B', shape: 'box',      model: 'models/tennessine.glb'    },
-      'OG':  { name: 'Oganesson',     fullName: 'oganesson',     number: 118, color: '#00CED1', shape: 'sphere',   model: 'models/oganesson.glb'     },
+      'H':  { name:'Hydrogen',      fullName:'hydrogen',      number:1,   color:'#FF6B6B', shape:'sphere',   model:'models/hydrogen.glb',
+              mass:'1.008 u',     category:'Reactive Nonmetal',  state:'Gas',    period:'Period 1 / Group 1',  config:'1s¹',
+              desc:'The lightest and most abundant element in the universe. Makes up ~75% of all baryonic mass. Found in stars, water, and all organic compounds.' },
+      'HE': { name:'Helium',        fullName:'helium',        number:2,   color:'#FFD93D', shape:'sphere',   model:'models/helium.glb',
+              mass:'4.003 u',     category:'Noble Gas',          state:'Gas',    period:'Period 1 / Group 18', config:'1s²',
+              desc:'Second lightest element and second most abundant in the universe. Used in balloons, cooling MRI magnets, and as a breathing mix for deep-sea divers.' },
+      'LI': { name:'Lithium',       fullName:'lithium',       number:3,   color:'#6BCB77', shape:'box',      model:'models/lithium.glb',
+              mass:'6.941 u',     category:'Alkali Metal',       state:'Solid',  period:'Period 2 / Group 1',  config:'[He] 2s¹',
+              desc:'Softest metal, so light it floats on water. Critical in rechargeable batteries for smartphones and electric vehicles. Also used in psychiatric medication.' },
+      'BE': { name:'Beryllium',     fullName:'beryllium',     number:4,   color:'#4D96FF', shape:'box',      model:'models/beryllium.glb',
+              mass:'9.012 u',     category:'Alkaline Earth Metal',state:'Solid', period:'Period 2 / Group 2',  config:'[He] 2s²',
+              desc:'Hard, lightweight metal used in aerospace alloys and X-ray windows. Toxic if inhaled as dust. Found in emeralds and aquamarine gemstones.' },
+      'B':  { name:'Boron',         fullName:'boron',         number:5,   color:'#FF8C00', shape:'cone',     model:'models/boron.glb',
+              mass:'10.811 u',    category:'Metalloid',          state:'Solid',  period:'Period 2 / Group 13', config:'[He] 2s² 2p¹',
+              desc:'Used in glass, ceramics, and detergents. Boron fibers are stronger than steel. Essential micronutrient for plants. Key component of borosilicate glass.' },
+      'C':  { name:'Carbon',        fullName:'carbon',        number:6,   color:'#555555', shape:'box',      model:'models/carbon.glb',
+              mass:'12.011 u',    category:'Reactive Nonmetal',  state:'Solid',  period:'Period 2 / Group 14', config:'[He] 2s² 2p²',
+              desc:'The basis of all known life. Forms more compounds than any other element. Exists as graphite, diamond, graphene, and fullerenes. Used in steel and fuels.' },
+      'N':  { name:'Nitrogen',      fullName:'nitrogen',      number:7,   color:'#4D96FF', shape:'sphere',   model:'models/nitrogen.glb',
+              mass:'14.007 u',    category:'Reactive Nonmetal',  state:'Gas',    period:'Period 2 / Group 15', config:'[He] 2s² 2p³',
+              desc:'Makes up 78% of Earth\'s atmosphere. Essential for amino acids and DNA. Liquid nitrogen is used for cryogenic preservation and quick-freezing food.' },
+      'O':  { name:'Oxygen',        fullName:'oxygen',        number:8,   color:'#FF4444', shape:'sphere',   model:'models/oxygen.glb',
+              mass:'15.999 u',    category:'Reactive Nonmetal',  state:'Gas',    period:'Period 2 / Group 16', config:'[He] 2s² 2p⁴',
+              desc:'Third most abundant element in the universe. Essential for respiration and combustion. Makes up 21% of Earth\'s atmosphere. Forms water with hydrogen.' },
+      'F':  { name:'Fluorine',      fullName:'fluorine',      number:9,   color:'#FFD93D', shape:'sphere',   model:'models/fluorine.glb',
+              mass:'18.998 u',    category:'Reactive Nonmetal',  state:'Gas',    period:'Period 2 / Group 17', config:'[He] 2s² 2p⁵',
+              desc:'Most electronegative element. Highly reactive — reacts with almost everything. Added to toothpaste and water supplies to prevent tooth decay.' },
+      'NE': { name:'Neon',          fullName:'neon',          number:10,  color:'#FF6EC7', shape:'sphere',   model:'models/neon.glb',
+              mass:'20.180 u',    category:'Noble Gas',          state:'Gas',    period:'Period 2 / Group 18', config:'[He] 2s² 2p⁶',
+              desc:'Famous for its bright orange-red glow in neon signs. Fifth most abundant element in the universe. Completely unreactive due to full electron shell.' },
+      'NA': { name:'Sodium',        fullName:'sodium',        number:11,  color:'#6BCB77', shape:'box',      model:'models/sodium.glb',
+              mass:'22.990 u',    category:'Alkali Metal',       state:'Solid',  period:'Period 3 / Group 1',  config:'[Ne] 3s¹',
+              desc:'Soft metal that reacts explosively with water. Essential for nerve function in animals. Found in table salt (NaCl). Used in streetlamps giving yellow light.' },
+      'MG': { name:'Magnesium',     fullName:'magnesium',     number:12,  color:'#4D96FF', shape:'cylinder', model:'models/magnesium.glb',
+              mass:'24.305 u',    category:'Alkaline Earth Metal',state:'Solid', period:'Period 3 / Group 2',  config:'[Ne] 3s²',
+              desc:'Lightweight structural metal used in car parts and aircraft. Essential for chlorophyll in plants. Burns with an intensely bright white flame.' },
+      'AL': { name:'Aluminum',      fullName:'aluminum',      number:13,  color:'#C0C0C0', shape:'box',      model:'models/aluminum.glb',
+              mass:'26.982 u',    category:'Post-transition Metal',state:'Solid',period:'Period 3 / Group 13', config:'[Ne] 3s² 3p¹',
+              desc:'Most abundant metal in Earth\'s crust. Lightweight, corrosion-resistant. Used in cans, foil, aircraft, and construction. Fully recyclable.' },
+      'SI': { name:'Silicon',       fullName:'silicon',       number:14,  color:'#A0522D', shape:'box',      model:'models/silicon.glb',
+              mass:'28.086 u',    category:'Metalloid',          state:'Solid',  period:'Period 3 / Group 14', config:'[Ne] 3s² 3p²',
+              desc:'Second most abundant element in Earth\'s crust. Foundation of modern electronics and computer chips. Also the main component of glass and quartz.' },
+      'P':  { name:'Phosphorus',    fullName:'phosphorus',    number:15,  color:'#FF8C00', shape:'cone',     model:'models/phosphorus.glb',
+              mass:'30.974 u',    category:'Reactive Nonmetal',  state:'Solid',  period:'Period 3 / Group 15', config:'[Ne] 3s² 3p³',
+              desc:'Essential for DNA, RNA, and ATP energy molecules. Key component of fertilizers. White phosphorus is highly toxic and was used in incendiary weapons.' },
+      'S':  { name:'Sulfur',        fullName:'sulfur',        number:16,  color:'#FFD700', shape:'sphere',   model:'models/sulfur.glb',
+              mass:'32.065 u',    category:'Reactive Nonmetal',  state:'Solid',  period:'Period 3 / Group 16', config:'[Ne] 3s² 3p⁴',
+              desc:'Yellow solid known since antiquity. Used in gunpowder, matches, and fertilizers. Found near volcanoes. Essential for proteins and present in garlic smell.' },
+      'CL': { name:'Chlorine',      fullName:'chlorine',      number:17,  color:'#7CFC00', shape:'sphere',   model:'models/chlorine.glb',
+              mass:'35.453 u',    category:'Reactive Nonmetal',  state:'Gas',    period:'Period 3 / Group 17', config:'[Ne] 3s² 3p⁵',
+              desc:'Yellow-green gas used to disinfect water and swimming pools. Forms table salt with sodium. Was used as a chemical weapon in World War I.' },
+      'AR': { name:'Argon',         fullName:'argon',         number:18,  color:'#00CED1', shape:'sphere',   model:'models/argon.glb',
+              mass:'39.948 u',    category:'Noble Gas',          state:'Gas',    period:'Period 3 / Group 18', config:'[Ne] 3s² 3p⁶',
+              desc:'Third most abundant gas in Earth\'s atmosphere at 0.93%. Used to fill light bulbs and provide inert atmosphere for welding. Name means "lazy" in Greek.' },
+      'K':  { name:'Potassium',     fullName:'potassium',     number:19,  color:'#9B59B6', shape:'box',      model:'models/potassium.glb',
+              mass:'39.098 u',    category:'Alkali Metal',       state:'Solid',  period:'Period 4 / Group 1',  config:'[Ar] 4s¹',
+              desc:'Essential for nerve and muscle function. Found in bananas and many foods. Reacts violently with water. Symbol K comes from Latin "Kalium".' },
+      'CA': { name:'Calcium',       fullName:'calcium',       number:20,  color:'#F0E68C', shape:'cylinder', model:'models/calcium.glb',
+              mass:'40.078 u',    category:'Alkaline Earth Metal',state:'Solid', period:'Period 4 / Group 2',  config:'[Ar] 4s²',
+              desc:'Most abundant mineral in the human body. Essential for bones, teeth, and muscle contractions. Found in milk, limestone, marble, and chalk.' },
+      'SC': { name:'Scandium',      fullName:'scandium',      number:21,  color:'#B0C4DE', shape:'box',      model:'models/scandium.glb',
+              mass:'44.956 u',    category:'Transition Metal',   state:'Solid',  period:'Period 4 / Group 3',  config:'[Ar] 3d¹ 4s²',
+              desc:'Rare silvery-white metal. Used in aluminum alloys for aerospace. Found in some Scandinavian ores. Sports equipment like bicycle frames use Sc-Al alloys.' },
+      'TI': { name:'Titanium',      fullName:'titanium',      number:22,  color:'#778899', shape:'cylinder', model:'models/titanium.glb',
+              mass:'47.867 u',    category:'Transition Metal',   state:'Solid',  period:'Period 4 / Group 4',  config:'[Ar] 3d² 4s²',
+              desc:'Strong, lightweight, corrosion-resistant metal. Used in aircraft, spacecraft, medical implants, and jewelry. Named after the Titans of Greek mythology.' },
+      'V':  { name:'Vanadium',      fullName:'vanadium',      number:23,  color:'#8A2BE2', shape:'box',      model:'models/vanadium.glb',
+              mass:'50.942 u',    category:'Transition Metal',   state:'Solid',  period:'Period 4 / Group 5',  config:'[Ar] 3d³ 4s²',
+              desc:'Hard silvery-grey metal. Added to steel to make it stronger. Used in tools, springs, and jet engines. Named after Norse goddess Vanadis (Freya).' },
+      'CR': { name:'Chromium',      fullName:'chromium',      number:24,  color:'#A9A9A9', shape:'sphere',   model:'models/chromium.glb',
+              mass:'51.996 u',    category:'Transition Metal',   state:'Solid',  period:'Period 4 / Group 6',  config:'[Ar] 3d⁵ 4s¹',
+              desc:'Shiny, corrosion-resistant metal. Key component of stainless steel. Used for chrome plating. Chromium compounds give rubies their red color.' },
+      'MN': { name:'Manganese',     fullName:'manganese',     number:25,  color:'#CD853F', shape:'box',      model:'models/manganese.glb',
+              mass:'54.938 u',    category:'Transition Metal',   state:'Solid',  period:'Period 4 / Group 7',  config:'[Ar] 3d⁵ 4s²',
+              desc:'Essential trace element for enzymes. Used in steel production to improve hardness. Found in dry cell batteries. Important for plant photosynthesis.' },
+      'FE': { name:'Iron',          fullName:'iron',          number:26,  color:'#A0522D', shape:'box',      model:'models/iron.glb',
+              mass:'55.845 u',    category:'Transition Metal',   state:'Solid',  period:'Period 4 / Group 8',  config:'[Ar] 3d⁶ 4s²',
+              desc:'Most used metal in the world. Core of the Earth is mostly iron. Essential for hemoglobin in blood. The basis of steel used in construction and machinery.' },
+      'CO': { name:'Cobalt',        fullName:'cobalt',        number:27,  color:'#4169E1', shape:'sphere',   model:'models/cobalt.glb',
+              mass:'58.933 u',    category:'Transition Metal',   state:'Solid',  period:'Period 4 / Group 9',  config:'[Ar] 3d⁷ 4s²',
+              desc:'Blue pigment used since ancient times in pottery and glass. Essential for Vitamin B12. Used in lithium-ion batteries and superalloys for jet engines.' },
+      'NI': { name:'Nickel',        fullName:'nickel',        number:28,  color:'#C0C0C0', shape:'sphere',   model:'models/nickel.glb',
+              mass:'58.693 u',    category:'Transition Metal',   state:'Solid',  period:'Period 4 / Group 10', config:'[Ar] 3d⁸ 4s²',
+              desc:'Corrosion-resistant metal used in coins, stainless steel, and batteries. Named after a German word meaning "devil\'s copper" because miners couldn\'t smelt it.' },
+      'CU': { name:'Copper',        fullName:'copper',        number:29,  color:'#FF8C00', shape:'cylinder', model:'models/copper.glb',
+              mass:'63.546 u',    category:'Transition Metal',   state:'Solid',  period:'Period 4 / Group 11', config:'[Ar] 3d¹⁰ 4s¹',
+              desc:'First metal used by humans ~10,000 years ago. Excellent electrical conductor — most electrical wiring is copper. Turns green (patina) when oxidized.' },
+      'ZN': { name:'Zinc',          fullName:'zinc',          number:30,  color:'#708090', shape:'box',      model:'models/zinc.glb',
+              mass:'65.38 u',     category:'Transition Metal',   state:'Solid',  period:'Period 4 / Group 12', config:'[Ar] 3d¹⁰ 4s²',
+              desc:'Bluish-white metal used to galvanize steel against rust. Essential nutrient for immune function. Used in brass alloys and sunscreen (zinc oxide).' },
+      'GA': { name:'Gallium',       fullName:'gallium',       number:31,  color:'#C0C0C0', shape:'box',      model:'models/gallium.glb',
+              mass:'69.723 u',    category:'Post-transition Metal',state:'Solid',period:'Period 4 / Group 13', config:'[Ar] 3d¹⁰ 4s² 4p¹',
+              desc:'Melts at near room temperature (29.8°C) — will melt in your hand. Used in semiconductors, LEDs, and solar cells. Non-toxic unlike its neighbor mercury.' },
+      'GE': { name:'Germanium',     fullName:'germanium',     number:32,  color:'#A0522D', shape:'box',      model:'models/germanium.glb',
+              mass:'72.630 u',    category:'Metalloid',          state:'Solid',  period:'Period 4 / Group 14', config:'[Ar] 3d¹⁰ 4s² 4p²',
+              desc:'Predicted by Mendeleev before its discovery. Used in fiber optic cables, infrared optics, and early transistors. Its properties closely match predictions.' },
+      'AS': { name:'Arsenic',       fullName:'arsenic',       number:33,  color:'#808000', shape:'cone',     model:'models/arsenic.glb',
+              mass:'74.922 u',    category:'Metalloid',          state:'Solid',  period:'Period 4 / Group 15', config:'[Ar] 3d¹⁰ 4s² 4p³',
+              desc:'Infamous poison used in historical murders. Now used in semiconductors and wood preservatives. Also used in some cancer treatments in small doses.' },
+      'SE': { name:'Selenium',      fullName:'selenium',      number:34,  color:'#FF6347', shape:'sphere',   model:'models/selenium.glb',
+              mass:'78.971 u',    category:'Reactive Nonmetal',  state:'Solid',  period:'Period 4 / Group 16', config:'[Ar] 3d¹⁰ 4s² 4p⁴',
+              desc:'Essential trace element for thyroid function. Used in photocopiers (xerography), solar cells, and glass manufacturing. Toxic in large amounts.' },
+      'BR': { name:'Bromine',       fullName:'bromine',       number:35,  color:'#8B0000', shape:'sphere',   model:'models/bromine.glb',
+              mass:'79.904 u',    category:'Reactive Nonmetal',  state:'Liquid', period:'Period 4 / Group 17', config:'[Ar] 3d¹⁰ 4s² 4p⁵',
+              desc:'One of only two liquid elements at room temperature. Has a strong, unpleasant smell (bromine means "stench"). Used in flame retardants and photography.' },
+      'KR': { name:'Krypton',       fullName:'krypton',       number:36,  color:'#00CED1', shape:'sphere',   model:'models/krypton.glb',
+              mass:'83.798 u',    category:'Noble Gas',          state:'Gas',    period:'Period 4 / Group 18', config:'[Ar] 3d¹⁰ 4s² 4p⁶',
+              desc:'Noble gas best known as Superman\'s weakness (fictional). In reality used in fluorescent lighting and high-speed photography flash lamps.' },
+      'RB': { name:'Rubidium',      fullName:'rubidium',      number:37,  color:'#9B59B6', shape:'box',      model:'models/rubidium.glb',
+              mass:'85.468 u',    category:'Alkali Metal',       state:'Solid',  period:'Period 5 / Group 1',  config:'[Kr] 5s¹',
+              desc:'Soft silvery metal that ignites spontaneously in air. Used in atomic clocks and specialized glass. Found in small amounts in tea and coffee.' },
+      'SR': { name:'Strontium',     fullName:'strontium',     number:38,  color:'#F0E68C', shape:'cylinder', model:'models/strontium.glb',
+              mass:'87.62 u',     category:'Alkaline Earth Metal',state:'Solid', period:'Period 5 / Group 2',  config:'[Kr] 5s²',
+              desc:'Gives fireworks their brilliant red color. Radioactive Sr-90 is a nuclear fallout concern. Used in toothpaste for sensitive teeth.' },
+      'Y':  { name:'Yttrium',       fullName:'yttrium',       number:39,  color:'#B0C4DE', shape:'box',      model:'models/yttrium.glb',
+              mass:'88.906 u',    category:'Transition Metal',   state:'Solid',  period:'Period 5 / Group 3',  config:'[Kr] 4d¹ 5s²',
+              desc:'Named after Ytterby, Sweden, where many rare earth elements were discovered. Used in red phosphors in TV screens and LED lights, and in cancer treatment.' },
+      'ZR': { name:'Zirconium',     fullName:'zirconium',     number:40,  color:'#778899', shape:'cylinder', model:'models/zirconium.glb',
+              mass:'91.224 u',    category:'Transition Metal',   state:'Solid',  period:'Period 5 / Group 4',  config:'[Kr] 4d² 5s²',
+              desc:'Highly resistant to corrosion and heat. Used in nuclear reactor casings as it doesn\'t absorb neutrons. Cubic zirconia (its oxide) is used as diamond simulant.' },
+      'NB': { name:'Niobium',       fullName:'niobium',       number:41,  color:'#8A2BE2', shape:'box',      model:'models/niobium.glb',
+              mass:'92.906 u',    category:'Transition Metal',   state:'Solid',  period:'Period 5 / Group 5',  config:'[Kr] 4d⁴ 5s¹',
+              desc:'Soft grey metal used to strengthen steel for pipelines and jet engines. Becomes superconducting at very low temperatures. Used in MRI magnets.' },
+      'MO': { name:'Molybdenum',    fullName:'molybdenum',    number:42,  color:'#A9A9A9', shape:'sphere',   model:'models/molybdenum.glb',
+              mass:'95.96 u',     category:'Transition Metal',   state:'Solid',  period:'Period 5 / Group 6',  config:'[Kr] 4d⁵ 5s¹',
+              desc:'Has the 6th highest melting point of all elements. Used in high-strength steel alloys and as a catalyst in petroleum refining. Essential trace element.' },
+      'TC': { name:'Technetium',    fullName:'technetium',    number:43,  color:'#CD853F', shape:'box',      model:'models/technetium.glb',
+              mass:'(98) u',      category:'Transition Metal',   state:'Solid',  period:'Period 5 / Group 7',  config:'[Kr] 4d⁵ 5s²',
+              desc:'First artificially produced element. All isotopes are radioactive. Tc-99m is widely used in medical imaging (nuclear medicine scans).' },
+      'RU': { name:'Ruthenium',     fullName:'ruthenium',     number:44,  color:'#C0C0C0', shape:'sphere',   model:'models/ruthenium.glb',
+              mass:'101.07 u',    category:'Transition Metal',   state:'Solid',  period:'Period 5 / Group 8',  config:'[Kr] 4d⁷ 5s¹',
+              desc:'Rare, hard white metal in the platinum group. Used as a hardener for platinum and palladium. Catalysts using ruthenium are key in solar energy research.' },
+      'RH': { name:'Rhodium',       fullName:'rhodium',       number:45,  color:'#E8E8E8', shape:'sphere',   model:'models/rhodium.glb',
+              mass:'102.906 u',   category:'Transition Metal',   state:'Solid',  period:'Period 5 / Group 9',  config:'[Kr] 4d⁸ 5s¹',
+              desc:'One of the rarest and most expensive elements. Highly reflective. Used in catalytic converters to reduce car emissions and as a finish for white gold jewelry.' },
+      'PD': { name:'Palladium',     fullName:'palladium',     number:46,  color:'#D4D4D4', shape:'sphere',   model:'models/palladium.glb',
+              mass:'106.42 u',    category:'Transition Metal',   state:'Solid',  period:'Period 5 / Group 10', config:'[Kr] 4d¹⁰',
+              desc:'Rare precious metal. Can absorb up to 900 times its own volume of hydrogen. Essential in catalytic converters and used in electronics and dentistry.' },
+      'AG': { name:'Silver',        fullName:'silver',        number:47,  color:'#C0C0C0', shape:'sphere',   model:'models/silver.glb',
+              mass:'107.868 u',   category:'Transition Metal',   state:'Solid',  period:'Period 5 / Group 11', config:'[Kr] 4d¹⁰ 5s¹',
+              desc:'Best electrical and thermal conductor of all metals. Used in jewelry, photography, electronics, and mirrors. Has natural antibacterial properties.' },
+      'CD': { name:'Cadmium',       fullName:'cadmium',       number:48,  color:'#808080', shape:'cylinder', model:'models/cadmium.glb',
+              mass:'112.411 u',   category:'Transition Metal',   state:'Solid',  period:'Period 5 / Group 12', config:'[Kr] 4d¹⁰ 5s²',
+              desc:'Toxic heavy metal used in rechargeable NiCd batteries and yellow/orange pigments. Exposure can cause kidney damage and the disease itai-itai.' },
+      'IN': { name:'Indium',        fullName:'indium',        number:49,  color:'#C0C0C0', shape:'box',      model:'models/indium.glb',
+              mass:'114.818 u',   category:'Post-transition Metal',state:'Solid',period:'Period 5 / Group 13', config:'[Kr] 4d¹⁰ 5s² 5p¹',
+              desc:'Soft silvery metal critical for touchscreens. Indium tin oxide (ITO) is used in LCD displays and smartphones. Emits a high-pitched squeal when bent.' },
+      'SN': { name:'Tin',           fullName:'tin',           number:50,  color:'#808080', shape:'box',      model:'models/tin.glb',
+              mass:'118.710 u',   category:'Post-transition Metal',state:'Solid',period:'Period 5 / Group 14', config:'[Kr] 4d¹⁰ 5s² 5p²',
+              desc:'Used since ancient times to make bronze (with copper). Protects steel food cans from corrosion. Emits a "tin cry" sound when bent due to crystal twinning.' },
+      'SB': { name:'Antimony',      fullName:'antimony',      number:51,  color:'#708090', shape:'cone',     model:'models/antimony.glb',
+              mass:'121.760 u',   category:'Metalloid',          state:'Solid',  period:'Period 5 / Group 15', config:'[Kr] 4d¹⁰ 5s² 5p³',
+              desc:'Used since ancient Egypt as kohl eye makeup. Used in flame retardants, alloys for lead-acid batteries, and semiconductors. Symbol Sb from Latin "stibium".' },
+      'TE': { name:'Tellurium',     fullName:'tellurium',     number:52,  color:'#FF6347', shape:'sphere',   model:'models/tellurium.glb',
+              mass:'127.60 u',    category:'Metalloid',          state:'Solid',  period:'Period 5 / Group 16', config:'[Kr] 4d¹⁰ 5s² 5p⁴',
+              desc:'Brittle semi-metallic element. Small amounts in steel improve machinability. Used in solar cells and thermoelectric devices. Causes garlic-like body odor.' },
+      'I':  { name:'Iodine',        fullName:'iodine',        number:53,  color:'#8B008B', shape:'sphere',   model:'models/iodine.glb',
+              mass:'126.904 u',   category:'Reactive Nonmetal',  state:'Solid',  period:'Period 5 / Group 17', config:'[Kr] 4d¹⁰ 5s² 5p⁵',
+              desc:'Essential for thyroid hormone production. Deficiency causes goiter. Used as antiseptic (iodine tincture). Radioactive I-131 is used in thyroid cancer treatment.' },
+      'XE': { name:'Xenon',         fullName:'xenon',         number:54,  color:'#00CED1', shape:'sphere',   model:'models/xenon.glb',
+              mass:'131.293 u',   category:'Noble Gas',          state:'Gas',    period:'Period 5 / Group 18', config:'[Kr] 4d¹⁰ 5s² 5p⁶',
+              desc:'Dense noble gas used in powerful flash lamps, arc lamps, and anesthesia. Xenon ion thrusters are used to propel spacecraft. Name means "stranger" in Greek.' },
+      'CS': { name:'Cesium',        fullName:'cesium',        number:55,  color:'#9B59B6', shape:'box',      model:'models/cesium.glb',
+              mass:'132.905 u',   category:'Alkali Metal',       state:'Solid',  period:'Period 6 / Group 1',  config:'[Xe] 6s¹',
+              desc:'Used in the world\'s most accurate atomic clocks, which define the SI second. Liquid at slightly above room temperature. Reacts explosively with water.' },
+      'BA': { name:'Barium',        fullName:'barium',        number:56,  color:'#F0E68C', shape:'cylinder', model:'models/barium.glb',
+              mass:'137.327 u',   category:'Alkaline Earth Metal',state:'Solid', period:'Period 6 / Group 2',  config:'[Xe] 6s²',
+              desc:'Patients drink barium sulfate for X-ray imaging of digestive tract. Used in fireworks for green color. Toxic in soluble forms. Reacts vigorously with water.' },
+      'LA': { name:'Lanthanum',     fullName:'lanthanum',     number:57,  color:'#B0C4DE', shape:'box',      model:'models/lanthanum.glb',
+              mass:'138.905 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6 / Group 3',  config:'[Xe] 5d¹ 6s²',
+              desc:'First of the lanthanide series. Used in camera and telescope lenses for high refractive index. Used in hybrid car batteries and hydrogen storage alloys.' },
+      'CE': { name:'Cerium',        fullName:'cerium',        number:58,  color:'#C0C0C0', shape:'box',      model:'models/cerium.glb',
+              mass:'140.116 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f¹ 5d¹ 6s²',
+              desc:'Most abundant rare earth element. Used in catalytic converters and as a polishing agent for glass. Pyrophoric (sparks when scratched) — used in lighters.' },
+      'PR': { name:'Praseodymium',  fullName:'praseodymium',  number:59,  color:'#B0C4DE', shape:'box',      model:'models/praseodymium.glb',
+              mass:'140.908 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f³ 6s²',
+              desc:'Name means "green twin" due to green salts. Used in powerful permanent magnets, aircraft engines, and yellow-green goggles for glass blowers.' },
+      'ND': { name:'Neodymium',     fullName:'neodymium',     number:60,  color:'#9370DB', shape:'box',      model:'models/neodymium.glb',
+              mass:'144.242 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f⁴ 6s²',
+              desc:'Used in the strongest permanent magnets (neodymium magnets) found in hard drives, headphones, and electric vehicle motors. Also used in purple glass.' },
+      'PM': { name:'Promethium',    fullName:'promethium',    number:61,  color:'#8A2BE2', shape:'box',      model:'models/promethium.glb',
+              mass:'(145) u',     category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f⁵ 6s²',
+              desc:'Only lanthanide with no stable isotopes — entirely radioactive. Named after Prometheus who stole fire from the gods. Used in luminous paint and nuclear batteries.' },
+      'SM': { name:'Samarium',      fullName:'samarium',      number:62,  color:'#7B68EE', shape:'box',      model:'models/samarium.glb',
+              mass:'150.36 u',    category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f⁶ 6s²',
+              desc:'Used in samarium-cobalt magnets that work at very high temperatures. Used in cancer treatment (samarium-153). Named after mineral samarskite.' },
+      'EU': { name:'Europium',      fullName:'europium',      number:63,  color:'#6A5ACD', shape:'sphere',   model:'models/europium.glb',
+              mass:'151.964 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f⁷ 6s²',
+              desc:'Used to create red and blue phosphors in TV and computer screens. Also used as a security feature in euro banknotes to prevent counterfeiting.' },
+      'GD': { name:'Gadolinium',    fullName:'gadolinium',    number:64,  color:'#B0C4DE', shape:'box',      model:'models/gadolinium.glb',
+              mass:'157.25 u',    category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f⁷ 5d¹ 6s²',
+              desc:'Used as a contrast agent in MRI scans. Extremely effective at absorbing neutrons, making it useful in nuclear reactor shielding and control rods.' },
+      'TB': { name:'Terbium',       fullName:'terbium',       number:65,  color:'#B0C4DE', shape:'box',      model:'models/terbium.glb',
+              mass:'158.925 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f⁹ 6s²',
+              desc:'Produces bright green fluorescence used in energy-efficient light bulbs and TV screens. Used in magneto-optical data storage and sonar systems.' },
+      'DY': { name:'Dysprosium',    fullName:'dysprosium',    number:66,  color:'#B0C4DE', shape:'box',      model:'models/dysprosium.glb',
+              mass:'162.500 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f¹⁰ 6s²',
+              desc:'Name means "hard to get." Used to enhance neodymium magnets for higher temperature operation in electric vehicles. Also used in nuclear reactor control rods.' },
+      'HO': { name:'Holmium',       fullName:'holmium',       number:67,  color:'#B0C4DE', shape:'box',      model:'models/holmium.glb',
+              mass:'164.930 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f¹¹ 6s²',
+              desc:'Has the highest magnetic moment of any element. Used in powerful magnets and as a yellow glass colorant. Holmium lasers are used in medical and dental surgery.' },
+      'ER': { name:'Erbium',        fullName:'erbium',        number:68,  color:'#B0C4DE', shape:'box',      model:'models/erbium.glb',
+              mass:'167.259 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f¹² 6s²',
+              desc:'Used as an amplifier in fiber optic cables, enabling long-distance internet communication. Gives a pink color to glass and ceramics. Used in dermatology lasers.' },
+      'TM': { name:'Thulium',       fullName:'thulium',       number:69,  color:'#B0C4DE', shape:'box',      model:'models/thulium.glb',
+              mass:'168.934 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f¹³ 6s²',
+              desc:'Rarest naturally occurring lanthanide. Named after the mythical land Thule. Radioactive Tm-170 is used in portable X-ray devices and microwave equipment.' },
+      'YB': { name:'Ytterbium',     fullName:'ytterbium',     number:70,  color:'#B0C4DE', shape:'box',      model:'models/ytterbium.glb',
+              mass:'173.045 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6',            config:'[Xe] 4f¹⁴ 6s²',
+              desc:'Used in the most accurate atomic clocks ever built. Also used as a dopant in stainless steel and fiber lasers. Named after Ytterby, Sweden.' },
+      'LU': { name:'Lutetium',      fullName:'lutetium',      number:71,  color:'#B0C4DE', shape:'box',      model:'models/lutetium.glb',
+              mass:'174.967 u',   category:'Lanthanide',         state:'Solid',  period:'Period 6 / Group 3',  config:'[Xe] 4f¹⁴ 5d¹ 6s²',
+              desc:'Densest and hardest of the lanthanides. Used in PET scan detectors in medical imaging. A radioisotope is used to treat neuroendocrine tumors.' },
+      'HF': { name:'Hafnium',       fullName:'hafnium',       number:72,  color:'#778899', shape:'cylinder', model:'models/hafnium.glb',
+              mass:'178.49 u',    category:'Transition Metal',   state:'Solid',  period:'Period 6 / Group 4',  config:'[Xe] 4f¹⁴ 5d² 6s²',
+              desc:'Used in nuclear reactor control rods due to excellent neutron absorption. Also used in computer chip manufacturing (Intel uses hafnium in transistors). Named after Copenhagen.' },
+      'TA': { name:'Tantalum',      fullName:'tantalum',      number:73,  color:'#708090', shape:'box',      model:'models/tantalum.glb',
+              mass:'180.948 u',   category:'Transition Metal',   state:'Solid',  period:'Period 6 / Group 5',  config:'[Xe] 4f¹⁴ 5d³ 6s²',
+              desc:'Extremely corrosion-resistant metal. Used in capacitors for mobile phones, laptops, and medical implants. Mining linked to conflict minerals in Congo.' },
+      'W':  { name:'Tungsten',      fullName:'tungsten',      number:74,  color:'#808080', shape:'box',      model:'models/tungsten.glb',
+              mass:'183.84 u',    category:'Transition Metal',   state:'Solid',  period:'Period 6 / Group 6',  config:'[Xe] 4f¹⁴ 5d⁴ 6s²',
+              desc:'Highest melting point of all metals (3422°C). Used in incandescent light bulb filaments and X-ray tubes. Symbol W from German "Wolfram." Hardest metal.' },
+      'RE': { name:'Rhenium',       fullName:'rhenium',       number:75,  color:'#A9A9A9', shape:'sphere',   model:'models/rhenium.glb',
+              mass:'186.207 u',   category:'Transition Metal',   state:'Solid',  period:'Period 6 / Group 7',  config:'[Xe] 4f¹⁴ 5d⁵ 6s²',
+              desc:'Second highest melting point after tungsten. Last stable element to be discovered (1925). Used in jet engine superalloys and petroleum catalysts.' },
+      'OS': { name:'Osmium',        fullName:'osmium',        number:76,  color:'#696969', shape:'sphere',   model:'models/osmium.glb',
+              mass:'190.23 u',    category:'Transition Metal',   state:'Solid',  period:'Period 6 / Group 8',  config:'[Xe] 4f¹⁴ 5d⁶ 6s²',
+              desc:'Densest naturally occurring element. Has a very unpleasant smell (name means "smell"). Used in very hard alloys for fountain pen tips and instrument pivots.' },
+      'IR': { name:'Iridium',       fullName:'iridium',       number:77,  color:'#D4D4D4', shape:'sphere',   model:'models/iridium.glb',
+              mass:'192.217 u',   category:'Transition Metal',   state:'Solid',  period:'Period 6 / Group 9',  config:'[Xe] 4f¹⁴ 5d⁷ 6s²',
+              desc:'Most corrosion-resistant metal. A layer of iridium in rock marks the mass extinction that killed the dinosaurs (Cretaceous–Paleogene boundary). Used in spark plugs.' },
+      'PT': { name:'Platinum',      fullName:'platinum',      number:78,  color:'#E8E8E8', shape:'sphere',   model:'models/platinum.glb',
+              mass:'195.084 u',   category:'Transition Metal',   state:'Solid',  period:'Period 6 / Group 10', config:'[Xe] 4f¹⁴ 5d⁹ 6s¹',
+              desc:'Precious metal used in jewelry, catalytic converters, and cancer treatment (cisplatin). More rare than gold. Used as the international standard for the kilogram until 2019.' },
+      'AU': { name:'Gold',          fullName:'gold',          number:79,  color:'#FFD700', shape:'sphere',   model:'models/gold.glb',
+              mass:'196.967 u',   category:'Transition Metal',   state:'Solid',  period:'Period 6 / Group 11', config:'[Xe] 4f¹⁴ 5d¹⁰ 6s¹',
+              desc:'One of the first metals known to humanity. Does not tarnish or corrode. Used in jewelry, electronics, and as a financial standard. All gold came from neutron star collisions.' },
+      'HG': { name:'Mercury',       fullName:'mercury',       number:80,  color:'#B0B0B0', shape:'sphere',   model:'models/mercury.glb',
+              mass:'200.592 u',   category:'Transition Metal',   state:'Liquid', period:'Period 6 / Group 12', config:'[Xe] 4f¹⁴ 5d¹⁰ 6s²',
+              desc:'Only metal that is liquid at room temperature. Highly toxic — causes neurological damage. Was used in thermometers, now mostly phased out. Named after the planet Mercury.' },
+      'TL': { name:'Thallium',      fullName:'thallium',      number:81,  color:'#808080', shape:'box',      model:'models/thallium.glb',
+              mass:'204.383 u',   category:'Post-transition Metal',state:'Solid',period:'Period 6 / Group 13', config:'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹',
+              desc:'Extremely toxic metal historically used as rat poison and insecticide. Now used in infrared detectors and some semiconductor devices. Causes hair loss when ingested.' },
+      'PB': { name:'Lead',          fullName:'lead',          number:82,  color:'#708090', shape:'box',      model:'models/lead.glb',
+              mass:'207.2 u',     category:'Post-transition Metal',state:'Solid',period:'Period 6 / Group 14', config:'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²',
+              desc:'Dense metal used since Roman times in pipes and vessels. Highly toxic — causes brain damage. Used in car batteries, radiation shielding, and ammunition.' },
+      'BI': { name:'Bismuth',       fullName:'bismuth',       number:83,  color:'#FF69B4', shape:'cone',     model:'models/bismuth.glb',
+              mass:'208.980 u',   category:'Post-transition Metal',state:'Solid',period:'Period 6 / Group 15', config:'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³',
+              desc:'Heaviest non-radioactive element. Forms beautiful rainbow-colored crystals. Active ingredient in Pepto-Bismol for upset stomachs. Expands when it solidifies like water.' },
+      'PO': { name:'Polonium',      fullName:'polonium',      number:84,  color:'#FF8C00', shape:'sphere',   model:'models/polonium.glb',
+              mass:'(209) u',     category:'Post-transition Metal',state:'Solid',period:'Period 6 / Group 16', config:'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴',
+              desc:'Highly radioactive element discovered by Marie Curie. Named after her homeland Poland. Used as a neutron trigger in nuclear weapons and as an alpha particle source.' },
+      'AT': { name:'Astatine',      fullName:'astatine',      number:85,  color:'#8B008B', shape:'sphere',   model:'models/astatine.glb',
+              mass:'(210) u',     category:'Metalloid',          state:'Solid',  period:'Period 6 / Group 17', config:'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵',
+              desc:'Rarest naturally occurring element — less than 1 gram exists in Earth\'s crust at any time. All isotopes are radioactive. Being studied for cancer treatment.' },
+      'RN': { name:'Radon',         fullName:'radon',         number:86,  color:'#00CED1', shape:'sphere',   model:'models/radon.glb',
+              mass:'(222) u',     category:'Noble Gas',          state:'Gas',    period:'Period 6 / Group 18', config:'[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶',
+              desc:'Radioactive noble gas that seeps from the ground into buildings. Second leading cause of lung cancer after smoking. Occurs naturally from uranium decay in rocks.' },
+      'FR': { name:'Francium',      fullName:'francium',      number:87,  color:'#9B59B6', shape:'box',      model:'models/francium.glb',
+              mass:'(223) u',     category:'Alkali Metal',       state:'Solid',  period:'Period 7 / Group 1',  config:'[Rn] 7s¹',
+              desc:'Second rarest naturally occurring element. Highly radioactive with a half-life of only 22 minutes. Most reactive of all metals. Only a few atoms exist at any time.' },
+      'RA': { name:'Radium',        fullName:'radium',        number:88,  color:'#F0E68C', shape:'cylinder', model:'models/radium.glb',
+              mass:'(226) u',     category:'Alkaline Earth Metal',state:'Solid', period:'Period 7 / Group 2',  config:'[Rn] 7s²',
+              desc:'Discovered by Marie and Pierre Curie. Was once used in glow-in-the-dark watch paint, causing radiation poisoning in "radium girls." Now used in cancer treatment.' },
+      'AC': { name:'Actinium',      fullName:'actinium',      number:89,  color:'#B0C4DE', shape:'box',      model:'models/actinium.glb',
+              mass:'(227) u',     category:'Actinide',           state:'Solid',  period:'Period 7 / Group 3',  config:'[Rn] 6d¹ 7s²',
+              desc:'Glows blue in the dark due to radiation. Used as a neutron source and in cancer treatment (targeted alpha therapy). Named from Greek "aktinos" meaning "ray".' },
+      'TH': { name:'Thorium',       fullName:'thorium',       number:90,  color:'#778899', shape:'cylinder', model:'models/thorium.glb',
+              mass:'232.038 u',   category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 6d² 7s²',
+              desc:'Slightly radioactive with a very long half-life. Used in gas lantern mantles. Proposed as an alternative nuclear fuel to uranium — thorium reactors are being researched.' },
+      'PA': { name:'Protactinium',  fullName:'protactinium',  number:91,  color:'#8A2BE2', shape:'box',      model:'models/protactinium.glb',
+              mass:'231.036 u',   category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f² 6d¹ 7s²',
+              desc:'Rare, toxic, and radioactive. Found in uranium ores. Name means "before actinium" since it decays into actinium. No significant commercial uses due to rarity.' },
+      'U':  { name:'Uranium',       fullName:'uranium',       number:92,  color:'#00FF7F', shape:'cylinder', model:'models/uranium.glb',
+              mass:'238.029 u',   category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f³ 6d¹ 7s²',
+              desc:'Fuel for nuclear power plants and atomic bombs. Naturally radioactive with a very long half-life. Depleted uranium is used in armor-piercing ammunition and radiation shielding.' },
+      'NP': { name:'Neptunium',     fullName:'neptunium',     number:93,  color:'#4169E1', shape:'box',      model:'models/neptunium.glb',
+              mass:'(237) u',     category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f⁴ 6d¹ 7s²',
+              desc:'First transuranium element, produced in a nuclear reactor. Named after the planet Neptune. Used as a byproduct in nuclear reactor waste and as a neutron detector.' },
+      'PU': { name:'Plutonium',     fullName:'plutonium',     number:94,  color:'#FF4500', shape:'box',      model:'models/plutonium.glb',
+              mass:'(244) u',     category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f⁶ 7s²',
+              desc:'Used in nuclear weapons and as fuel in nuclear reactors. Pu-238 powers spacecraft including Voyager and Curiosity rover. One of the most toxic substances known.' },
+      'AM': { name:'Americium',     fullName:'americium',     number:95,  color:'#9370DB', shape:'box',      model:'models/americium.glb',
+              mass:'(243) u',     category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f⁷ 7s²',
+              desc:'Found in household smoke detectors — it ionizes air to detect smoke particles. Named after the Americas. Produced in nuclear reactors from plutonium.' },
+      'CM': { name:'Curium',        fullName:'curium',        number:96,  color:'#8A2BE2', shape:'box',      model:'models/curium.glb',
+              mass:'(247) u',     category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f⁷ 6d¹ 7s²',
+              desc:'Named after Marie and Pierre Curie. Glows red in the dark due to intense radioactivity. Used as a power source in spacecraft and as an alpha-particle source.' },
+      'BK': { name:'Berkelium',     fullName:'berkelium',     number:97,  color:'#7B68EE', shape:'box',      model:'models/berkelium.glb',
+              mass:'(247) u',     category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f⁹ 7s²',
+              desc:'Named after Berkeley, California where it was synthesized. Only microgram amounts have ever been made. Has no practical applications due to extreme scarcity.' },
+      'CF': { name:'Californium',   fullName:'californium',   number:98,  color:'#6A5ACD', shape:'box',      model:'models/californium.glb',
+              mass:'(251) u',     category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f¹⁰ 7s²',
+              desc:'Named after California. Powerful neutron emitter used to start nuclear reactors. Used to detect gold and silver ore. The most expensive element — $27 million per gram.' },
+      'ES': { name:'Einsteinium',   fullName:'einsteinium',   number:99,  color:'#9B59B6', shape:'box',      model:'models/einsteinium.glb',
+              mass:'(252) u',     category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f¹¹ 7s²',
+              desc:'Named after Albert Einstein. First produced in the debris of the first hydrogen bomb test (1952). No practical uses due to extreme scarcity and radioactivity.' },
+      'FM': { name:'Fermium',       fullName:'fermium',       number:100, color:'#8A2BE2', shape:'box',      model:'models/fermium.glb',
+              mass:'(257) u',     category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f¹² 7s²',
+              desc:'Named after Enrico Fermi. Also discovered in H-bomb test debris. Can only be produced in microgram amounts. No practical applications.' },
+      'MD': { name:'Mendelevium',   fullName:'mendelevium',   number:101, color:'#7B68EE', shape:'box',      model:'models/mendelevium.glb',
+              mass:'(258) u',     category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f¹³ 7s²',
+              desc:'Named after Dmitri Mendeleev, creator of the periodic table. Only a few atoms produced at a time. No known uses outside of scientific research.' },
+      'NO': { name:'Nobelium',      fullName:'nobelium',      number:102, color:'#6A5ACD', shape:'box',      model:'models/nobelium.glb',
+              mass:'(259) u',     category:'Actinide',           state:'Solid',  period:'Period 7',            config:'[Rn] 5f¹⁴ 7s²',
+              desc:'Named after Alfred Nobel, inventor of dynamite and founder of the Nobel Prizes. Highly unstable with short half-life. No practical uses.' },
+      'LR': { name:'Lawrencium',    fullName:'lawrencium',    number:103, color:'#9B59B6', shape:'box',      model:'models/lawrencium.glb',
+              mass:'(266) u',     category:'Actinide',           state:'Solid',  period:'Period 7 / Group 3',  config:'[Rn] 5f¹⁴ 7s² 7p¹',
+              desc:'Named after Ernest Lawrence, inventor of the cyclotron particle accelerator. Last actinide element. Only atoms produced at a time. No practical applications.' },
+      'RF': { name:'Rutherfordium', fullName:'rutherfordium', number:104, color:'#778899', shape:'cylinder', model:'models/rutherfordium.glb',
+              mass:'(267) u',     category:'Transition Metal',   state:'Solid',  period:'Period 7 / Group 4',  config:'[Rn] 5f¹⁴ 6d² 7s²',
+              desc:'Named after Ernest Rutherford. First transactinide element. Extremely radioactive with half-life of about 1 hour. No practical applications.' },
+      'DB': { name:'Dubnium',       fullName:'dubnium',       number:105, color:'#708090', shape:'box',      model:'models/dubnium.glb',
+              mass:'(268) u',     category:'Transition Metal',   state:'Solid',  period:'Period 7 / Group 5',  config:'[Rn] 5f¹⁴ 6d³ 7s²',
+              desc:'Named after Dubna, Russia. Only a few atoms produced. Extremely short half-life. No practical uses. Subject of naming dispute between USA and USSR.' },
+      'SG': { name:'Seaborgium',    fullName:'seaborgium',    number:106, color:'#808080', shape:'box',      model:'models/seaborgium.glb',
+              mass:'(269) u',     category:'Transition Metal',   state:'Solid',  period:'Period 7 / Group 6',  config:'[Rn] 5f¹⁴ 6d⁴ 7s²',
+              desc:'Named after Glenn Seaborg while he was still alive — first element named after a living person. Seaborg helped discover 10 elements. No practical uses.' },
+      'BH': { name:'Bohrium',       fullName:'bohrium',       number:107, color:'#A9A9A9', shape:'box',      model:'models/bohrium.glb',
+              mass:'(270) u',     category:'Transition Metal',   state:'Solid',  period:'Period 7 / Group 7',  config:'[Rn] 5f¹⁴ 6d⁵ 7s²',
+              desc:'Named after Niels Bohr, pioneer of quantum mechanics. Only a few atoms have ever been made. Half-life of about 17 seconds. No practical uses.' },
+      'HS': { name:'Hassium',       fullName:'hassium',       number:108, color:'#696969', shape:'box',      model:'models/hassium.glb',
+              mass:'(277) u',     category:'Transition Metal',   state:'Solid',  period:'Period 7 / Group 8',  config:'[Rn] 5f¹⁴ 6d⁶ 7s²',
+              desc:'Named after the German state Hesse. Predicted to be a very dense metal similar to osmium. Only a few atoms ever produced. No practical applications.' },
+      'MT': { name:'Meitnerium',    fullName:'meitnerium',    number:109, color:'#D4D4D4', shape:'box',      model:'models/meitnerium.glb',
+              mass:'(278) u',     category:'Transition Metal',   state:'Solid',  period:'Period 7 / Group 9',  config:'[Rn] 5f¹⁴ 6d⁷ 7s²',
+              desc:'Named after Lise Meitner who co-discovered nuclear fission. Only a few atoms ever made. Very short half-life. No practical applications.' },
+      'DS': { name:'Darmstadtium',  fullName:'darmstadtium',  number:110, color:'#E8E8E8', shape:'box',      model:'models/darmstadtium.glb',
+              mass:'(281) u',     category:'Transition Metal',   state:'Solid',  period:'Period 7 / Group 10', config:'[Rn] 5f¹⁴ 6d⁸ 7s²',
+              desc:'Named after Darmstadt, Germany where it was synthesized. Extremely radioactive and unstable. Only a few atoms produced. No practical applications.' },
+      'RG': { name:'Roentgenium',   fullName:'roentgenium',   number:111, color:'#FFD700', shape:'box',      model:'models/roentgenium.glb',
+              mass:'(282) u',     category:'Transition Metal',   state:'Solid',  period:'Period 7 / Group 11', config:'[Rn] 5f¹⁴ 6d⁹ 7s²',
+              desc:'Named after Wilhelm Röntgen, discoverer of X-rays. Extremely unstable. Only a few atoms ever made. Predicted to be a gas at room temperature. No practical uses.' },
+      'CN': { name:'Copernicium',   fullName:'copernicium',   number:112, color:'#B0B0B0', shape:'box',      model:'models/copernicium.glb',
+              mass:'(285) u',     category:'Transition Metal',   state:'Gas',    period:'Period 7 / Group 12', config:'[Rn] 5f¹⁴ 6d¹⁰ 7s²',
+              desc:'Named after Nicolaus Copernicus. Predicted to be a gas at room temperature due to relativistic effects. Extremely radioactive. No practical applications.' },
+      'NH': { name:'Nihonium',      fullName:'nihonium',      number:113, color:'#C0C0C0', shape:'box',      model:'models/nihonium.glb',
+              mass:'(286) u',     category:'Post-transition Metal',state:'Solid',period:'Period 7 / Group 13', config:'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹',
+              desc:'Named after Japan (Nihon in Japanese). First element discovered in Asia. Very unstable with a half-life of about 20 seconds. No practical applications.' },
+      'FL': { name:'Flerovium',     fullName:'flerovium',     number:114, color:'#808080', shape:'box',      model:'models/flerovium.glb',
+              mass:'(289) u',     category:'Post-transition Metal',state:'Solid',period:'Period 7 / Group 14', config:'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²',
+              desc:'Named after Flerov Laboratory in Russia. Predicted to be a gas due to relativistic effects. May be the most stable superheavy element. No practical applications.' },
+      'MC': { name:'Moscovium',     fullName:'moscovium',     number:115, color:'#708090', shape:'box',      model:'models/moscovium.glb',
+              mass:'(290) u',     category:'Post-transition Metal',state:'Solid',period:'Period 7 / Group 15', config:'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³',
+              desc:'Named after Moscow Oblast, Russia. Only a few dozen atoms ever produced. Decays rapidly into nihonium. No practical applications.' },
+      'LV': { name:'Livermorium',   fullName:'livermorium',   number:116, color:'#778899', shape:'box',      model:'models/livermorium.glb',
+              mass:'(293) u',     category:'Post-transition Metal',state:'Solid',period:'Period 7 / Group 16', config:'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴',
+              desc:'Named after Lawrence Livermore National Laboratory in California. Synthesized in a joint US-Russian collaboration. Very short half-life. No practical applications.' },
+      'TS': { name:'Tennessine',    fullName:'tennessine',    number:117, color:'#8B008B', shape:'box',      model:'models/tennessine.glb',
+              mass:'(294) u',     category:'Post-transition Metal',state:'Solid',period:'Period 7 / Group 17', config:'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵',
+              desc:'Named after Tennessee, USA. Second heaviest known element. Only a few atoms ever created. Predicted to have some metallic properties unlike other halogens.' },
+      'OG': { name:'Oganesson',     fullName:'oganesson',     number:118, color:'#00CED1', shape:'sphere',   model:'models/oganesson.glb',
+              mass:'(294) u',     category:'Noble Gas',          state:'Solid',  period:'Period 7 / Group 18', config:'[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶',
+              desc:'Heaviest known element. Named after physicist Yuri Oganessian. Unlike other noble gases, predicted to be solid and reactive due to relativistic effects. Extremely unstable.' },
     };
 
     const video    = document.getElementById('camera-feed');
@@ -306,30 +625,19 @@
     }
 
     // ── Multi-evidence scoring ──
-    // Symbol token  = +2
-    // Full name     = +3
-    // Atomic number = +2
-    // Min score 3 to match
     function matchElement(text) {
       const upper  = text.toUpperCase().replace(/[^A-Z0-9]/g, ' ');
       const tokens = upper.split(/\s+/).filter(w => w.length > 0);
       const lower  = text.toLowerCase();
-
-      let bestSymbol = null;
-      let bestScore  = 0;
+      let bestSymbol = null, bestScore = 0;
 
       for (const [symbol, el] of Object.entries(ELEMENTS)) {
         let score = 0;
         if (tokens.includes(symbol))            score += 2;
         if (lower.includes(el.fullName))        score += 3;
         if (tokens.includes(String(el.number))) score += 2;
-
-        if (score >= 3 && score > bestScore) {
-          bestScore  = score;
-          bestSymbol = symbol;
-        }
+        if (score >= 3 && score > bestScore) { bestScore = score; bestSymbol = symbol; }
       }
-
       if (bestSymbol) log('Score: ' + bestSymbol + '=' + bestScore, '#888');
       return bestSymbol;
     }
@@ -345,16 +653,11 @@
       const shape = document.createElement(tag);
       shape.setAttribute('color', el.color);
       shape.setAttribute('position', '0 0 0');
-      shape.setAttribute('width', '0.6');
-      shape.setAttribute('height', '0.6');
-      shape.setAttribute('depth', '0.6');
-      shape.setAttribute('radius', '0.35');
-      shape.setAttribute('animation__spin',
-        'property: rotation; to: 0 360 0; loop: true; dur: 2500; easing: linear');
-      shape.setAttribute('animation__bob',
-        'property: position; from: 0 -0.05 0; to: 0 0.05 0; loop: true; dur: 1500; dir: alternate; easing: easeInOutSine');
+      shape.setAttribute('width', '0.6'); shape.setAttribute('height', '0.6'); shape.setAttribute('depth', '0.6'); shape.setAttribute('radius', '0.35');
+      shape.setAttribute('animation__spin', 'property: rotation; to: 0 360 0; loop: true; dur: 2500; easing: linear');
+      shape.setAttribute('animation__bob', 'property: position; from: 0 -0.05 0; to: 0 0.05 0; loop: true; dur: 1500; dir: alternate; easing: easeInOutSine');
       arModel.appendChild(shape);
-      log('Fallback shape: ' + symbol, '#FFD93D');
+      log('Fallback: ' + symbol, '#FFD93D');
     }
 
     // ── Show element ──
@@ -370,15 +673,14 @@
       log('Loading: ' + el.model);
 
       fetch(el.model)
-        .then(r => log(r.ok ? 'File OK: ' + el.model : 'File 404: ' + el.model + ' (' + r.status + ')', r.ok ? '#00FF88' : '#FF4444'))
+        .then(r => log(r.ok ? 'File OK: ' + el.model : 'File 404: ' + el.model, r.ok ? '#00FF88' : '#FF4444'))
         .catch(e => log('Fetch err: ' + e.message, '#FF4444'));
 
       const modelEl = document.createElement('a-gltf-model');
       modelEl.setAttribute('src', el.model);
       modelEl.setAttribute('position', '0 0 0');
       modelEl.setAttribute('scale', '0.5 0.5 0.5');
-      modelEl.setAttribute('animation',
-        'property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear');
+      modelEl.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear');
       modelEl.addEventListener('model-loaded', () => log('Model OK: ' + el.model, '#00FF88'));
       modelEl.addEventListener('model-error',  () => { log('Model FAILED: ' + el.model, '#FF4444'); showFallbackShape(symbol); });
       arModel.innerHTML = '';
@@ -391,6 +693,7 @@
       infoEl.style.display = 'none';
       hintEl.style.display = 'block';
       arModel.innerHTML    = '';
+      closeExplanation();
     }
 
     // ── Gestures ──
@@ -398,6 +701,7 @@
     let lastTouchX = null, lastTouchY = null, rotX = 0, rotY = 0;
 
     document.addEventListener('touchstart', (e) => {
+      if (document.getElementById('explanation-panel').style.display === 'block') return;
       if (e.touches.length === 2) {
         initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         initialScale = currentScale;
@@ -406,6 +710,7 @@
     });
 
     document.addEventListener('touchmove', (e) => {
+      if (document.getElementById('explanation-panel').style.display === 'block') return;
       e.preventDefault();
       if (e.touches.length === 2 && initialDistance) {
         const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -416,8 +721,7 @@
         rotY += (e.touches[0].clientX - lastTouchX) * 0.5;
         rotX += (e.touches[0].clientY - lastTouchY) * 0.5;
         arModel.setAttribute('rotation', rotX + ' ' + rotY + ' 0');
-        lastTouchX = e.touches[0].clientX;
-        lastTouchY = e.touches[0].clientY;
+        lastTouchX = e.touches[0].clientX; lastTouchY = e.touches[0].clientY;
       }
     }, { passive: false });
 
@@ -432,21 +736,16 @@
     async function scanFrame() {
       if (isProcessing) return;
       isProcessing = true;
-
-      const sw = Math.floor(video.videoWidth * 0.5);
-      const sh = Math.floor(video.videoHeight * 0.5);
-      const sx = Math.floor(video.videoWidth * 0.25);
-      const sy = Math.floor(video.videoHeight * 0.25);
+      const sw = Math.floor(video.videoWidth * 0.5), sh = Math.floor(video.videoHeight * 0.5);
+      const sx = Math.floor(video.videoWidth * 0.25), sy = Math.floor(video.videoHeight * 0.25);
       canvas.width = sw; canvas.height = sh;
       ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
-
       try {
         const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
           tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
           tessedit_pageseg_mode: '6',
         });
         log('OCR: ' + text.trim().replace(/\n/g, ' ').substring(0, 80), '#aaa');
-
         const found = matchElement(text);
         if (found) {
           notFoundCount = 0;
@@ -455,14 +754,11 @@
           notFoundCount++;
           if (notFoundCount >= 3 && currentSymbol) { currentSymbol = null; hideElement(); }
         }
-      } catch (err) {
-        log('OCR error: ' + err.message, '#FF4444');
-      }
+      } catch (err) { log('OCR error: ' + err.message, '#FF4444'); }
       isProcessing = false;
     }
 
     function startScanning() { setInterval(scanFrame, 2000); }
-
     startCamera();
     log('App started — 118 elements loaded');
   </script>
