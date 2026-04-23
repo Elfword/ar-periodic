@@ -10,177 +10,94 @@
     html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
 
     #camera-feed {
-      position: fixed;
-      top: 0; left: 0;
+      position: fixed; top: 0; left: 0;
       width: 100%; height: 100%;
-      object-fit: cover;
-      z-index: 0;
+      object-fit: cover; z-index: 0;
     }
+    #overlay-canvas { display: none; }
 
-    #overlay-canvas {
-      display: none;
-    }
-
-    /* A-Frame scene sits transparently on top of camera */
     #ar-scene-wrapper {
-      position: fixed;
-      top: 0; left: 0;
+      position: fixed; top: 0; left: 0;
       width: 100%; height: 100%;
-      z-index: 2;
-      pointer-events: none;
+      z-index: 2; pointer-events: none;
     }
+    a-scene { background: transparent !important; }
 
-    a-scene {
-      background: transparent !important;
-    }
-
-    /* Scanning bar */
     #scan-bar-wrapper {
-      position: fixed;
-      top: 0; left: 0;
+      position: fixed; top: 0; left: 0;
       width: 100%; height: 100%;
-      z-index: 3;
-      pointer-events: none;
-      overflow: hidden;
+      z-index: 3; pointer-events: none; overflow: hidden;
     }
-
     #scan-bar {
-      width: 100%;
-      height: 3px;
+      width: 100%; height: 3px;
       background: linear-gradient(90deg, transparent, #00FF88, #00FFCC, #00FF88, transparent);
-      position: absolute;
-      top: 0;
+      position: absolute; top: 0;
       animation: scanDown 2s linear infinite;
       box-shadow: 0 0 8px #00FF88;
     }
-
     @keyframes scanDown {
-      0%   { top: 0%; opacity: 1; }
+      0%   { top: 0%;   opacity: 1; }
       90%  { top: 100%; opacity: 1; }
       100% { top: 100%; opacity: 0; }
     }
 
-    /* Corner brackets to show scan area */
     #scan-frame {
-      position: fixed;
-      top: 50%;
-      left: 50%;
+      position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      width: 280px;
-      height: 180px;
-      z-index: 3;
-      pointer-events: none;
+      width: 280px; height: 180px;
+      z-index: 3; pointer-events: none;
     }
-
-    .corner {
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      border-color: #00FF88;
-      border-style: solid;
-    }
-    .corner.tl { top: 0; left: 0;  border-width: 3px 0 0 3px; }
-    .corner.tr { top: 0; right: 0; border-width: 3px 3px 0 0; }
+    .corner { position: absolute; width: 24px; height: 24px; border-color: #00FF88; border-style: solid; }
+    .corner.tl { top: 0; left: 0;    border-width: 3px 0 0 3px; }
+    .corner.tr { top: 0; right: 0;   border-width: 3px 3px 0 0; }
     .corner.bl { bottom: 0; left: 0;  border-width: 0 0 3px 3px; }
     .corner.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; }
 
-    /* Status pill */
     #status {
-      position: fixed;
-      top: 20px;
-      left: 50%;
+      position: fixed; top: 20px; left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.65);
-      color: #fff;
-      padding: 6px 18px;
-      border-radius: 20px;
-      font-family: monospace;
-      font-size: 13px;
-      z-index: 10;
-      white-space: nowrap;
+      background: rgba(0,0,0,0.65); color: #fff;
+      padding: 6px 18px; border-radius: 20px;
+      font-family: monospace; font-size: 13px;
+      z-index: 10; white-space: nowrap;
       border: 1px solid rgba(0,255,136,0.3);
     }
+    #status.found { border-color: #00FF88; color: #00FF88; }
 
-    #status.found {
-      border-color: #00FF88;
-      color: #00FF88;
-    }
-
-    /* Element info card */
     #element-info {
-      position: fixed;
-      bottom: 36px;
-      left: 50%;
+      position: fixed; bottom: 170px; left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.75);
-      color: #fff;
-      padding: 14px 28px;
-      border-radius: 14px;
-      font-family: monospace;
-      z-index: 10;
-      display: none;
-      text-align: center;
-      border: 1px solid rgba(0,255,136,0.4);
-      min-width: 180px;
+      background: rgba(0,0,0,0.75); color: #fff;
+      padding: 14px 28px; border-radius: 14px;
+      font-family: monospace; z-index: 10;
+      display: none; text-align: center;
+      border: 1px solid rgba(0,255,136,0.4); min-width: 180px;
     }
+    #element-info .symbol { font-size: 32px; font-weight: bold; color: #00FF88; line-height: 1; }
+    #element-info .name   { font-size: 14px; color: #ccc; margin-top: 4px; }
+    #element-info .number { font-size: 11px; color: #888; margin-top: 2px; }
 
-    #element-info .symbol {
-      font-size: 32px;
-      font-weight: bold;
-      color: #00FF88;
-      line-height: 1;
-    }
-
-    #element-info .name {
-      font-size: 14px;
-      color: #ccc;
-      margin-top: 4px;
-    }
-
-    #element-info .number {
-      font-size: 11px;
-      color: #888;
-      margin-top: 2px;
-    }
-
-    /* Hint text */
     #hint {
-      position: fixed;
-      bottom: 140px;
-      left: 50%;
+      position: fixed; bottom: 180px; left: 50%;
       transform: translateX(-50%);
       color: rgba(255,255,255,0.45);
-      font-family: monospace;
-      font-size: 11px;
-      z-index: 10;
-      text-align: center;
-      pointer-events: none;
+      font-family: monospace; font-size: 11px;
+      z-index: 10; text-align: center; pointer-events: none;
     }
 
     #debug-panel {
-      position: fixed;
-      bottom: 0; left: 0;
-      width: 100%;
-      max-height: 160px;
-      overflow-y: auto;
+      position: fixed; bottom: 0; left: 0;
+      width: 100%; max-height: 160px; overflow-y: auto;
       background: rgba(0,0,0,0.82);
-      font-family: monospace;
-      font-size: 11px;
-      padding: 6px 8px;
-      z-index: 999;
-      pointer-events: none;
+      font-family: monospace; font-size: 11px;
+      padding: 6px 8px; z-index: 999; pointer-events: none;
       border-top: 1px solid rgba(0,255,136,0.2);
     }
-
     #debug-toggle {
-      position: fixed;
-      bottom: 0; right: 0;
-      background: rgba(0,0,0,0.7);
-      color: #00FF88;
-      font-family: monospace;
-      font-size: 11px;
-      padding: 4px 10px;
-      z-index: 1000;
+      position: fixed; bottom: 0; right: 0;
+      background: rgba(0,0,0,0.7); color: #00FF88;
+      font-family: monospace; font-size: 11px;
+      padding: 4px 10px; z-index: 1000;
       border: none;
       border-top: 1px solid rgba(0,255,136,0.3);
       border-left: 1px solid rgba(0,255,136,0.3);
@@ -193,10 +110,7 @@
   <video id="camera-feed" autoplay playsinline muted></video>
   <canvas id="overlay-canvas"></canvas>
 
-  <!-- Scanning UI -->
-  <div id="scan-bar-wrapper">
-    <div id="scan-bar"></div>
-  </div>
+  <div id="scan-bar-wrapper"><div id="scan-bar"></div></div>
 
   <div id="scan-frame">
     <div class="corner tl"></div>
@@ -205,82 +119,163 @@
     <div class="corner br"></div>
   </div>
 
-  <!-- AR Scene -->
   <div id="ar-scene-wrapper">
-    <a-scene
-      embedded
-      vr-mode-ui="enabled: false"
+    <a-scene embedded vr-mode-ui="enabled: false"
       renderer="alpha: true; colorManagement: true"
       style="background: transparent; width:100%; height:100%;">
-
       <a-camera position="0 0 3" look-controls="enabled: false"></a-camera>
       <a-entity id="ar-model" position="0 0 0"></a-entity>
-
     </a-scene>
   </div>
 
   <div id="status">Scanning...</div>
-
   <div id="element-info">
     <div class="symbol" id="info-symbol">Fe</div>
-    <div class="name" id="info-name">Iron</div>
+    <div class="name"   id="info-name">Iron</div>
     <div class="number" id="info-number">Atomic No. 26</div>
   </div>
-
-  <div id="hint">Point camera at a periodic table element</div>
+  <div id="hint">Point camera at an element cell</div>
   <div id="debug-panel"></div>
   <button id="debug-toggle" onclick="toggleDebug()">LOG</button>
+
   <script>
-    // ── On-screen debug logger ──
+    // ── Debug logger ──
     const debugPanel = document.getElementById('debug-panel');
     let debugVisible = true;
-
     function toggleDebug() {
       debugVisible = !debugVisible;
       debugPanel.style.display = debugVisible ? 'block' : 'none';
-      document.getElementById('debug-toggle').textContent = debugVisible ? 'LOG' : 'LOG';
     }
-
-    function log(msg, color = '#00FF88') {
+    function log(msg, color) {
       const line = document.createElement('div');
-      line.style.color = color;
-      const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
-      line.textContent = '[' + time + '] ' + msg;
+      line.style.color = color || '#00FF88';
+      const t = new Date().toLocaleTimeString('en-GB', { hour12: false });
+      line.textContent = '[' + t + '] ' + msg;
       debugPanel.appendChild(line);
-      while (debugPanel.children.length > 25) debugPanel.removeChild(debugPanel.firstChild);
+      while (debugPanel.children.length > 30) debugPanel.removeChild(debugPanel.firstChild);
       debugPanel.scrollTop = debugPanel.scrollHeight;
     }
 
-    // ── Element database ──
+    // ── All 118 elements ──
     const ELEMENTS = {
-      'H':  { name: 'Hydrogen',   number: 1,  color: '#FF6B6B', shape: 'sphere',   model: 'models/hydrogen.glb'  },
-      'HE': { name: 'Helium',     number: 2,  color: '#FFD93D', shape: 'sphere',   model: 'models/helium.glb'    },
-      'LI': { name: 'Lithium',    number: 3,  color: '#6BCB77', shape: 'box',      model: 'models/lithium.glb'   },
-      'BE': { name: 'Beryllium',  number: 4,  color: '#4D96FF', shape: 'box',      model: 'models/beryllium.glb' },
-      'B':  { name: 'Boron',      number: 5,  color: '#FF8C00', shape: 'cone',     model: 'models/boron.glb'     },
-      'C':  { name: 'Carbon',     number: 6,  color: '#555555', shape: 'box',      model: 'models/carbon.glb'    },
-      'N':  { name: 'Nitrogen',   number: 7,  color: '#4D96FF', shape: 'sphere',   model: 'models/nitrogen.glb'  },
-      'O':  { name: 'Oxygen',     number: 8,  color: '#FF4444', shape: 'sphere',   model: 'models/oxygen.glb'    },
-      'F':  { name: 'Fluorine',   number: 9,  color: '#FFD93D', shape: 'sphere',   model: 'models/fluorine.glb'  },
-      'NE': { name: 'Neon',       number: 10, color: '#FF6EC7', shape: 'sphere',   model: 'models/neon.glb'      },
-      'NA': { name: 'Sodium',     number: 11, color: '#6BCB77', shape: 'box',      model: 'models/sodium.glb'    },
-      'MG': { name: 'Magnesium',  number: 12, color: '#4D96FF', shape: 'cylinder', model: 'models/magnesium.glb' },
-      'AL': { name: 'Aluminum',   number: 13, color: '#C0C0C0', shape: 'box',      model: 'models/aluminum.glb'  },
-      'SI': { name: 'Silicon',    number: 14, color: '#A0522D', shape: 'box',      model: 'models/silicon.glb'   },
-      'P':  { name: 'Phosphorus', number: 15, color: '#FF8C00', shape: 'cone',     model: 'models/phosphorus.glb'},
-      'S':  { name: 'Sulfur',     number: 16, color: '#FFD700', shape: 'sphere',   model: 'models/sulfur.glb'    },
-      'CL': { name: 'Chlorine',   number: 17, color: '#7CFC00', shape: 'sphere',   model: 'models/chlorine.glb'  },
-      'AR': { name: 'Argon',      number: 18, color: '#00CED1', shape: 'sphere',   model: 'models/argon.glb'     },
-      'K':  { name: 'Potassium',  number: 19, color: '#9B59B6', shape: 'box',      model: 'models/potassium.glb' },
-      'CA': { name: 'Calcium',    number: 20, color: '#F0E68C', shape: 'cylinder', model: 'models/calcium.glb'   },
-      'FE': { name: 'Iron',       number: 26, color: '#A0522D', shape: 'box',      model: 'models/iron.glb'      },
-      'CU': { name: 'Copper',     number: 29, color: '#FF8C00', shape: 'cylinder', model: 'models/copper.glb'    },
-      'ZN': { name: 'Zinc',       number: 30, color: '#708090', shape: 'box',      model: 'models/zinc.glb'      },
-      'AG': { name: 'Silver',     number: 47, color: '#C0C0C0', shape: 'sphere',   model: 'models/silver.glb'    },
-      'AU': { name: 'Gold',       number: 79, color: '#FFD700', shape: 'sphere',   model: 'models/gold.glb'      },
-      'HG': { name: 'Mercury',    number: 80, color: '#B0B0B0', shape: 'sphere',   model: 'models/mercury.glb'   },
-      'PB': { name: 'Lead',       number: 82, color: '#708090', shape: 'box',      model: 'models/lead.glb'      },
-      'U':  { name: 'Uranium',    number: 92, color: '#00FF7F', shape: 'cylinder', model: 'models/uranium.glb'   },
+      'H':   { name: 'Hydrogen',      fullName: 'hydrogen',      number: 1,   color: '#FF6B6B', shape: 'sphere',   model: 'models/hydrogen.glb'      },
+      'HE':  { name: 'Helium',        fullName: 'helium',        number: 2,   color: '#FFD93D', shape: 'sphere',   model: 'models/helium.glb'        },
+      'LI':  { name: 'Lithium',       fullName: 'lithium',       number: 3,   color: '#6BCB77', shape: 'box',      model: 'models/lithium.glb'       },
+      'BE':  { name: 'Beryllium',     fullName: 'beryllium',     number: 4,   color: '#4D96FF', shape: 'box',      model: 'models/beryllium.glb'     },
+      'B':   { name: 'Boron',         fullName: 'boron',         number: 5,   color: '#FF8C00', shape: 'cone',     model: 'models/boron.glb'         },
+      'C':   { name: 'Carbon',        fullName: 'carbon',        number: 6,   color: '#555555', shape: 'box',      model: 'models/carbon.glb'        },
+      'N':   { name: 'Nitrogen',      fullName: 'nitrogen',      number: 7,   color: '#4D96FF', shape: 'sphere',   model: 'models/nitrogen.glb'      },
+      'O':   { name: 'Oxygen',        fullName: 'oxygen',        number: 8,   color: '#FF4444', shape: 'sphere',   model: 'models/oxygen.glb'        },
+      'F':   { name: 'Fluorine',      fullName: 'fluorine',      number: 9,   color: '#FFD93D', shape: 'sphere',   model: 'models/fluorine.glb'      },
+      'NE':  { name: 'Neon',          fullName: 'neon',          number: 10,  color: '#FF6EC7', shape: 'sphere',   model: 'models/neon.glb'          },
+      'NA':  { name: 'Sodium',        fullName: 'sodium',        number: 11,  color: '#6BCB77', shape: 'box',      model: 'models/sodium.glb'        },
+      'MG':  { name: 'Magnesium',     fullName: 'magnesium',     number: 12,  color: '#4D96FF', shape: 'cylinder', model: 'models/magnesium.glb'     },
+      'AL':  { name: 'Aluminum',      fullName: 'aluminum',      number: 13,  color: '#C0C0C0', shape: 'box',      model: 'models/aluminum.glb'      },
+      'SI':  { name: 'Silicon',       fullName: 'silicon',       number: 14,  color: '#A0522D', shape: 'box',      model: 'models/silicon.glb'       },
+      'P':   { name: 'Phosphorus',    fullName: 'phosphorus',    number: 15,  color: '#FF8C00', shape: 'cone',     model: 'models/phosphorus.glb'    },
+      'S':   { name: 'Sulfur',        fullName: 'sulfur',        number: 16,  color: '#FFD700', shape: 'sphere',   model: 'models/sulfur.glb'        },
+      'CL':  { name: 'Chlorine',      fullName: 'chlorine',      number: 17,  color: '#7CFC00', shape: 'sphere',   model: 'models/chlorine.glb'      },
+      'AR':  { name: 'Argon',         fullName: 'argon',         number: 18,  color: '#00CED1', shape: 'sphere',   model: 'models/argon.glb'         },
+      'K':   { name: 'Potassium',     fullName: 'potassium',     number: 19,  color: '#9B59B6', shape: 'box',      model: 'models/potassium.glb'     },
+      'CA':  { name: 'Calcium',       fullName: 'calcium',       number: 20,  color: '#F0E68C', shape: 'cylinder', model: 'models/calcium.glb'       },
+      'SC':  { name: 'Scandium',      fullName: 'scandium',      number: 21,  color: '#B0C4DE', shape: 'box',      model: 'models/scandium.glb'      },
+      'TI':  { name: 'Titanium',      fullName: 'titanium',      number: 22,  color: '#778899', shape: 'cylinder', model: 'models/titanium.glb'      },
+      'V':   { name: 'Vanadium',      fullName: 'vanadium',      number: 23,  color: '#8A2BE2', shape: 'box',      model: 'models/vanadium.glb'      },
+      'CR':  { name: 'Chromium',      fullName: 'chromium',      number: 24,  color: '#A9A9A9', shape: 'sphere',   model: 'models/chromium.glb'      },
+      'MN':  { name: 'Manganese',     fullName: 'manganese',     number: 25,  color: '#CD853F', shape: 'box',      model: 'models/manganese.glb'     },
+      'FE':  { name: 'Iron',          fullName: 'iron',          number: 26,  color: '#A0522D', shape: 'box',      model: 'models/iron.glb'          },
+      'CO':  { name: 'Cobalt',        fullName: 'cobalt',        number: 27,  color: '#4169E1', shape: 'sphere',   model: 'models/cobalt.glb'        },
+      'NI':  { name: 'Nickel',        fullName: 'nickel',        number: 28,  color: '#C0C0C0', shape: 'sphere',   model: 'models/nickel.glb'        },
+      'CU':  { name: 'Copper',        fullName: 'copper',        number: 29,  color: '#FF8C00', shape: 'cylinder', model: 'models/copper.glb'        },
+      'ZN':  { name: 'Zinc',          fullName: 'zinc',          number: 30,  color: '#708090', shape: 'box',      model: 'models/zinc.glb'          },
+      'GA':  { name: 'Gallium',       fullName: 'gallium',       number: 31,  color: '#C0C0C0', shape: 'box',      model: 'models/gallium.glb'       },
+      'GE':  { name: 'Germanium',     fullName: 'germanium',     number: 32,  color: '#A0522D', shape: 'box',      model: 'models/germanium.glb'     },
+      'AS':  { name: 'Arsenic',       fullName: 'arsenic',       number: 33,  color: '#808000', shape: 'cone',     model: 'models/arsenic.glb'       },
+      'SE':  { name: 'Selenium',      fullName: 'selenium',      number: 34,  color: '#FF6347', shape: 'sphere',   model: 'models/selenium.glb'      },
+      'BR':  { name: 'Bromine',       fullName: 'bromine',       number: 35,  color: '#8B0000', shape: 'sphere',   model: 'models/bromine.glb'       },
+      'KR':  { name: 'Krypton',       fullName: 'krypton',       number: 36,  color: '#00CED1', shape: 'sphere',   model: 'models/krypton.glb'       },
+      'RB':  { name: 'Rubidium',      fullName: 'rubidium',      number: 37,  color: '#9B59B6', shape: 'box',      model: 'models/rubidium.glb'      },
+      'SR':  { name: 'Strontium',     fullName: 'strontium',     number: 38,  color: '#F0E68C', shape: 'cylinder', model: 'models/strontium.glb'     },
+      'Y':   { name: 'Yttrium',       fullName: 'yttrium',       number: 39,  color: '#B0C4DE', shape: 'box',      model: 'models/yttrium.glb'       },
+      'ZR':  { name: 'Zirconium',     fullName: 'zirconium',     number: 40,  color: '#778899', shape: 'cylinder', model: 'models/zirconium.glb'     },
+      'NB':  { name: 'Niobium',       fullName: 'niobium',       number: 41,  color: '#8A2BE2', shape: 'box',      model: 'models/niobium.glb'       },
+      'MO':  { name: 'Molybdenum',    fullName: 'molybdenum',    number: 42,  color: '#A9A9A9', shape: 'sphere',   model: 'models/molybdenum.glb'    },
+      'TC':  { name: 'Technetium',    fullName: 'technetium',    number: 43,  color: '#CD853F', shape: 'box',      model: 'models/technetium.glb'    },
+      'RU':  { name: 'Ruthenium',     fullName: 'ruthenium',     number: 44,  color: '#C0C0C0', shape: 'sphere',   model: 'models/ruthenium.glb'     },
+      'RH':  { name: 'Rhodium',       fullName: 'rhodium',       number: 45,  color: '#E8E8E8', shape: 'sphere',   model: 'models/rhodium.glb'       },
+      'PD':  { name: 'Palladium',     fullName: 'palladium',     number: 46,  color: '#D4D4D4', shape: 'sphere',   model: 'models/palladium.glb'     },
+      'AG':  { name: 'Silver',        fullName: 'silver',        number: 47,  color: '#C0C0C0', shape: 'sphere',   model: 'models/silver.glb'        },
+      'CD':  { name: 'Cadmium',       fullName: 'cadmium',       number: 48,  color: '#808080', shape: 'cylinder', model: 'models/cadmium.glb'       },
+      'IN':  { name: 'Indium',        fullName: 'indium',        number: 49,  color: '#C0C0C0', shape: 'box',      model: 'models/indium.glb'        },
+      'SN':  { name: 'Tin',           fullName: 'tin',           number: 50,  color: '#808080', shape: 'box',      model: 'models/tin.glb'           },
+      'SB':  { name: 'Antimony',      fullName: 'antimony',      number: 51,  color: '#708090', shape: 'cone',     model: 'models/antimony.glb'      },
+      'TE':  { name: 'Tellurium',     fullName: 'tellurium',     number: 52,  color: '#FF6347', shape: 'sphere',   model: 'models/tellurium.glb'     },
+      'I':   { name: 'Iodine',        fullName: 'iodine',        number: 53,  color: '#8B008B', shape: 'sphere',   model: 'models/iodine.glb'        },
+      'XE':  { name: 'Xenon',         fullName: 'xenon',         number: 54,  color: '#00CED1', shape: 'sphere',   model: 'models/xenon.glb'         },
+      'CS':  { name: 'Cesium',        fullName: 'cesium',        number: 55,  color: '#9B59B6', shape: 'box',      model: 'models/cesium.glb'        },
+      'BA':  { name: 'Barium',        fullName: 'barium',        number: 56,  color: '#F0E68C', shape: 'cylinder', model: 'models/barium.glb'        },
+      'LA':  { name: 'Lanthanum',     fullName: 'lanthanum',     number: 57,  color: '#B0C4DE', shape: 'box',      model: 'models/lanthanum.glb'     },
+      'CE':  { name: 'Cerium',        fullName: 'cerium',        number: 58,  color: '#C0C0C0', shape: 'box',      model: 'models/cerium.glb'        },
+      'PR':  { name: 'Praseodymium',  fullName: 'praseodymium',  number: 59,  color: '#B0C4DE', shape: 'box',      model: 'models/praseodymium.glb'  },
+      'ND':  { name: 'Neodymium',     fullName: 'neodymium',     number: 60,  color: '#9370DB', shape: 'box',      model: 'models/neodymium.glb'     },
+      'PM':  { name: 'Promethium',    fullName: 'promethium',    number: 61,  color: '#8A2BE2', shape: 'box',      model: 'models/promethium.glb'    },
+      'SM':  { name: 'Samarium',      fullName: 'samarium',      number: 62,  color: '#7B68EE', shape: 'box',      model: 'models/samarium.glb'      },
+      'EU':  { name: 'Europium',      fullName: 'europium',      number: 63,  color: '#6A5ACD', shape: 'sphere',   model: 'models/europium.glb'      },
+      'GD':  { name: 'Gadolinium',    fullName: 'gadolinium',    number: 64,  color: '#B0C4DE', shape: 'box',      model: 'models/gadolinium.glb'    },
+      'TB':  { name: 'Terbium',       fullName: 'terbium',       number: 65,  color: '#B0C4DE', shape: 'box',      model: 'models/terbium.glb'       },
+      'DY':  { name: 'Dysprosium',    fullName: 'dysprosium',    number: 66,  color: '#B0C4DE', shape: 'box',      model: 'models/dysprosium.glb'    },
+      'HO':  { name: 'Holmium',       fullName: 'holmium',       number: 67,  color: '#B0C4DE', shape: 'box',      model: 'models/holmium.glb'       },
+      'ER':  { name: 'Erbium',        fullName: 'erbium',        number: 68,  color: '#B0C4DE', shape: 'box',      model: 'models/erbium.glb'        },
+      'TM':  { name: 'Thulium',       fullName: 'thulium',       number: 69,  color: '#B0C4DE', shape: 'box',      model: 'models/thulium.glb'       },
+      'YB':  { name: 'Ytterbium',     fullName: 'ytterbium',     number: 70,  color: '#B0C4DE', shape: 'box',      model: 'models/ytterbium.glb'     },
+      'LU':  { name: 'Lutetium',      fullName: 'lutetium',      number: 71,  color: '#B0C4DE', shape: 'box',      model: 'models/lutetium.glb'      },
+      'HF':  { name: 'Hafnium',       fullName: 'hafnium',       number: 72,  color: '#778899', shape: 'cylinder', model: 'models/hafnium.glb'       },
+      'TA':  { name: 'Tantalum',      fullName: 'tantalum',      number: 73,  color: '#708090', shape: 'box',      model: 'models/tantalum.glb'      },
+      'W':   { name: 'Tungsten',      fullName: 'tungsten',      number: 74,  color: '#808080', shape: 'box',      model: 'models/tungsten.glb'      },
+      'RE':  { name: 'Rhenium',       fullName: 'rhenium',       number: 75,  color: '#A9A9A9', shape: 'sphere',   model: 'models/rhenium.glb'       },
+      'OS':  { name: 'Osmium',        fullName: 'osmium',        number: 76,  color: '#696969', shape: 'sphere',   model: 'models/osmium.glb'        },
+      'IR':  { name: 'Iridium',       fullName: 'iridium',       number: 77,  color: '#D4D4D4', shape: 'sphere',   model: 'models/iridium.glb'       },
+      'PT':  { name: 'Platinum',      fullName: 'platinum',      number: 78,  color: '#E8E8E8', shape: 'sphere',   model: 'models/platinum.glb'      },
+      'AU':  { name: 'Gold',          fullName: 'gold',          number: 79,  color: '#FFD700', shape: 'sphere',   model: 'models/gold.glb'          },
+      'HG':  { name: 'Mercury',       fullName: 'mercury',       number: 80,  color: '#B0B0B0', shape: 'sphere',   model: 'models/mercury.glb'       },
+      'TL':  { name: 'Thallium',      fullName: 'thallium',      number: 81,  color: '#808080', shape: 'box',      model: 'models/thallium.glb'      },
+      'PB':  { name: 'Lead',          fullName: 'lead',          number: 82,  color: '#708090', shape: 'box',      model: 'models/lead.glb'          },
+      'BI':  { name: 'Bismuth',       fullName: 'bismuth',       number: 83,  color: '#FF69B4', shape: 'cone',     model: 'models/bismuth.glb'       },
+      'PO':  { name: 'Polonium',      fullName: 'polonium',      number: 84,  color: '#FF8C00', shape: 'sphere',   model: 'models/polonium.glb'      },
+      'AT':  { name: 'Astatine',      fullName: 'astatine',      number: 85,  color: '#8B008B', shape: 'sphere',   model: 'models/astatine.glb'      },
+      'RN':  { name: 'Radon',         fullName: 'radon',         number: 86,  color: '#00CED1', shape: 'sphere',   model: 'models/radon.glb'         },
+      'FR':  { name: 'Francium',      fullName: 'francium',      number: 87,  color: '#9B59B6', shape: 'box',      model: 'models/francium.glb'      },
+      'RA':  { name: 'Radium',        fullName: 'radium',        number: 88,  color: '#F0E68C', shape: 'cylinder', model: 'models/radium.glb'        },
+      'AC':  { name: 'Actinium',      fullName: 'actinium',      number: 89,  color: '#B0C4DE', shape: 'box',      model: 'models/actinium.glb'      },
+      'TH':  { name: 'Thorium',       fullName: 'thorium',       number: 90,  color: '#778899', shape: 'cylinder', model: 'models/thorium.glb'       },
+      'PA':  { name: 'Protactinium',  fullName: 'protactinium',  number: 91,  color: '#8A2BE2', shape: 'box',      model: 'models/protactinium.glb'  },
+      'U':   { name: 'Uranium',       fullName: 'uranium',       number: 92,  color: '#00FF7F', shape: 'cylinder', model: 'models/uranium.glb'       },
+      'NP':  { name: 'Neptunium',     fullName: 'neptunium',     number: 93,  color: '#4169E1', shape: 'box',      model: 'models/neptunium.glb'     },
+      'PU':  { name: 'Plutonium',     fullName: 'plutonium',     number: 94,  color: '#FF4500', shape: 'box',      model: 'models/plutonium.glb'     },
+      'AM':  { name: 'Americium',     fullName: 'americium',     number: 95,  color: '#9370DB', shape: 'box',      model: 'models/americium.glb'     },
+      'CM':  { name: 'Curium',        fullName: 'curium',        number: 96,  color: '#8A2BE2', shape: 'box',      model: 'models/curium.glb'        },
+      'BK':  { name: 'Berkelium',     fullName: 'berkelium',     number: 97,  color: '#7B68EE', shape: 'box',      model: 'models/berkelium.glb'     },
+      'CF':  { name: 'Californium',   fullName: 'californium',   number: 98,  color: '#6A5ACD', shape: 'box',      model: 'models/californium.glb'   },
+      'ES':  { name: 'Einsteinium',   fullName: 'einsteinium',   number: 99,  color: '#9B59B6', shape: 'box',      model: 'models/einsteinium.glb'   },
+      'FM':  { name: 'Fermium',       fullName: 'fermium',       number: 100, color: '#8A2BE2', shape: 'box',      model: 'models/fermium.glb'       },
+      'MD':  { name: 'Mendelevium',   fullName: 'mendelevium',   number: 101, color: '#7B68EE', shape: 'box',      model: 'models/mendelevium.glb'   },
+      'NO':  { name: 'Nobelium',      fullName: 'nobelium',      number: 102, color: '#6A5ACD', shape: 'box',      model: 'models/nobelium.glb'      },
+      'LR':  { name: 'Lawrencium',    fullName: 'lawrencium',    number: 103, color: '#9B59B6', shape: 'box',      model: 'models/lawrencium.glb'    },
+      'RF':  { name: 'Rutherfordium', fullName: 'rutherfordium', number: 104, color: '#778899', shape: 'cylinder', model: 'models/rutherfordium.glb' },
+      'DB':  { name: 'Dubnium',       fullName: 'dubnium',       number: 105, color: '#708090', shape: 'box',      model: 'models/dubnium.glb'       },
+      'SG':  { name: 'Seaborgium',    fullName: 'seaborgium',    number: 106, color: '#808080', shape: 'box',      model: 'models/seaborgium.glb'    },
+      'BH':  { name: 'Bohrium',       fullName: 'bohrium',       number: 107, color: '#A9A9A9', shape: 'box',      model: 'models/bohrium.glb'       },
+      'HS':  { name: 'Hassium',       fullName: 'hassium',       number: 108, color: '#696969', shape: 'box',      model: 'models/hassium.glb'       },
+      'MT':  { name: 'Meitnerium',    fullName: 'meitnerium',    number: 109, color: '#D4D4D4', shape: 'box',      model: 'models/meitnerium.glb'    },
+      'DS':  { name: 'Darmstadtium',  fullName: 'darmstadtium',  number: 110, color: '#E8E8E8', shape: 'box',      model: 'models/darmstadtium.glb'  },
+      'RG':  { name: 'Roentgenium',   fullName: 'roentgenium',   number: 111, color: '#FFD700', shape: 'box',      model: 'models/roentgenium.glb'   },
+      'CN':  { name: 'Copernicium',   fullName: 'copernicium',   number: 112, color: '#B0B0B0', shape: 'box',      model: 'models/copernicium.glb'   },
+      'NH':  { name: 'Nihonium',      fullName: 'nihonium',      number: 113, color: '#C0C0C0', shape: 'box',      model: 'models/nihonium.glb'      },
+      'FL':  { name: 'Flerovium',     fullName: 'flerovium',     number: 114, color: '#808080', shape: 'box',      model: 'models/flerovium.glb'     },
+      'MC':  { name: 'Moscovium',     fullName: 'moscovium',     number: 115, color: '#708090', shape: 'box',      model: 'models/moscovium.glb'     },
+      'LV':  { name: 'Livermorium',   fullName: 'livermorium',   number: 116, color: '#778899', shape: 'box',      model: 'models/livermorium.glb'   },
+      'TS':  { name: 'Tennessine',    fullName: 'tennessine',    number: 117, color: '#8B008B', shape: 'box',      model: 'models/tennessine.glb'    },
+      'OG':  { name: 'Oganesson',     fullName: 'oganesson',     number: 118, color: '#00CED1', shape: 'sphere',   model: 'models/oganesson.glb'     },
     };
 
     const video    = document.getElementById('camera-feed');
@@ -310,26 +305,33 @@
       }
     }
 
-    // ── OCR match: count occurrences, pick highest ──
+    // ── Multi-evidence scoring ──
+    // Symbol token  = +2
+    // Full name     = +3
+    // Atomic number = +2
+    // Min score 3 to match
     function matchElement(text) {
-      const tokens = text.toUpperCase().replace(/[^A-Z]/g, ' ').split(/\s+/).filter(w => w.length === 1 || w.length === 2);
-      const counts = {};
+      const upper  = text.toUpperCase().replace(/[^A-Z0-9]/g, ' ');
+      const tokens = upper.split(/\s+/).filter(w => w.length > 0);
+      const lower  = text.toLowerCase();
 
-      for (const token of tokens) {
-        if (ELEMENTS[token]) counts[token] = (counts[token] || 0) + 1;
+      let bestSymbol = null;
+      let bestScore  = 0;
+
+      for (const [symbol, el] of Object.entries(ELEMENTS)) {
+        let score = 0;
+        if (tokens.includes(symbol))            score += 2;
+        if (lower.includes(el.fullName))        score += 3;
+        if (tokens.includes(String(el.number))) score += 2;
+
+        if (score >= 3 && score > bestScore) {
+          bestScore  = score;
+          bestSymbol = symbol;
+        }
       }
 
-      if (Object.keys(counts).length === 0) return null;
-
-      const best = Object.entries(counts).sort((a, b) => {
-        if (b[1] !== a[1]) return b[1] - a[1];
-        return b[0].length - a[0].length;
-      })[0];
-
-      // Single-letter symbols need 2+ hits to avoid false positives
-      if (best[0].length === 1 && best[1] < 2) return null;
-
-      return best[0];
+      if (bestSymbol) log('Score: ' + bestSymbol + '=' + bestScore, '#888');
+      return bestSymbol;
     }
 
     // ── Fallback 3D shape ──
@@ -340,7 +342,6 @@
       if (el.shape === 'sphere')   tag = 'a-sphere';
       if (el.shape === 'cylinder') tag = 'a-cylinder';
       if (el.shape === 'cone')     tag = 'a-cone';
-
       const shape = document.createElement(tag);
       shape.setAttribute('color', el.color);
       shape.setAttribute('position', '0 0 0');
@@ -353,7 +354,7 @@
       shape.setAttribute('animation__bob',
         'property: position; from: 0 -0.05 0; to: 0 0.05 0; loop: true; dur: 1500; dir: alternate; easing: easeInOutSine');
       arModel.appendChild(shape);
-      log('Showing fallback shape for ' + symbol, '#FFD93D');
+      log('Fallback shape: ' + symbol, '#FFD93D');
     }
 
     // ── Show element ──
@@ -366,8 +367,11 @@
       document.getElementById('info-symbol').textContent = symbol;
       document.getElementById('info-name').textContent   = el.name;
       document.getElementById('info-number').textContent = 'Atomic No. ' + el.number;
+      log('Loading: ' + el.model);
 
-      log('Matched: ' + symbol + ' → loading ' + el.model);
+      fetch(el.model)
+        .then(r => log(r.ok ? 'File OK: ' + el.model : 'File 404: ' + el.model + ' (' + r.status + ')', r.ok ? '#00FF88' : '#FF4444'))
+        .catch(e => log('Fetch err: ' + e.message, '#FF4444'));
 
       const modelEl = document.createElement('a-gltf-model');
       modelEl.setAttribute('src', el.model);
@@ -375,15 +379,8 @@
       modelEl.setAttribute('scale', '0.5 0.5 0.5');
       modelEl.setAttribute('animation',
         'property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear');
-
-      modelEl.addEventListener('model-loaded', () => {
-        log('Model loaded OK: ' + el.model, '#00FF88');
-      });
-      modelEl.addEventListener('model-error', () => {
-        log('Model FAILED: ' + el.model, '#FF4444');
-        showFallbackShape(symbol);
-      });
-
+      modelEl.addEventListener('model-loaded', () => log('Model OK: ' + el.model, '#00FF88'));
+      modelEl.addEventListener('model-error',  () => { log('Model FAILED: ' + el.model, '#FF4444'); showFallbackShape(symbol); });
       arModel.innerHTML = '';
       arModel.appendChild(modelEl);
     }
@@ -396,33 +393,22 @@
       arModel.innerHTML    = '';
     }
 
-    // ── Gestures: pinch to scale + 1-finger rotate ──
-    let initialDistance = null;
-    let initialScale = 1, currentScale = 1;
-    let lastTouchX = null, lastTouchY = null;
-    let rotX = 0, rotY = 0;
+    // ── Gestures ──
+    let initialDistance = null, initialScale = 1, currentScale = 1;
+    let lastTouchX = null, lastTouchY = null, rotX = 0, rotY = 0;
 
     document.addEventListener('touchstart', (e) => {
       if (e.touches.length === 2) {
-        initialDistance = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
+        initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         initialScale = currentScale;
       }
-      if (e.touches.length === 1) {
-        lastTouchX = e.touches[0].clientX;
-        lastTouchY = e.touches[0].clientY;
-      }
+      if (e.touches.length === 1) { lastTouchX = e.touches[0].clientX; lastTouchY = e.touches[0].clientY; }
     });
 
     document.addEventListener('touchmove', (e) => {
       e.preventDefault();
       if (e.touches.length === 2 && initialDistance) {
-        const dist = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
+        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         currentScale = Math.max(0.1, Math.min(5, initialScale * (dist / initialDistance)));
         arModel.setAttribute('scale', currentScale + ' ' + currentScale + ' ' + currentScale);
       }
@@ -440,58 +426,45 @@
       if (e.touches.length === 0) { lastTouchX = null; lastTouchY = null; }
     });
 
-    // ── OCR scanning loop ──
+    // ── OCR loop ──
     let isProcessing = false, currentSymbol = null, notFoundCount = 0;
 
     async function scanFrame() {
       if (isProcessing) return;
       isProcessing = true;
 
-      // Crop to center 50% of frame only
-      const sw = Math.floor(video.videoWidth  * 0.5);
+      const sw = Math.floor(video.videoWidth * 0.5);
       const sh = Math.floor(video.videoHeight * 0.5);
-      const sx = Math.floor(video.videoWidth  * 0.25);
+      const sx = Math.floor(video.videoWidth * 0.25);
       const sy = Math.floor(video.videoHeight * 0.25);
       canvas.width = sw; canvas.height = sh;
       ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
 
       try {
         const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
-          tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+          tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
           tessedit_pageseg_mode: '6',
         });
-
-        const clean = text.trim().replace(/\n/g, ' ').substring(0, 80);
-        log('OCR: ' + clean, '#aaa');
+        log('OCR: ' + text.trim().replace(/\n/g, ' ').substring(0, 80), '#aaa');
 
         const found = matchElement(text);
-
         if (found) {
           notFoundCount = 0;
-          if (found !== currentSymbol) {
-            currentSymbol = found;
-            showElement(found);
-          }
+          if (found !== currentSymbol) { currentSymbol = found; showElement(found); }
         } else {
           notFoundCount++;
-          if (notFoundCount >= 3 && currentSymbol) {
-            currentSymbol = null;
-            hideElement();
-          }
+          if (notFoundCount >= 3 && currentSymbol) { currentSymbol = null; hideElement(); }
         }
       } catch (err) {
         log('OCR error: ' + err.message, '#FF4444');
       }
-
       isProcessing = false;
     }
 
-    function startScanning() {
-      setInterval(scanFrame, 2000);
-    }
+    function startScanning() { setInterval(scanFrame, 2000); }
 
     startCamera();
-    log('App started');
+    log('App started — 118 elements loaded');
   </script>
 </body>
 </html>
