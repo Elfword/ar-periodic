@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+
+    #camera-feed {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    #overlay-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 1;
+      display: none; /* used internally for OCR capture */
+    }
+
+    #ar-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    #status {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-family: monospace;
+      font-size: 14px;
+      z-index: 10;
+    }
+
+    #element-info {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-family: monospace;
+      font-size: 18px;
+      z-index: 10;
+      display: none;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Camera feed -->
+  <video id="camera-feed" autoplay playsinline muted></video>
+  <canvas id="overlay-canvas"></canvas>
+
+  <!-- AR 3D scene -->
+  <div id="ar-container">
+    <a-scene
+      embedded
+      vr-mode-ui="enabled: false"
+      renderer="alpha: true; colorManagement: true"
+      style="background: transparent;">
+
+      <a-assets>
+        <!-- preload models here if needed -->
+      </a-assets>
+
+      <a-camera position="0 0 3" look-controls="enabled: false"></a-camera>
+
+      <!-- 3D model loads here dynamically -->
+      <a-entity id="ar-model"></a-entity>
+
+    </a-scene>
+  </div>
+
+  <!-- UI -->
+  <div id="status">🔍 Scanning...</div>
+  <div id="element-info" id="element-info"></div>
+
+  <script>
+    // ── Element database ──
+    const ELEMENTS = {
+      'H':  { name: 'Hydrogen',   model: 'models/hydrogen.glb',  color: '#FF6B6B' },
+      'HE': { name: 'Helium',     model: 'models/helium.glb',    color: '#FFD93D' },
+      'LI': { name: 'Lithium',    model: 'models/lithium.glb',   color: '#6BCB77' },
+      'BE': { name: 'Beryllium',  model: 'models/beryllium.glb', color: '#4D96FF' },
+      'B':  { name: 'Boron',      model: 'models/boron.glb',     color: '#FF6B6B' },
+      'C':  { name: 'Carbon',     model: 'models/carbon.glb',    color: '#333333' },
+      'N':  { name: 'Nitrogen',   model: 'models/nitrogen.glb',  color: '#4D96FF' },
+      'O':  { name: 'Oxygen',     model: 'models/oxygen.glb',    color: '#FF6B6B' },
+      'F':  { name: 'Fluorine',   model: 'models/fluorine.glb',  color: '#FFD93D' },
+      'NE': { name: 'Neon',       model: 'models/neon.glb',      color: '#FF6B6B' },
+      'NA': { name: 'Sodium',     model: 'models/sodium.glb',    color: '#6BCB77' },
+      'MG': { name: 'Magnesium',  model: 'models/magnesium.glb', color: '#4D96FF' },
+      'AL': { name: 'Aluminum',   model: 'models/aluminum.glb',  color: '#FFD93D' },
+      'SI': { name: 'Silicon',    model: 'models/silicon.glb',   color: '#6BCB77' },
+      'P':  { name: 'Phosphorus', model: 'models/phosphorus.glb',color: '#FF6B6B' },
+      'S':  { name: 'Sulfur',     model: 'models/sulfur.glb',    color: '#FFD93D' },
+      'CL': { name: 'Chlorine',   model: 'models/chlorine.glb',  color: '#6BCB77' },
+      'AR': { name: 'Argon',      model: 'models/argon.glb',     color: '#4D96FF' },
+      'K':  { name: 'Potassium',  model: 'models/potassium.glb', color: '#FF6B6B' },
+      'CA': { name: 'Calcium',    model: 'models/calcium.glb',   color: '#FFD93D' },
+      'FE': { name: 'Iron',       model: 'models/iron.glb',      color: '#999999' },
+      'CU': { name: 'Copper',     model: 'models/copper.glb',    color: '#FF8C00' },
+      'ZN': { name: 'Zinc',       model: 'models/zinc.glb',      color: '#6BCB77' },
+      'AG': { name: 'Silver',     model: 'models/silver.glb',    color: '#C0C0C0' },
+      'AU': { name: 'Gold',       model: 'models/gold.glb',      color: '#FFD700' },
+      'HG': { name: 'Mercury',    model: 'models/mercury.glb',   color: '#B0B0B0' },
+      'PB': { name: 'Lead',       model: 'models/lead.glb',      color: '#708090' },
+      'U':  { name: 'Uranium',    model: 'models/uranium.glb',   color: '#6BCB77' },
+      // Add remaining elements following same pattern...
+    };
+
+    // ── Camera setup ──
+    const video = document.getElementById('camera-feed');
+    const canvas = document.getElementById('overlay-canvas');
+    const ctx = canvas.getContext('2d');
+    const statusEl = document.getElementById('status');
+    const infoEl = document.getElementById('element-info');
+    const arModel = document.getElementById('ar-model');
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' } // use back camera
+        });
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          startScanning();
+        };
+      } catch (err) {
+        statusEl.textContent = '❌ Camera access denied';
+        console.error(err);
+      }
+    }
+
+    // ── OCR scanning loop ──
+    let isProcessing = false;
+    let currentElement = null;
+
+    async function scanFrame() {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      // Draw current video frame to canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      try {
+        const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
+          tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+        });
+
+        const found = matchElement(text);
+
+        if (found && found !== currentElement) {
+          currentElement = found;
+          showElement(found);
+        } else if (!found && currentElement) {
+          currentElement = null;
+          hideElement();
+        }
+
+      } catch (err) {
+        console.error('OCR error:', err);
+      }
+
+      isProcessing = false;
+    }
+
+    function startScanning() {
+      // Scan every 2 seconds to avoid overloading mobile CPU
+      setInterval(scanFrame, 2000);
+    }
+
+    // ── Element matching ──
+    function matchElement(text) {
+      const upper = text.toUpperCase().replace(/[^A-Z]/g, ' ');
+      const words = upper.split(/\s+/).filter(w => w.length >= 1 && w.length <= 2);
+
+      // Sort elements by symbol length (longer first) to avoid H matching HE
+      const sortedKeys = Object.keys(ELEMENTS).sort((a, b) => b.length - a.length);
+
+      for (const symbol of sortedKeys) {
+        if (words.includes(symbol)) {
+          return symbol;
+        }
+      }
+      return null;
+    }
+
+    // ── Show/hide AR model ──
+    function showElement(symbol) {
+      const el = ELEMENTS[symbol];
+      statusEl.textContent = `✅ Found: ${symbol}`;
+
+      // Show info card
+      infoEl.style.display = 'block';
+      infoEl.innerHTML = `<strong>${symbol}</strong> — ${el.name}`;
+
+      // Load 3D model
+      arModel.setAttribute('gltf-model', el.model);
+      arModel.setAttribute('position', '0 0 0');
+      arModel.setAttribute('scale', '0.5 0.5 0.5');
+      arModel.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 3000');
+    }
+
+    function hideElement() {
+      statusEl.textContent = '🔍 Scanning...';
+      infoEl.style.display = 'none';
+      arModel.removeAttribute('gltf-model');
+      arModel.removeAttribute('animation');
+    }
+
+    // ── Start ──
+    startCamera();
+  </script>
+</body>
+</html>
