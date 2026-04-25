@@ -261,6 +261,72 @@
     }
     #log-btn .lb-count { color: #FFD93D; font-weight: bold; }
 
+
+    /* ── Reset Warning Modal ── */
+    #reset-modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 60; display: none;
+      align-items: center; justify-content: center;
+    }
+    #reset-modal.show { display: flex; }
+    .rm-box {
+      background: #111; border: 1px solid #FF4444;
+      border-radius: 16px; padding: 28px 24px;
+      max-width: 300px; width: 90%;
+      text-align: center; font-family: monospace;
+    }
+    .rm-icon  { font-size: 40px; margin-bottom: 10px; }
+    .rm-title { font-size: 16px; font-weight: bold; color: #FF4444; margin-bottom: 8px; }
+    .rm-body  { font-size: 12px; color: #aaa; line-height: 1.7; margin-bottom: 20px; }
+    .rm-body strong { color: #fff; }
+    .rm-btns  { display: flex; gap: 10px; }
+    .rm-cancel { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #444;
+                 background: none; color: #aaa; font-family: monospace; font-size: 13px; cursor: pointer; }
+    .rm-confirm { flex: 1; padding: 10px; border-radius: 8px; border: none;
+                  background: #FF4444; color: #fff; font-family: monospace;
+                  font-size: 13px; font-weight: bold; cursor: pointer; }
+    .rm-cancel:hover  { border-color: #888; color: #fff; }
+    .rm-confirm:hover { background: #cc0000; }
+    /* Reset button inside discovery panel */
+    #reset-btn {
+      margin: 16px 16px 0;
+      padding: 10px;
+      width: calc(100% - 32px);
+      background: none;
+      border: 1px solid rgba(255,68,68,0.4);
+      border-radius: 8px;
+      color: #FF4444;
+      font-family: monospace;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    #reset-btn:hover { background: rgba(255,68,68,0.1); }
+
+
+    #reset-btn {
+      background: none; border: 1px solid rgba(255,68,68,0.4);
+      color: #FF4444; font-family: monospace; font-size: 11px;
+      padding: 4px 10px; border-radius: 10px; cursor: pointer;
+    }
+    #reset-confirm {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 60; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px; padding: 32px;
+      text-align: center; font-family: monospace;
+    }
+    .rc-icon  { font-size: 48px; }
+    .rc-title { font-size: 18px; font-weight: bold; color: #FF4444; }
+    .rc-msg   { font-size: 13px; color: #aaa; line-height: 1.6; max-width: 280px; }
+    .rc-btns  { display: flex; gap: 12px; margin-top: 8px; }
+    .rc-cancel  { background: rgba(255,255,255,0.08); border: none; color: #fff;
+                  font-family: monospace; font-size: 14px; padding: 10px 24px;
+                  border-radius: 10px; cursor: pointer; }
+    .rc-confirm { background: #FF4444; border: none; color: #fff;
+                  font-family: monospace; font-size: 14px; font-weight: bold;
+                  padding: 10px 24px; border-radius: 10px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -345,8 +411,9 @@
   <div id="discovery-panel">
     <div class="dp-header">
       <span class="dp-title">📖 Discovery Log</span>
-      <button class="dp-close" onclick="closeDiscoveryLog()">×</button>
+      <button id="reset-btn" onclick="resetProgress()">🗑 Reset</button><button class="dp-close" onclick="closeDiscoveryLog()">×</button>
     </div>
+    <button id="reset-btn" onclick="openResetModal()">🗑️ Reset All Progress</button>
     <div class="dp-tabs">
       <button class="dp-tab active" id="dptab-log"   onclick="switchTab('log')">🧪 Compounds</button>
       <button class="dp-tab"        id="dptab-stats" onclick="switchTab('stats')">📊 My Stats</button>
@@ -377,6 +444,16 @@
       </div>
       <div class="stats-title">Top 10 Most Scanned Elements</div>
       <div id="stats-chart"></div>
+
+    <!-- Reset confirm overlay (inside discovery-panel) -->
+    <div id="reset-confirm">
+      <div class="rc-icon">⚠️</div>
+      <div class="rc-title">Reset All Progress?</div>
+      <div class="rc-msg">This will permanently delete all your discovered compounds and scan history. This action cannot be undone.</div>
+      <div class="rc-btns">
+        <button class="rc-cancel"  onclick="cancelReset()">Cancel</button>
+        <button class="rc-confirm" onclick="confirmReset()">Yes, Reset</button>
+      </div>
     </div>
   </div>
 
@@ -584,12 +661,19 @@
     function recordScan(symbol) {
       elementScanCount[symbol] = (elementScanCount[symbol] || 0) + 1;
       totalScans++;
+      try {
+        localStorage.setItem('elementScanCount', JSON.stringify(elementScanCount));
+        localStorage.setItem('totalScans', String(totalScans));
+      } catch(e) {}
       document.getElementById('lb-count').textContent = Object.keys(discoveredCompounds).length;
     }
 
     function recordDiscovery(key, compound) {
       const isNew = !discoveredCompounds[key];
       discoveredCompounds[key] = true;
+      try {
+        localStorage.setItem('discoveredCompounds', JSON.stringify(discoveredCompounds));
+      } catch(e) {}
       document.getElementById('lb-count').textContent = Object.keys(discoveredCompounds).length;
       if (isNew) showDiscoveryToast(compound, key);
     }
@@ -1118,8 +1202,103 @@
     }
 
     function startScanning() { setInterval(scanFrame, 2000); }
+    // ── Persistent storage ──
+    function loadSavedData() {
+      try {
+        const savedC = localStorage.getItem('discoveredCompounds');
+        if (savedC) discoveredCompounds = JSON.parse(savedC);
+        const savedE = localStorage.getItem('elementScanCount');
+        if (savedE) elementScanCount = JSON.parse(savedE);
+        const savedT = localStorage.getItem('totalScans');
+        if (savedT) totalScans = parseInt(savedT) || 0;
+        document.getElementById('lb-count').textContent = Object.keys(discoveredCompounds).length;
+        log('Saved data loaded: ' + Object.keys(discoveredCompounds).length + ' compounds, ' + totalScans + ' scans', '#00FF88');
+      } catch(e) {
+        log('No saved data or storage unavailable', '#aaa');
+      }
+    }
+
+    function openResetModal()  { document.getElementById('reset-modal').classList.add('show'); }
+    function closeResetModal() { document.getElementById('reset-modal').classList.remove('show'); }
+
+    function confirmReset() {
+      discoveredCompounds = {};
+      elementScanCount    = {};
+      totalScans          = 0;
+      try {
+        localStorage.removeItem('discoveredCompounds');
+        localStorage.removeItem('elementScanCount');
+        localStorage.removeItem('totalScans');
+      } catch(e) {}
+      document.getElementById('lb-count').textContent = 0;
+      closeResetModal();
+      buildDiscoveryList();
+      buildStatsChart();
+      log('All progress has been reset', '#FF4444');
+    }
+
+        loadSavedData();
+    // ── Persistent storage ──
+    function loadSavedData() {
+      try {
+        const saved = localStorage.getItem('discoveredCompounds');
+        if (saved) discoveredCompounds = JSON.parse(saved);
+        const savedScans = localStorage.getItem('elementScanCount');
+        if (savedScans) elementScanCount = JSON.parse(savedScans);
+        const savedTotal = localStorage.getItem('totalScans');
+        if (savedTotal) totalScans = parseInt(savedTotal);
+        document.getElementById('lb-count').textContent = Object.keys(discoveredCompounds).length;
+        log('Loaded: ' + Object.keys(discoveredCompounds).length + ' compounds saved', '#00FF88');
+      } catch(e) {
+        log('No saved data', '#aaa');
+      }
+    }
+
+    function resetProgress() {
+      document.getElementById('reset-confirm').style.display = 'flex';
+    }
+
+    function confirmReset() {
+      discoveredCompounds = {};
+      elementScanCount    = {};
+      totalScans          = 0;
+      localStorage.removeItem('discoveredCompounds');
+      localStorage.removeItem('elementScanCount');
+      localStorage.removeItem('totalScans');
+      document.getElementById('lb-count').textContent = 0;
+      document.getElementById('reset-confirm').style.display = 'none';
+      buildDiscoveryList();
+      buildStatsChart();
+      log('Progress reset', '#FF4444');
+    }
+
+    function cancelReset() {
+      document.getElementById('reset-confirm').style.display = 'none';
+    }
+
+        loadSavedData();
     startCamera();
     log('App started — 118 elements, 100+ compounds, Discovery Log active');
   </script>
+
+  <!-- Reset Warning Modal -->
+  <div id="reset-modal">
+    <div class="rm-box">
+      <div class="rm-icon">⚠️</div>
+      <div class="rm-title">Reset All Progress?</div>
+      <div class="rm-body">
+        This will permanently delete:<br>
+        <strong>• All discovered compounds</strong><br>
+        <strong>• All scan statistics</strong><br>
+        <strong>• Your element usage data</strong><br><br>
+        This action <strong style="color:#FF4444">cannot be undone</strong>.
+      </div>
+      <div class="rm-btns">
+        <button class="rm-cancel"  onclick="closeResetModal()">Cancel</button>
+        <button class="rm-confirm" onclick="confirmReset()">Yes, Reset</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
