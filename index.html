@@ -182,6 +182,30 @@
       cursor: pointer;
     }
 
+    /* ── Home Menu ── */
+    #home-menu { position:fixed; inset:0; z-index:2000; background:linear-gradient(180deg,#06110d 0%,#000 100%); display:flex; align-items:center; justify-content:center; padding:24px; font-family:monospace; }
+    .home-box { width:min(430px,100%); text-align:center; }
+    .home-title { color:#00FF88; font-size:30px; font-weight:bold; letter-spacing:2px; margin-bottom:8px; }
+    .home-subtitle { color:#888; font-size:12px; margin-bottom:28px; }
+    .home-btn { width:100%; padding:17px 18px; margin:7px 0; border-radius:14px; border:1px solid rgba(0,255,136,.35); background:rgba(0,255,136,.07); color:#fff; font:600 15px monospace; cursor:pointer; text-align:left; }
+    .home-btn:hover { background:rgba(0,255,136,.14); border-color:#00FF88; }
+    .home-btn .hb-icon { display:inline-block; width:34px; color:#00FF88; font-size:20px; vertical-align:middle; }
+    .home-btn small { display:block; margin:4px 0 0 34px; color:#777; font:11px monospace; }
+    .home-footer { margin-top:22px; color:#555; font-size:10px; }
+    #home-menu.hidden { display:none; }
+    #home-return { position:fixed; top:20px; left:16px; z-index:15; display:none; background:rgba(0,0,0,.75); color:#00FF88; border:1px solid rgba(0,255,136,.4); border-radius:20px; padding:6px 12px; font:12px monospace; cursor:pointer; }
+    #home-return.show { display:block; }
+    .dl-element-item { display:flex; align-items:center; gap:10px; padding:12px 10px; margin:5px 0; background:rgba(255,255,255,.035); border:1px solid rgba(0,255,136,.12); border-radius:10px; cursor:pointer; }
+    .dl-element-symbol { width:42px; font-size:19px; font-weight:bold; color:#00FF88; }
+    .dl-element-name { flex:1; color:#fff; }
+    .dl-element-meta { color:#777; font-size:10px; text-align:right; }
+    .dl-empty { color:#666; text-align:center; padding:35px 10px; line-height:1.7; }
+    .quiz-note { color:#888; font-size:11px; line-height:1.6; margin:8px 0 16px; }
+    .quiz-question { color:#fff; font-size:16px; line-height:1.5; margin:18px 0; }
+    .quiz-option { width:100%; padding:12px; margin:5px 0; border-radius:9px; border:1px solid #333; background:#111; color:#ddd; text-align:left; font:12px monospace; cursor:pointer; }
+    .quiz-option:hover { border-color:#00FF88; }
+    .quiz-result { color:#00FF88; font-size:18px; text-align:center; padding:20px 0; }
+
     /* ── Discovery Log Panel ── */
     #discovery-panel {
       position: fixed; inset: 0;
@@ -327,22 +351,20 @@
     .rc-confirm { background: #FF4444; border: none; color: #fff;
                   font-family: monospace; font-size: 14px; font-weight: bold;
                   padding: 10px 24px; border-radius: 10px; cursor: pointer; }
-
-    /* ── Adaptive Quiz ── */
-    #quiz-btn{position:fixed;top:58px;right:16px;background:rgba(0,0,0,.78);color:#FFD93D;border:1px solid rgba(255,217,61,.45);border-radius:20px;padding:6px 12px;font-family:monospace;font-size:12px;z-index:12;cursor:pointer}
-    #quiz-panel{position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:80;display:none;flex-direction:column;font-family:monospace;color:#fff}
-    .q-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
-    .q-title{font-size:16px;color:#FFD93D;font-weight:bold}.q-close{background:none;border:none;color:#777;font-size:24px;cursor:pointer}
-    .q-body{padding:18px;overflow-y:auto;max-width:680px;width:100%;margin:0 auto}.q-progress{font-size:11px;color:#888;margin-bottom:10px}
-    .q-diff{display:inline-block;font-size:10px;border:1px solid rgba(255,217,61,.45);color:#FFD93D;border-radius:10px;padding:3px 8px;margin-bottom:14px}
-    .q-question{font-size:17px;line-height:1.55;margin-bottom:18px}.q-options{display:grid;gap:9px}.q-option{width:100%;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#eee;border-radius:10px;padding:12px;font:13px monospace;cursor:pointer}.q-option:hover{border-color:#FFD93D}.q-option.correct{border-color:#00FF88;background:rgba(0,255,136,.12)}.q-option.wrong{border-color:#FF4444;background:rgba(255,68,68,.12)}
-    .q-feedback{min-height:42px;padding-top:14px;font-size:12px;color:#aaa;line-height:1.6}.q-next{width:100%;padding:12px;border:0;border-radius:10px;background:#FFD93D;color:#111;font:bold 13px monospace;cursor:pointer;display:none}.q-next.show{display:block}
-    .q-start{text-align:center;padding-top:35px}.q-start p{color:#aaa;font-size:12px;line-height:1.7;margin:12px 0 20px}.q-start button{padding:12px 22px;border:1px solid #FFD93D;background:rgba(255,217,61,.1);color:#FFD93D;border-radius:10px;font:bold 13px monospace;cursor:pointer}
-    .q-score{text-align:center;padding-top:40px}.q-score .big{font-size:42px;color:#00FF88;font-weight:bold}.q-score p{color:#aaa;font-size:12px;line-height:1.7;margin:12px 0 20px}.q-score button{padding:11px 18px;margin:4px;border-radius:9px;font:12px monospace;cursor:pointer;border:1px solid #FFD93D;background:none;color:#FFD93D}.q-score button:last-child{border-color:#555;color:#aaa}
-    .q-stat{font-size:11px;color:#777;margin-top:10px}
   </style>
 </head>
 <body>
+  <div id="home-menu">
+    <div class="home-box">
+      <div class="home-title">PERIODIC TABLE AR</div>
+      <div class="home-subtitle">Explore elements, review discoveries, and test your knowledge.</div>
+      <button class="home-btn" onclick="startFromHome()"><span class="hb-icon">⌖</span>Start Scanning<small>Scan an element and explore its 3D model.</small></button>
+      <button class="home-btn" onclick="openDiscoveryLog()"><span class="hb-icon">▣</span>Discovery Log<small>Review scanned elements, compounds, and your progress.</small></button>
+      <button class="home-btn" onclick="openQuiz()"><span class="hb-icon">?</span>Quiz<small>Answer questions adapted to your element activity.</small></button>
+      <div class="home-footer">Your progress is stored on this device.</div>
+    </div>
+  </div>
+  <button id="home-return" onclick="goHome()">← Home</button>
   <video id="camera-feed" autoplay playsinline muted></video>
   <canvas id="overlay-canvas"></canvas>
 
@@ -420,6 +442,12 @@
     <div class="dt-rarity"  id="toast-rarity">⬜ Common</div>
   </div>
 
+  <!-- Quiz Panel -->
+  <div id="quiz-panel" style="position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:70;display:none;flex-direction:column;font-family:monospace;">
+    <div class="dp-header"><span class="dp-title">? Adaptive Quiz</span><button class="dp-close" onclick="closeQuiz()">×</button></div>
+    <div id="quiz-content" style="flex:1;overflow-y:auto;padding:18px 16px 40px;"></div>
+  </div>
+
   <!-- Discovery Log Panel (full screen) -->
   <div id="discovery-panel">
     <div class="dp-header">
@@ -428,12 +456,20 @@
     </div>
     <button id="reset-btn" onclick="openResetModal()">🗑️ Reset All Progress</button>
     <div class="dp-tabs">
-      <button class="dp-tab active" id="dptab-log"   onclick="switchTab('log')">🧪 Compounds</button>
-      <button class="dp-tab"        id="dptab-stats" onclick="switchTab('stats')">📊 My Stats</button>
+      <button class="dp-tab active" id="dptab-elements" onclick="switchTab('elements')">⚛ Elements</button>
+      <button class="dp-tab" id="dptab-log" onclick="switchTab('log')">🧪 Compounds</button>
+      <button class="dp-tab" id="dptab-stats" onclick="switchTab('stats')">📊 Progress</button>
+    </div>
+
+    <!-- Scanned Elements tab -->
+    <div id="tab-elements" style="flex:1;overflow-y:auto;padding:14px 16px 32px;">
+      <div class="dl-count" id="el-count">0 elements scanned</div>
+      <div class="quiz-note">Tap an element to review its information without scanning it again.</div>
+      <div id="el-list"></div>
     </div>
 
     <!-- Compounds tab -->
-    <div id="tab-log">
+    <div id="tab-log" style="display:none;">
       <div class="dl-progress">
         <div class="dl-count" id="dl-count">0 / 0 discovered</div>
         <div class="dl-bar-bg"><div class="dl-bar-fill" id="dl-bar-fill" style="width:0%"></div></div>
@@ -470,12 +506,6 @@
     </div>
   </div>
 
-
-  <button id="quiz-btn" onclick="openQuiz()">🧠 Quiz</button>
-  <div id="quiz-panel">
-    <div class="q-header"><span class="q-title">🧠 Adaptive Chemistry Quiz</span><button class="q-close" onclick="closeQuiz()">×</button></div>
-    <div class="q-body" id="quiz-body"></div>
-  </div>
   <div id="hint">Point camera at an element cell</div>
   <div id="debug-panel"></div>
   <button id="debug-toggle" onclick="toggleDebug()">LOG</button>
@@ -710,19 +740,48 @@
     }
 
     function openDiscoveryLog() {
-      buildDiscoveryList();
-      buildStatsChart();
+      buildDiscoveryList(); buildElementLog(); buildStatsChart();
       document.getElementById('discovery-panel').style.display = 'flex';
+      switchTab('elements');
     }
     function closeDiscoveryLog() {
       document.getElementById('discovery-panel').style.display = 'none';
     }
     function switchTab(tab) {
-      document.getElementById('tab-log').style.display   = tab === 'log'   ? 'block' : 'none';
-      document.getElementById('tab-stats').style.display = tab === 'stats' ? 'block' : 'none';
-      document.querySelectorAll('.dp-tab').forEach(b => b.classList.remove('active'));
-      document.getElementById('dptab-' + tab).classList.add('active');
+      ['elements','log','stats'].forEach(t => {
+        const el = document.getElementById('tab-' + t);
+        if (el) el.style.display = tab === t ? 'block' : 'none';
+        const btn = document.getElementById('dptab-' + t);
+        if (btn) btn.classList.toggle('active', tab === t);
+      });
+      if (tab === 'elements') buildElementLog();
       if (tab === 'stats') buildStatsChart();
+    }
+
+    function buildElementLog() {
+      const list = document.getElementById('el-list');
+      const entries = Object.entries(elementScanCount).filter(([sym,c]) => c > 0).sort((a,b)=>b[1]-a[1]);
+      document.getElementById('el-count').textContent = entries.length + ' elements scanned';
+      list.innerHTML = '';
+      if (!entries.length) { list.innerHTML = '<div class="dl-empty">No elements scanned yet.<br>Start scanning to build your Discovery Log.</div>'; return; }
+      entries.forEach(([sym,count]) => {
+        const el = ELEMENTS[sym]; if (!el) return;
+        const row = document.createElement('div'); row.className='dl-element-item';
+        row.innerHTML = '<span class="dl-element-symbol">'+sym+'</span><span class="dl-element-name">'+el.name+'</span><span class="dl-element-meta">'+count+' scan'+(count===1?'':'s')+'<br>Tap to learn</span>';
+        row.onclick = () => openSavedElement(sym);
+        list.appendChild(row);
+      });
+    }
+
+    function openSavedElement(sym) {
+      const el = ELEMENTS[sym]; if (!el) return;
+      document.getElementById('discovery-panel').style.display='none';
+      document.getElementById('home-return').classList.add('show');
+      const ep=document.getElementById('explanation-panel'); ep.style.display='block'; ep.classList.remove('fusion-mode');
+      document.getElementById('ep-symbol').textContent=sym; document.getElementById('ep-name').textContent=el.name;
+      document.getElementById('ep-number').textContent=el.number; document.getElementById('ep-mass').textContent=el.mass;
+      document.getElementById('ep-category').textContent=el.category; document.getElementById('ep-state').textContent=el.state;
+      document.getElementById('ep-period').textContent=el.period; document.getElementById('ep-config').textContent=el.config; document.getElementById('ep-desc').textContent=el.desc;
     }
 
     function buildDiscoveryList() {
@@ -1220,109 +1279,11 @@
       isProcessing = false;
     }
 
-    function startScanning() { setInterval(scanFrame, 2000); }
-
-    // ── Adaptive Quiz ──
-    let quizStats = {};
-    let quizState = { questions: [], index: 0, score: 0, answered: false };
-
-    const QUIZ_BANK = [
-      {key:'name', min:1, q:e=>`What is the name of element ${e.symbol}?`, a:e=>e.name, wrong:e=>pickWrong(e,'name')},
-      {key:'symbol', min:1, q:e=>`What is the chemical symbol for ${e.name}?`, a:e=>e.symbol, wrong:e=>pickWrong(e,'symbol')},
-      {key:'number', min:1, q:e=>`What is the atomic number of ${e.name}?`, a:e=>String(e.number), wrong:e=>pickWrong(e,'number')},
-      {key:'category', min:3, q:e=>`Which category does ${e.name} belong to?`, a:e=>e.category, wrong:e=>pickWrong(e,'category')},
-      {key:'period', min:3, q:e=>`Where is ${e.name} located in the periodic table?`, a:e=>e.period, wrong:e=>pickWrong(e,'period')},
-      {key:'state', min:4, q:e=>`What is the state of ${e.name} at room temperature?`, a:e=>e.state, wrong:e=>pickWrong(e,'state')},
-      {key:'config', min:6, q:e=>`Which is the electron configuration of ${e.name}?`, a:e=>e.config, wrong:e=>pickWrong(e,'config')},
-      {key:'desc', min:8, q:e=>`Which statement best describes ${e.name}?`, a:e=>e.desc, wrong:e=>pickWrong(e,'desc')}
-    ];
-
-    function getQuizStats(symbol){
-      if(!quizStats[symbol]) quizStats[symbol]={correct:0,wrong:0};
-      return quizStats[symbol];
-    }
-    function familiarity(symbol){
-      const scans=elementScanCount[symbol]||0, st=getQuizStats(symbol);
-      const attempts=st.correct+st.wrong;
-      // Scans establish familiarity, while quiz accuracy prevents repeated scans alone from making questions too hard.
-      const scanScore=Math.min(1, scans/6);
-      const accuracy=attempts ? st.correct/attempts : 0;
-      return Math.round((scanScore*0.4+accuracy*0.6)*10);
-    }
-    function difficulty(symbol){
-      const f=familiarity(symbol);
-      if(f>=8)return 3; if(f>=4)return 2; return 1;
-    }
-    function pickWrong(el,field){
-      const vals=Object.values(ELEMENTS).filter(x=>x.symbol!==el.symbol && x[field]!=null).map(x=>String(x[field]));
-      const uniq=[...new Set(vals)];
-      return uniq.sort(()=>Math.random()-.5).slice(0,3);
-    }
-    function getElementObjects(){
-      return Object.entries(ELEMENTS).map(([symbol,e])=>({...e,symbol}));
-    }
-    function makeQuestion(el,diff){
-      const pool=QUIZ_BANK.filter(x=>x.min<=diff);
-      const t=pool[Math.floor(Math.random()*pool.length)];
-      const answer=String(t.a(el));
-      let wrong=typeof t.wrong==='function'?t.wrong(el,t.key):[];
-      wrong=wrong.filter(x=>x!==answer).slice(0,3);
-      // If the field has too few distinct distractors, fall back to another element's answer.
-      if(wrong.length<3){
-        const others=getElementObjects().filter(x=>x.symbol!==el.symbol).sort(()=>Math.random()-.5);
-        for(const o of others){ if(wrong.length>=3)break; let v; try{v=String(t.a(o));}catch(_){continue;} if(v!==answer&&!wrong.includes(v))wrong.push(v); }
-      }
-      const options=[answer,...wrong.slice(0,3)].sort(()=>Math.random()-.5);
-      return {text:t.q(el),answer,options,element:el,diff};
-    }
-    function chooseQuizElements(){
-      const els=getElementObjects();
-      // Prefer elements the learner has actually scanned, but include a few unscanned ones for baseline practice.
-      const seen=els.filter(e=>(elementScanCount[e.symbol]||0)>0).sort((a,b)=>familiarity(b.symbol)-familiarity(a.symbol));
-      const unseen=els.filter(e=>!(elementScanCount[e.symbol]||0)).sort(()=>Math.random()-.5);
-      return [...seen.slice(0,8),...unseen.slice(0,4)].sort(()=>Math.random()-.5).slice(0,5);
-    }
-    function openQuiz(){
-      document.getElementById('quiz-panel').style.display='flex';
-      quizState={questions:[],index:0,score:0,answered:false};
-      renderQuizStart();
-    }
-    function closeQuiz(){document.getElementById('quiz-panel').style.display='none';}
-    function renderQuizStart(){
-      const seen=Object.keys(elementScanCount).length;
-      document.getElementById('quiz-body').innerHTML=`<div class="q-start"><div style="font-size:28px">🧠</div><h2 style="margin-top:8px">Adaptive Quiz</h2><p>Questions adapt to the elements you have scanned. More scanning increases familiarity, while your quiz performance also affects difficulty.<br><br>Elements scanned so far: <b style="color:#FFD93D">${seen}</b></p><button onclick="startQuiz()">Start 5 Questions</button></div>`;
-    }
-    function startQuiz(){
-      const els=chooseQuizElements();
-      quizState.questions=els.map(el=>makeQuestion(el,difficulty(el.symbol)));
-      quizState.index=0;quizState.score=0;quizState.answered=false;renderQuestion();
-    }
-    function renderQuestion(){
-      const q=quizState.questions[quizState.index]; if(!q){showQuizScore();return;}
-      quizState.answered=false;
-      document.getElementById('quiz-body').innerHTML=`<div class="q-progress">Question ${quizState.index+1} / ${quizState.questions.length}</div><div class="q-diff">Difficulty ${q.diff} · ${q.element.symbol} · ${q.element.name}</div><div class="q-question">${escapeHtml(q.text)}</div><div class="q-options">${q.options.map((o,i)=>`<button class="q-option" onclick="answerQuiz(${i})">${escapeHtml(o)}</button>`).join('')}</div><div class="q-feedback" id="q-feedback"></div><button class="q-next" id="q-next" onclick="nextQuestion()">Next</button>`;
-    }
-    function answerQuiz(i){
-      if(quizState.answered)return; quizState.answered=true;
-      const q=quizState.questions[quizState.index], buttons=[...document.querySelectorAll('.q-option')];
-      buttons.forEach((b,n)=>{b.disabled=true;if(q.options[n]===q.answer)b.classList.add('correct');if(n===i&&q.options[n]!==q.answer)b.classList.add('wrong');});
-      const correct=q.options[i]===q.answer, st=getQuizStats(q.element.symbol); if(correct){st.correct++;quizState.score++;}else st.wrong++;
-      localStorage.setItem('quizStats',JSON.stringify(quizStats));
-      document.getElementById('q-feedback').innerHTML=correct?'<span style="color:#00FF88">Correct.</span>':'<span style="color:#FF6666">Incorrect.</span> Correct answer: <b style="color:#fff">'+escapeHtml(q.answer)+'</b>';
-      document.getElementById('q-next').classList.add('show');
-    }
-    function nextQuestion(){quizState.index++;renderQuestion();}
-    function showQuizScore(){
-      const pct=Math.round(quizState.score/quizState.questions.length*100);
-      document.getElementById('quiz-body').innerHTML=`<div class="q-score"><div style="font-size:28px">🏁</div><div class="big">${pct}%</div><p>${quizState.score} / ${quizState.questions.length} correct.<br>Your future question difficulty will use both scan activity and quiz performance.</p><button onclick="startQuiz()">Try Again</button><button onclick="closeQuiz()">Close</button></div>`;
-    }
-    function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
-
+    let scanningStarted = false;
+    function startScanning() { if (scanningStarted) return; scanningStarted = true; setInterval(scanFrame, 2000); }
     // ── Persistent storage ──
     function loadSavedData() {
       try {
-        const savedQ = localStorage.getItem('quizStats');
-        if (savedQ) quizStats = JSON.parse(savedQ);
         const savedC = localStorage.getItem('discoveredCompounds');
         if (savedC) discoveredCompounds = JSON.parse(savedC);
         const savedE = localStorage.getItem('elementScanCount');
@@ -1347,6 +1308,7 @@
         localStorage.removeItem('discoveredCompounds');
         localStorage.removeItem('elementScanCount');
         localStorage.removeItem('totalScans');
+      localStorage.removeItem('quizStats');
       } catch(e) {}
       document.getElementById('lb-count').textContent = 0;
       closeResetModal();
@@ -1354,6 +1316,57 @@
       buildStatsChart();
       log('All progress has been reset', '#FF4444');
     }
+
+    function startFromHome() {
+      document.getElementById('home-menu').classList.add('hidden');
+      document.getElementById('home-return').classList.add('show');
+      startCamera();
+    }
+    function goHome() {
+      document.getElementById('home-menu').classList.remove('hidden');
+      document.getElementById('home-return').classList.remove('show');
+      document.getElementById('discovery-panel').style.display='none';
+      document.getElementById('quiz-panel').style.display='none';
+      document.getElementById('explanation-panel').style.display='none';
+    }
+
+    let quizQuestions=[], quizIndex=0, quizScore=0;
+    function getQuizDifficulty(sym) {
+      const scans=elementScanCount[sym]||0;
+      const q=JSON.parse(localStorage.getItem('quizStats')||'{}')[sym]||{correct:0,wrong:0};
+      const total=q.correct+q.wrong;
+      const accuracy=total?q.correct/total:.5;
+      const familiarity=Math.min(1,scans/8)*.4+accuracy*.6;
+      return familiarity>.7?3:familiarity>.35?2:1;
+    }
+    function makeQuestion(sym,diff) {
+      const el=ELEMENTS[sym];
+      const type=(diff%4);
+      if(type===0) return {q:'What is the atomic number of '+el.name+'?',a:String(el.number),field:'number'};
+      if(type===1) return {q:'What is the chemical symbol of '+el.name+'?',a:sym,field:'symbol'};
+      if(type===2) return {q:'Which category best describes '+el.name+'?',a:el.category,field:'category'};
+      return {q:'In which '+el.period.split('/')[0].trim()+' is '+el.name+' located?',a:el.period.split('/')[0].replace('Period ','').trim(),field:'period'};
+    }
+    function openQuiz(){
+      const scanned=Object.keys(elementScanCount).filter(s=>elementScanCount[s]>0 && ELEMENTS[s]);
+      if(!scanned.length){
+        document.getElementById('quiz-panel').style.display='flex'; document.getElementById('quiz-content').innerHTML='<div class="dl-empty">Scan at least one element first.<br>Your quiz will adapt to your scanned elements.</div>'; return;
+      }
+      quizQuestions=scanned.slice().sort(()=>Math.random()-.5).slice(0,5).map(sym=>({sym,diff:getQuizDifficulty(sym)})); quizIndex=0; quizScore=0;
+      document.getElementById('quiz-panel').style.display='flex'; renderQuizQuestion();
+    }
+    function renderQuizQuestion(){
+      if(quizIndex>=quizQuestions.length){
+        document.getElementById('quiz-content').innerHTML='<div class="quiz-result">Quiz Complete<br>'+quizScore+' / '+quizQuestions.length+' correct<br><button class="home-btn" style="margin-top:20px" onclick="openQuiz()">Try Again</button></div>'; return;
+      }
+      const item=quizQuestions[quizIndex], q=makeQuestion(item.sym,item.diff);
+      const all=Object.keys(ELEMENTS); let opts=[q.a]; while(opts.length<4){const x=ELEMENTS[all[Math.floor(Math.random()*all.length)]]; const v=q.field==='number'?String(x.number):q.field==='symbol'?Object.keys(ELEMENTS).find(k=>ELEMENTS[k]===x):q.field==='category'?x.category:x.period.split('/')[0].replace('Period ','').trim(); if(!opts.includes(v))opts.push(v);} opts.sort(()=>Math.random()-.5);
+      document.getElementById('quiz-content').innerHTML='<div style="color:#777;font-size:11px">Question '+(quizIndex+1)+' / '+quizQuestions.length+' · Difficulty '+item.diff+'</div><div class="quiz-question">'+q.q+'</div>'+opts.map(v=>'<button class="quiz-option" onclick="answerQuiz('+JSON.stringify(v)+','+JSON.stringify(q.a)+','+JSON.stringify(item.sym)+')">'+v+'</button>').join('');
+    }
+    function answerQuiz(value,correct,sym){
+      const stats=JSON.parse(localStorage.getItem('quizStats')||'{}'); stats[sym]=stats[sym]||{correct:0,wrong:0}; if(value===correct){quizScore++;stats[sym].correct++;}else stats[sym].wrong++; localStorage.setItem('quizStats',JSON.stringify(stats)); quizIndex++; renderQuizQuestion();
+    }
+    function closeQuiz(){ document.getElementById('quiz-panel').style.display='none'; }
 
         loadSavedData();
     // ── Persistent storage ──
@@ -1384,7 +1397,6 @@
       localStorage.removeItem('elementScanCount');
       localStorage.removeItem('totalScans');
       localStorage.removeItem('quizStats');
-      quizStats = {};
       document.getElementById('lb-count').textContent = 0;
       document.getElementById('reset-confirm').style.display = 'none';
       buildDiscoveryList();
@@ -1397,8 +1409,8 @@
     }
 
         loadSavedData();
-    startCamera();
-    log('App started — 118 elements, 100+ compounds, Discovery Log active');
+    document.getElementById('home-menu').classList.remove('hidden');
+    log('App ready — choose Start Scanning, Discovery Log, or Quiz');
   </script>
 
   <!-- Reset Warning Modal -->
