@@ -1343,7 +1343,12 @@
           if (found !== currentSymbol) { currentSymbol = found; showElement(found); }
         } else {
           notFoundCount++;
-          if (notFoundCount >= 3 && currentSymbol && !fusionActive) { currentSymbol = null; hideElement(); }
+          // Keep the last detected element visible so the learner has time to read it.
+          // The card/model is replaced only when another element is successfully detected.
+          if (notFoundCount >= 3 && currentSymbol && !fusionActive) {
+            statusEl.className = '';
+            statusEl.textContent = 'Ready — scan another element';
+          }
         }
       } catch (err) { log('OCR error: ' + err.message, '#FF4444'); }
       isProcessing = false;
