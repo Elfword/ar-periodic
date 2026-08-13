@@ -740,12 +740,15 @@
     }
 
     function openDiscoveryLog() {
+      document.getElementById('home-menu').classList.add('hidden');
+      document.getElementById('home-return').classList.remove('show');
       buildDiscoveryList(); buildElementLog(); buildStatsChart();
       document.getElementById('discovery-panel').style.display = 'flex';
       switchTab('elements');
     }
     function closeDiscoveryLog() {
       document.getElementById('discovery-panel').style.display = 'none';
+      document.getElementById('home-menu').classList.remove('hidden');
     }
     function switchTab(tab) {
       ['elements','log','stats'].forEach(t => {
@@ -1348,6 +1351,8 @@
       return {q:'In which '+el.period.split('/')[0].trim()+' is '+el.name+' located?',a:el.period.split('/')[0].replace('Period ','').trim(),field:'period'};
     }
     function openQuiz(){
+      document.getElementById('home-menu').classList.add('hidden');
+      document.getElementById('home-return').classList.remove('show');
       const scanned=Object.keys(elementScanCount).filter(s=>elementScanCount[s]>0 && ELEMENTS[s]);
       if(!scanned.length){
         document.getElementById('quiz-panel').style.display='flex'; document.getElementById('quiz-content').innerHTML='<div class="dl-empty">Scan at least one element first.<br>Your quiz will adapt to your scanned elements.</div>'; return;
@@ -1366,7 +1371,7 @@
     function answerQuiz(value,correct,sym){
       const stats=JSON.parse(localStorage.getItem('quizStats')||'{}'); stats[sym]=stats[sym]||{correct:0,wrong:0}; if(value===correct){quizScore++;stats[sym].correct++;}else stats[sym].wrong++; localStorage.setItem('quizStats',JSON.stringify(stats)); quizIndex++; renderQuizQuestion();
     }
-    function closeQuiz(){ document.getElementById('quiz-panel').style.display='none'; }
+    function closeQuiz(){ document.getElementById('quiz-panel').style.display='none'; document.getElementById('home-menu').classList.remove('hidden'); }
 
         loadSavedData();
     // ── Persistent storage ──
