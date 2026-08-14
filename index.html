@@ -195,6 +195,35 @@
     #home-menu.hidden { display:none; }
     #home-return { position:fixed; top:20px; left:16px; z-index:15; display:none; background:rgba(0,0,0,.75); color:#00FF88; border:1px solid rgba(0,255,136,.4); border-radius:20px; padding:6px 12px; font:12px monospace; cursor:pointer; }
     #home-return.show { display:block; }
+
+    .discovery-search {
+      width:100%; box-sizing:border-box; margin:8px 0 10px; padding:11px 12px;
+      border-radius:10px; border:1px solid rgba(0,255,136,.18);
+      background:#0b0b0b; color:#fff; font:12px monospace; outline:none;
+    }
+    .discovery-search:focus { border-color:rgba(0,255,136,.55); }
+    .discovery-search::placeholder { color:#666; }
+    .element-progress-card {
+      padding:12px; margin:8px 0 12px; border-radius:11px;
+      background:rgba(0,255,136,.045); border:1px solid rgba(0,255,136,.14);
+    }
+    .element-progress-top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .element-progress-title { color:#fff; font-size:12px; font-weight:bold; }
+    .element-progress-count { color:#00FF88; font-size:12px; font-weight:bold; }
+    .element-progress-bg { height:8px; margin-top:8px; border-radius:5px; background:rgba(255,255,255,.08); overflow:hidden; }
+    .element-progress-fill { height:100%; width:0%; background:linear-gradient(90deg,#00FF88,#00FFCC); border-radius:5px; transition:width .35s; }
+    .element-progress-sub { margin-top:5px; color:#777; font-size:10px; }
+    .dl-element-history { color:#777; font-size:10px; text-align:right; min-width:74px; }
+    .element-detail-section {
+      margin-top:12px; padding:13px; border-radius:11px;
+      background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07);
+    }
+    .element-detail-section-title { color:#00FF88; font-size:11px; font-weight:bold; margin-bottom:8px; letter-spacing:.5px; }
+    .element-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .element-detail-stat { background:rgba(255,255,255,.035); padding:9px; border-radius:8px; }
+    .element-detail-stat-label { color:#666; font-size:9px; }
+    .element-detail-stat-value { color:#fff; font-size:11px; margin-top:3px; word-break:break-word; }
+
     .dl-element-item { display:flex; align-items:center; gap:10px; padding:12px 10px; margin:5px 0; background:rgba(255,255,255,.035); border:1px solid rgba(0,255,136,.12); border-radius:10px; cursor:pointer; }
     .dl-element-symbol { width:42px; font-size:19px; font-weight:bold; color:#00FF88; }
     .dl-element-name { flex:1; color:#fff; }
@@ -571,6 +600,15 @@
 
     <!-- Scanned Elements tab -->
     <div id="tab-elements" style="flex:1;overflow-y:auto;padding:14px 16px 32px;">
+      <div class="element-progress-card">
+        <div class="element-progress-top">
+          <div class="element-progress-title">Elements Discovered</div>
+          <div class="element-progress-count" id="element-progress-count">0 / 118</div>
+        </div>
+        <div class="element-progress-bg"><div class="element-progress-fill" id="element-progress-fill"></div></div>
+        <div class="element-progress-sub" id="element-progress-sub">Discover elements by scanning them.</div>
+      </div>
+      <input id="element-search" class="discovery-search" type="search" placeholder="🔍 Search element or symbol..." oninput="filterElementLog(this.value)" autocomplete="off">
       <div class="dl-count" id="el-count">0 elements scanned</div>
       <div class="quiz-note">Tap an element to review its information without scanning it again.</div>
       <div id="el-list"></div>
@@ -831,16 +869,27 @@
     // ── Discovery & Stats (in-memory) ──
     let discoveredCompounds = {};
     let elementScanCount    = {};
+    let elementLastScanned  = {};
     let totalScans          = 0;
 
     function recordScan(symbol) {
       elementScanCount[symbol] = (elementScanCount[symbol] || 0) + 1;
+      elementLastScanned[symbol] = Date.now();
       totalScans++;
       try {
         localStorage.setItem('elementScanCount', JSON.stringify(elementScanCount));
+        localStorage.setItem('elementLastScanned', JSON.stringify(elementLastScanned));
         localStorage.setItem('totalScans', String(totalScans));
       } catch(e) {}
       document.getElementById('lb-count').textContent = Object.keys(discoveredCompounds).length;
+    }
+
+    function formatLastScanned(symbol) {
+      const t = elementLastScanned[symbol];
+      if (!t) return 'No recent scan';
+      const d = new Date(t);
+      return 'Last: ' + d.toLocaleDateString(undefined, {day:'2-digit', month:'short'}) +
+             ' ' + d.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'});
     }
 
     function recordDiscovery(key, compound) {
@@ -918,23 +967,57 @@
         const btn = document.getElementById('dptab-' + t);
         if (btn) btn.classList.toggle('active', active);
       });
-      if (tab === 'elements') buildElementLog();
+      if (tab === 'elements') {
+        const search = document.getElementById('element-search');
+        buildElementLog(search ? search.value : '');
+      }
+      if (tab === 'log') buildDiscoveryList();
       if (tab === 'stats') buildStatsChart();
     }
 
-    function buildElementLog() {
+    function buildElementLog(filter='') {
       const list = document.getElementById('el-list');
-      const entries = Object.entries(elementScanCount).filter(([sym,c]) => c > 0).sort((a,b)=>b[1]-a[1]);
-      document.getElementById('el-count').textContent = entries.length + ' elements scanned';
+      const entries = Object.entries(elementScanCount)
+        .filter(([sym,c]) => c > 0 && ELEMENTS[sym])
+        .sort((a,b)=>b[1]-a[1]);
+
+      const unique = entries.length;
+      const pct = Math.min(100, Math.round(unique / 118 * 100));
+      document.getElementById('el-count').textContent = unique + ' elements scanned';
+      document.getElementById('element-progress-count').textContent = unique + ' / 118';
+      document.getElementById('element-progress-fill').style.width = pct + '%';
+      document.getElementById('element-progress-sub').textContent =
+        unique === 118 ? 'All 118 elements discovered!' : (118 - unique) + ' elements remaining to discover.';
+
+      const q = String(filter || '').trim().toLowerCase();
+      const filtered = entries.filter(([sym]) => {
+        const el = ELEMENTS[sym];
+        return !q || sym.toLowerCase().includes(q) || el.name.toLowerCase().includes(q);
+      });
+
       list.innerHTML = '';
-      if (!entries.length) { list.innerHTML = '<div class="dl-empty">No elements scanned yet.<br>Start scanning to build your Discovery Log.</div>'; return; }
-      entries.forEach(([sym,count]) => {
-        const el = ELEMENTS[sym]; if (!el) return;
-        const row = document.createElement('div'); row.className='dl-element-item';
-        row.innerHTML = '<span class="dl-element-symbol">'+sym+'</span><span class="dl-element-name">'+el.name+'</span><span class="dl-element-meta">'+count+' scan'+(count===1?'':'s')+'<br>Tap to learn</span>';
+      if (!filtered.length) {
+        list.innerHTML = '<div class="dl-empty">' +
+          (entries.length ? 'No matching elements found.' : 'No elements scanned yet.<br>Start scanning to build your Discovery Log.') +
+          '</div>';
+        return;
+      }
+
+      filtered.forEach(([sym,count]) => {
+        const el = ELEMENTS[sym];
+        const row = document.createElement('div');
+        row.className='dl-element-item';
+        row.innerHTML =
+          '<span class="dl-element-symbol">'+sym+'</span>' +
+          '<span class="dl-element-name">'+el.name+'</span>' +
+          '<span class="dl-element-history">'+count+' scan'+(count===1?'':'s')+'<br>'+formatLastScanned(sym)+'</span>';
         row.onclick = () => openSavedElement(sym);
         list.appendChild(row);
       });
+    }
+
+    function filterElementLog(value) {
+      buildElementLog(value);
     }
 
     let returnToDiscoveryAfterElement = false;
@@ -949,6 +1032,25 @@
       document.getElementById('ep-number').textContent=el.number; document.getElementById('ep-mass').textContent=el.mass;
       document.getElementById('ep-category').textContent=el.category; document.getElementById('ep-state').textContent=el.state;
       document.getElementById('ep-period').textContent=el.period; document.getElementById('ep-config').textContent=el.config; document.getElementById('ep-desc').textContent=el.desc;
+
+      // Add persistent scan-history / learning facts to the existing detail page.
+      let extra = document.getElementById('element-learning-extra');
+      if (!extra) {
+        extra = document.createElement('div');
+        extra.id = 'element-learning-extra';
+        const desc = document.getElementById('ep-desc');
+        if (desc && desc.parentElement) desc.parentElement.appendChild(extra);
+      }
+      extra.innerHTML =
+        '<div class="element-detail-section">' +
+          '<div class="element-detail-section-title">LEARNING & PROGRESS</div>' +
+          '<div class="element-detail-grid">' +
+            '<div class="element-detail-stat"><div class="element-detail-stat-label">Times Scanned</div><div class="element-detail-stat-value">'+(elementScanCount[sym]||0)+'</div></div>' +
+            '<div class="element-detail-stat"><div class="element-detail-stat-label">Last Scanned</div><div class="element-detail-stat-value">'+formatLastScanned(sym).replace('Last: ','')+'</div></div>' +
+            '<div class="element-detail-stat"><div class="element-detail-stat-label">Quiz Difficulty</div><div class="element-detail-stat-value">Level '+getQuizDifficulty(sym)+'</div></div>' +
+            '<div class="element-detail-stat"><div class="element-detail-stat-label">Element Progress</div><div class="element-detail-stat-value">'+Object.keys(elementScanCount).filter(s=>elementScanCount[s]>0).length+' / 118 discovered</div></div>' +
+          '</div>' +
+        '</div>';
     }
 
     function buildDiscoveryList() {
@@ -986,6 +1088,9 @@
       document.getElementById('stats-total').textContent  = totalScans;
       document.getElementById('stats-unique').textContent = Object.keys(elementScanCount).length;
       document.getElementById('stats-found').textContent  = Object.keys(discoveredCompounds).length;
+      const unique = Object.keys(elementScanCount).filter(s=>elementScanCount[s]>0 && ELEMENTS[s]).length;
+      const statsTitle = document.querySelector('#tab-stats .stats-title');
+      if (statsTitle) statsTitle.textContent = 'Element Discovery: '+unique+' / 118 ('+Math.round(unique/118*100)+'%)';
       const chart = document.getElementById('stats-chart');
       chart.innerHTML = '';
       const top = entries.slice(0,10), maxV = top.length ? top[0][1] : 1;
@@ -1465,6 +1570,8 @@
         if (savedC) discoveredCompounds = JSON.parse(savedC);
         const savedE = localStorage.getItem('elementScanCount');
         if (savedE) elementScanCount = JSON.parse(savedE);
+        const savedL = localStorage.getItem('elementLastScanned');
+        if (savedL) elementLastScanned = JSON.parse(savedL);
         const savedT = localStorage.getItem('totalScans');
         if (savedT) totalScans = parseInt(savedT) || 0;
         document.getElementById('lb-count').textContent = Object.keys(discoveredCompounds).length;
@@ -1480,10 +1587,12 @@
     function confirmReset() {
       discoveredCompounds = {};
       elementScanCount    = {};
+      elementLastScanned  = {};
       totalScans          = 0;
       try {
         localStorage.removeItem('discoveredCompounds');
         localStorage.removeItem('elementScanCount');
+        localStorage.removeItem('elementLastScanned');
         localStorage.removeItem('totalScans');
       localStorage.removeItem('quizStats');
       } catch(e) {}
