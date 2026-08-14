@@ -134,16 +134,6 @@
     #explanation-panel.fusion-mode {
       border-top-color: rgba(255,110,199,0.5);
     }
-    /* Full-screen view when opening an element from Discovery Log.
-       This keeps the AR scanner hidden behind the log instead of returning to it. */
-    #explanation-panel.saved-mode {
-      top: 0; bottom: 0; left: 0; right: 0;
-      max-height: none;
-      border-radius: 0;
-      border-top: none;
-      z-index: 100;
-      padding: 24px 20px 40px;
-    }
     .ep-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .ep-left   { display: flex; align-items: baseline; gap: 10px; }
     .ep-symbol { font-size: 28px; font-weight: bold; color: #00FF88; }
@@ -361,51 +351,12 @@
     .rc-confirm { background: #FF4444; border: none; color: #fff;
                   font-family: monospace; font-size: 14px; font-weight: bold;
                   padding: 10px 24px; border-radius: 10px; cursor: pointer; }
-  </style>
-
-<style>
-#discoveryDetailPage{
-  position:fixed; inset:0; z-index:99999; display:none;
-  background:#07111f; color:#fff; overflow-y:auto;
-  font-family:Arial,sans-serif;
-}
-#discoveryDetailPage .dd-header{
-  position:sticky; top:0; z-index:2; padding:18px 22px;
-  background:rgba(7,17,31,.96); border-bottom:1px solid rgba(255,255,255,.12);
-  display:flex; align-items:center; gap:14px;
-}
-#discoveryDetailPage .dd-back{
-  border:0; border-radius:12px; padding:10px 15px; cursor:pointer;
-  background:#1b2b42; color:#fff; font-weight:700;
-}
-#discoveryDetailPage .dd-content{max-width:900px; margin:0 auto; padding:28px 22px 50px}
-#discoveryDetailPage .dd-hero{
-  display:grid; grid-template-columns:150px 1fr; gap:24px; align-items:center;
-  padding:24px; border-radius:22px; background:linear-gradient(145deg,#10223a,#0b1728);
-}
-#discoveryDetailPage .dd-symbol{
-  width:150px;height:150px;border-radius:24px;display:grid;place-items:center;
-  font-size:64px;font-weight:900;background:#162d49;border:1px solid rgba(255,255,255,.15);
-}
-#discoveryDetailPage .dd-name{font-size:38px;font-weight:900;margin:0 0 5px}
-#discoveryDetailPage .dd-meta{opacity:.72;font-size:16px}
-#discoveryDetailPage .dd-grid{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px
-}
-#discoveryDetailPage .dd-card{
-  padding:16px;border-radius:16px;background:#102036;border:1px solid rgba(255,255,255,.08)
-}
-#discoveryDetailPage .dd-label{font-size:12px;text-transform:uppercase;opacity:.55}
-#discoveryDetailPage .dd-value{font-size:18px;font-weight:800;margin-top:5px}
-#discoveryDetailPage .dd-section{
-  margin-top:20px;padding:22px;border-radius:20px;background:#102036;
-  border:1px solid rgba(255,255,255,.08)
-}
-#discoveryDetailPage .dd-section h3{margin-top:0}
-@media(max-width:600px){
-  #discoveryDetailPage .dd-hero{grid-template-columns:1fr;text-align:center}
-  #discoveryDetailPage .dd-symbol{margin:auto}
-}
+  
+    .rules-list{display:flex;flex-direction:column;gap:10px;}
+    .rule-card{padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.035);}
+    .rule-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;}
+    .rule-text{font-size:13px;line-height:1.55;color:#c9c9c9;}
+    .rules-note{margin-top:14px;padding:12px;border-radius:10px;background:rgba(255,255,255,.035);font-size:12px;line-height:1.5;color:#aaa;}
 </style>
 </head>
 <body>
@@ -514,7 +465,7 @@
       <button class="dp-tab active" id="dptab-elements" onclick="switchTab('elements')">⚛ Elements</button>
       <button class="dp-tab" id="dptab-log" onclick="switchTab('log')">🧪 Compounds</button>
       <button class="dp-tab" id="dptab-stats" onclick="switchTab('stats')">📊 Progress</button>
-      <button class="dp-tab" id="dptab-rules" onclick="switchTab('rules')">📚 Chemistry Rules</button>
+      <button class="dp-tab" id="dptab-rules" onclick="switchTab('rules')">📚 Rules</button>
     </div>
 
     <!-- Scanned Elements tab -->
@@ -540,51 +491,22 @@
       <div class="dl-list" id="dl-list"></div>
     </div>
 
-    <!-- Chemistry Rules tab -->
-    <div id="tab-rules" style="display:none;flex:1;overflow-y:auto;padding:14px 16px 40px;">
-      <div class="dl-count">Panduan Dasar Tabel Periodik</div>
+    <!-- Periodic Table Rules / Reference tab -->
+    <div id="tab-rules" style="display:none;flex:1;overflow-y:auto;padding:14px 16px 32px;">
       <div class="quiz-note">Gunakan bagian ini sebagai referensi singkat saat mempelajari unsur.</div>
-      <div class="dd-section">
-        <h3>1. Nomor Atom</h3><p>Nomor atom menunjukkan jumlah proton dalam atom. Pada atom netral, jumlah proton sama dengan jumlah elektron.</p>
+      <div class="rules-list">
+        <div class="rule-card"><div class="rule-title">1. Golongan</div><div class="rule-text">Unsur yang berada dalam satu golongan memiliki jumlah elektron valensi yang sama sehingga memiliki beberapa kemiripan sifat kimia.</div></div>
+        <div class="rule-card"><div class="rule-title">2. Periode</div><div class="rule-text">Nomor periode menunjukkan jumlah kulit elektron yang dimiliki suatu atom.</div></div>
+        <div class="rule-card"><div class="rule-title">3. Nomor Atom</div><div class="rule-text">Nomor atom menunjukkan jumlah proton dalam inti atom. Pada atom netral, jumlah proton sama dengan jumlah elektron.</div></div>
+        <div class="rule-card"><div class="rule-title">4. Logam, Metaloid, dan Nonlogam</div><div class="rule-text">Unsur dalam tabel periodik dapat dikelompokkan menjadi logam, metaloid, dan nonlogam berdasarkan sifat-sifatnya.</div></div>
+        <div class="rule-card"><div class="rule-title">5. Jari-jari Atom</div><div class="rule-text">Secara umum, jari-jari atom meningkat dari atas ke bawah dalam satu golongan dan menurun dari kiri ke kanan dalam satu periode.</div></div>
+        <div class="rule-card"><div class="rule-title">6. Energi Ionisasi</div><div class="rule-text">Secara umum, energi ionisasi meningkat dari kiri ke kanan dalam satu periode dan menurun dari atas ke bawah dalam satu golongan.</div></div>
+        <div class="rule-card"><div class="rule-title">7. Keelektronegatifan</div><div class="rule-text">Secara umum, keelektronegatifan meningkat dari kiri ke kanan dan dari bawah ke atas dalam tabel periodik.</div></div>
+        <div class="rule-card"><div class="rule-title">8. Sifat Logam</div><div class="rule-text">Sifat logam secara umum meningkat dari kanan ke kiri dan dari atas ke bawah.</div></div>
+        <div class="rule-card"><div class="rule-title">9. Elektron Valensi</div><div class="rule-text">Elektron valensi adalah elektron pada kulit terluar yang berperan penting dalam menentukan sifat dan reaktivitas kimia suatu unsur.</div></div>
+        <div class="rule-card"><div class="rule-title">10. Konfigurasi Elektron</div><div class="rule-text">Susunan elektron suatu atom berkaitan dengan posisi unsur dalam tabel periodik dan dapat membantu menjelaskan sifat kimianya.</div></div>
       </div>
-      <div class="dd-section">
-        <h3>2. Periode</h3><p>Periode adalah baris horizontal pada Tabel Periodik. Terdapat 7 periode dan posisi periode berkaitan dengan tingkat kulit elektron utama yang terisi.</p>
-      </div>
-      <div class="dd-section">
-        <h3>3. Golongan</h3><p>Golongan adalah kolom vertikal. Terdapat 18 golongan. Unsur dalam golongan yang sama umumnya memiliki sifat kimia yang mirip.</p>
-      </div>
-      <div class="dd-section">
-        <h3>4. Elektron Valensi</h3><p>Elektron valensi adalah elektron pada kulit terluar yang sangat memengaruhi sifat dan reaktivitas kimia suatu unsur.</p>
-      </div>
-      <div class="dd-section">
-        <h3>5. Sifat Periodik</h3>
-        <ul>
-          <li>Jari-jari atom: umumnya mengecil dari kiri ke kanan dan membesar dari atas ke bawah.</li>
-          <li>Energi ionisasi: umumnya meningkat dari kiri ke kanan dan menurun dari atas ke bawah.</li>
-          <li>Keelektronegatifan: umumnya meningkat menuju kanan-atas.</li>
-          <li>Sifat logam: umumnya meningkat menuju kiri-bawah.</li>
-        </ul>
-      </div>
-      <div class="dd-section">
-        <h3>6. Logam, Nonlogam, dan Metaloid</h3><p>Logam terutama berada di sebelah kiri, nonlogam di sebelah kanan, sedangkan metaloid berada di sekitar garis berbentuk tangga.</p>
-      </div>
-      <div class="dd-section">
-        <h3>7. Golongan Penting</h3>
-        <ul>
-          <li>Golongan 1: Logam alkali</li><li>Golongan 2: Logam alkali tanah</li>
-          <li>Golongan 3–12: Logam transisi</li><li>Golongan 17: Halogen</li><li>Golongan 18: Gas mulia</li>
-          <li>Lantanida dan aktinida biasanya ditampilkan di bagian bawah.</li>
-        </ul>
-      </div>
-      <div class="dd-section">
-        <h3>8. Konfigurasi Elektron</h3><p>Susunan elektron suatu unsur mengikuti prinsip seperti Aufbau, Larangan Pauli, dan Aturan Hund. Struktur Tabel Periodik berkaitan erat dengan konfigurasi elektron.</p>
-      </div>
-      <div class="dd-section">
-        <h3>9. Ion</h3><p>Kehilangan elektron membentuk kation bermuatan positif, sedangkan menerima elektron membentuk anion bermuatan negatif.</p>
-      </div>
-      <div class="dd-section">
-        <h3>10. Kereaktifan</h3><p>Unsur dalam golongan yang sama umumnya memiliki pola kereaktifan yang serupa. Contohnya, logam alkali umumnya sangat reaktif sedangkan gas mulia memiliki kereaktifan yang rendah.</p>
-      </div>
+      <div class="rules-note"><b>Catatan:</b> Tren periodik merupakan kecenderungan umum dan dapat memiliki pengecualian pada kondisi tertentu.</div>
     </div>
 
     <!-- Stats tab -->
@@ -843,15 +765,12 @@
     }
 
     function openDiscoveryLog() {
-      document.getElementById('home-menu').classList.add('hidden');
-      document.getElementById('home-return').classList.remove('show');
       buildDiscoveryList(); buildElementLog(); buildStatsChart();
       document.getElementById('discovery-panel').style.display = 'flex';
       switchTab('elements');
     }
     function closeDiscoveryLog() {
       document.getElementById('discovery-panel').style.display = 'none';
-      document.getElementById('home-menu').classList.remove('hidden');
     }
     function switchTab(tab) {
       ['elements','log','stats','rules'].forEach(t => {
@@ -881,13 +800,9 @@
 
     function openSavedElement(sym) {
       const el = ELEMENTS[sym]; if (!el) return;
-      // Keep the Discovery Log open underneath. The saved-element view is a
-      // separate full-screen layer, so it never exposes the AR scanner.
-      document.getElementById('home-return').classList.remove('show');
-      const ep=document.getElementById('explanation-panel');
-      ep.style.display='block';
-      ep.classList.remove('fusion-mode');
-      ep.classList.add('saved-mode');
+      document.getElementById('discovery-panel').style.display='none';
+      document.getElementById('home-return').classList.add('show');
+      const ep=document.getElementById('explanation-panel'); ep.style.display='block'; ep.classList.remove('fusion-mode');
       document.getElementById('ep-symbol').textContent=sym; document.getElementById('ep-name').textContent=el.name;
       document.getElementById('ep-number').textContent=el.number; document.getElementById('ep-mass').textContent=el.mass;
       document.getElementById('ep-category').textContent=el.category; document.getElementById('ep-state').textContent=el.state;
@@ -1089,17 +1004,9 @@
     }
 
     function closeExplanation() {
-      const ep = document.getElementById('explanation-panel');
-      const wasSaved = ep.classList.contains('saved-mode');
-      ep.style.display = 'none';
-      ep.classList.remove('saved-mode');
+      document.getElementById('explanation-panel').style.display = 'none';
       document.getElementById('debug-panel').style.zIndex = '999';
       document.getElementById('debug-toggle').style.zIndex = '1000';
-      if (wasSaved) {
-        // Return to the Discovery Log, not to the scanner.
-        document.getElementById('discovery-panel').style.display = 'flex';
-        buildElementLog();
-      }
     }
 
     // ── Elements database (118) ──
@@ -1391,12 +1298,7 @@
           if (found !== currentSymbol) { currentSymbol = found; showElement(found); }
         } else {
           notFoundCount++;
-          // Keep the last detected element visible so the learner has time to read it.
-          // The card/model is replaced only when another element is successfully detected.
-          if (notFoundCount >= 3 && currentSymbol && !fusionActive) {
-            statusEl.className = '';
-            statusEl.textContent = 'Ready — scan another element';
-          }
+          if (notFoundCount >= 3 && currentSymbol && !fusionActive) { currentSymbol = null; hideElement(); }
         }
       } catch (err) { log('OCR error: ' + err.message, '#FF4444'); }
       isProcessing = false;
@@ -1471,8 +1373,6 @@
       return {q:'In which '+el.period.split('/')[0].trim()+' is '+el.name+' located?',a:el.period.split('/')[0].replace('Period ','').trim(),field:'period'};
     }
     function openQuiz(){
-      document.getElementById('home-menu').classList.add('hidden');
-      document.getElementById('home-return').classList.remove('show');
       const scanned=Object.keys(elementScanCount).filter(s=>elementScanCount[s]>0 && ELEMENTS[s]);
       if(!scanned.length){
         document.getElementById('quiz-panel').style.display='flex'; document.getElementById('quiz-content').innerHTML='<div class="dl-empty">Scan at least one element first.<br>Your quiz will adapt to your scanned elements.</div>'; return;
@@ -1491,7 +1391,7 @@
     function answerQuiz(value,correct,sym){
       const stats=JSON.parse(localStorage.getItem('quizStats')||'{}'); stats[sym]=stats[sym]||{correct:0,wrong:0}; if(value===correct){quizScore++;stats[sym].correct++;}else stats[sym].wrong++; localStorage.setItem('quizStats',JSON.stringify(stats)); quizIndex++; renderQuizQuestion();
     }
-    function closeQuiz(){ document.getElementById('quiz-panel').style.display='none'; document.getElementById('home-menu').classList.remove('hidden'); }
+    function closeQuiz(){ document.getElementById('quiz-panel').style.display='none'; }
 
         loadSavedData();
     // ── Persistent storage ──
@@ -1557,74 +1457,5 @@
     </div>
   </div>
 
-
-<div id="discoveryDetailPage">
-  <div class="dd-header">
-    <button class="dd-back" onclick="closeDiscoveryDetail()">← Discovery Log</button>
-    <strong>Element Information</strong>
-  </div>
-  <div class="dd-content" id="discoveryDetailContent"></div>
-</div>
-
-<script>
-function openDiscoveryDetail(symbol){
-  const el = (typeof ELEMENTS !== 'undefined') ? ELEMENTS[symbol] : null;
-  if (!el) return;
-
-  const scans = (typeof scanCounts !== 'undefined' && scanCounts[symbol]) ? scanCounts[symbol] : 0;
-  const stats = (typeof quizStats !== 'undefined' && quizStats[symbol]) ? quizStats[symbol] : {correct:0,wrong:0};
-  const totalQuiz = stats.correct + stats.wrong;
-  const accuracy = totalQuiz ? Math.round(stats.correct / totalQuiz * 100) : 0;
-
-  document.getElementById('discoveryDetailContent').innerHTML = `
-    <div class="dd-hero">
-      <div class="dd-symbol">${el.symbol || symbol}</div>
-      <div>
-        <div class="dd-name">${el.name || 'Unknown Element'}</div>
-        <div class="dd-meta">${el.category || ''}</div>
-        <div class="dd-grid">
-          <div class="dd-card"><div class="dd-label">Atomic Number</div><div class="dd-value">${el.atomicNumber ?? '-'}</div></div>
-          <div class="dd-card"><div class="dd-label">Period</div><div class="dd-value">${el.period ?? '-'}</div></div>
-          <div class="dd-card"><div class="dd-label">Group</div><div class="dd-value">${el.group ?? '-'}</div></div>
-          <div class="dd-card"><div class="dd-label">State</div><div class="dd-value">${el.state ?? '-'}</div></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="dd-section">
-      <h3>About ${el.name || symbol}</h3>
-      <p>${el.description || 'No description is available for this element yet.'}</p>
-    </div>
-
-    <div class="dd-section">
-      <h3>Element Details</h3>
-      <div class="dd-grid">
-        <div class="dd-card"><div class="dd-label">Electron Configuration</div><div class="dd-value">${el.electronConfiguration || '-'}</div></div>
-        <div class="dd-card"><div class="dd-label">Times Scanned</div><div class="dd-value">${scans}</div></div>
-        <div class="dd-card"><div class="dd-label">Quiz Accuracy</div><div class="dd-value">${totalQuiz ? accuracy + '%' : 'Not attempted'}</div></div>
-      </div>
-    </div>
-  `;
-
-  document.getElementById('discoveryDetailPage').style.display = 'block';
-}
-
-function closeDiscoveryDetail(){
-  document.getElementById('discoveryDetailPage').style.display = 'none';
-}
-</script>
-
-<script>
-(function(){
-  const originalOpen = window.openElementInfo;
-  window.openElementInfo = function(symbol){
-    openDiscoveryDetail(symbol);
-  };
-  const originalShow = window.showElementInfo;
-  window.showElementInfo = function(symbol){
-    openDiscoveryDetail(symbol);
-  };
-})();
-</script>
 </body>
 </html>
