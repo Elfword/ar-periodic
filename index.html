@@ -209,8 +209,9 @@
     /* ── Discovery Log Panel ── */
     #discovery-panel {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.95);
-      z-index: 2100; display: none;
+      background: #000 !important;
+      z-index: 10000 !important;
+      pointer-events: auto; display: none;
       flex-direction: column;
       font-family: monospace;
     }
@@ -770,23 +771,38 @@
       toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 3200);
     }
 
+    function setScanningUIVisible(visible) {
+      const ids = ['camera-feed','ar-scene-wrapper','scan-bar-wrapper','scan-frame','hint','log-btn','status','element-info','debug-panel','debug-toggle'];
+      ids.forEach(id => { const el=document.getElementById(id); if (el) el.style.visibility = visible ? 'visible' : 'hidden'; });
+    }
+
+    function stopCameraForPage() {
+      if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+      setScanningUIVisible(false);
+    }
+
     function openDiscoveryLog() {
-      // Discovery Log is a standalone page: hide the home menu first.
+      // Discovery Log is a completely separate page from the scanner.
       document.getElementById('home-menu').classList.add('hidden');
       document.getElementById('home-return').classList.add('show');
+      stopCameraForPage();
 
-      // Do not require the camera/scanning screen to be active.
       buildDiscoveryList();
       buildElementLog();
       buildStatsChart();
 
       const panel = document.getElementById('discovery-panel');
       panel.style.display = 'flex';
-      panel.style.zIndex = '2100';
+      panel.style.zIndex = '10000';
       switchTab('elements');
     }
     function closeDiscoveryLog() {
       document.getElementById('discovery-panel').style.display = 'none';
+      document.getElementById('home-menu').classList.remove('hidden');
+      document.getElementById('home-return').classList.remove('show');
     }
     function switchTab(tab) {
       ['elements','log','stats','rules'].forEach(t => {
@@ -1361,9 +1377,11 @@
     function startFromHome() {
       document.getElementById('home-menu').classList.add('hidden');
       document.getElementById('home-return').classList.add('show');
+      setScanningUIVisible(true);
       startCamera();
     }
     function goHome() {
+      stopCameraForPage();
       document.getElementById('home-menu').classList.remove('hidden');
       document.getElementById('home-return').classList.remove('show');
       document.getElementById('discovery-panel').style.display='none';
