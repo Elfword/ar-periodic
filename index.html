@@ -360,9 +360,18 @@
     .rules-note{margin-top:14px;padding:12px;border-radius:10px;background:rgba(255,255,255,.035);font-size:12px;line-height:1.5;color:#aaa;}
 
 /* Discovery Log scrolling fix */
-#discoveryLog { overflow: hidden !important; }
-#discoveryLog .discovery-content, #discoveryLog .tab-content, #discoveryLog .log-content, #discoveryLog .content, #discoveryLog .modal-content { overflow-y: auto; -webkit-overflow-scrolling: touch; }
-#discoveryLog .tab-panel, #discoveryLog [role="tabpanel"] { max-height: calc(100vh - 190px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#discovery-panel { overflow: hidden !important; min-height: 0; }
+#discovery-panel .dp-header, #discovery-panel .dp-tabs { flex: 0 0 auto; }
+#tab-elements, #tab-log, #tab-stats, #tab-rules {
+  min-height: 0 !important;
+  max-height: none !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+#tab-elements, #tab-log, #tab-stats, #tab-rules {
+  flex-direction: column;
+}
 
 </style>
 </head>
@@ -807,9 +816,22 @@
     function switchTab(tab) {
       ['elements','log','stats','rules'].forEach(t => {
         const el = document.getElementById('tab-' + t);
-        if (el) el.style.display = tab === t ? 'block' : 'none';
+        const active = tab === t;
+        if (el) {
+          el.style.display = active ? 'flex' : 'none';
+          if (active) {
+            el.style.flex = '1 1 auto';
+            el.style.minHeight = '0';
+            el.style.overflowY = 'auto';
+            el.style.overflowX = 'hidden';
+            el.style.webkitOverflowScrolling = 'touch';
+            el.style.touchAction = 'pan-y';
+            el.style.overscrollBehavior = 'contain';
+            el.scrollTop = 0;
+          }
+        }
         const btn = document.getElementById('dptab-' + t);
-        if (btn) btn.classList.toggle('active', tab === t);
+        if (btn) btn.classList.toggle('active', active);
       });
       if (tab === 'elements') buildElementLog();
       if (tab === 'stats') buildStatsChart();
