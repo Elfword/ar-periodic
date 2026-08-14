@@ -357,6 +357,12 @@
     .rule-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;}
     .rule-text{font-size:13px;line-height:1.55;color:#c9c9c9;}
     .rules-note{margin-top:14px;padding:12px;border-radius:10px;background:rgba(255,255,255,.035);font-size:12px;line-height:1.5;color:#aaa;}
+
+/* Discovery Log scrolling fix */
+#discoveryLog { overflow: hidden !important; }
+#discoveryLog .discovery-content, #discoveryLog .tab-content, #discoveryLog .log-content, #discoveryLog .content, #discoveryLog .modal-content { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#discoveryLog .tab-panel, #discoveryLog [role="tabpanel"] { max-height: calc(100vh - 190px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
 </style>
 </head>
 <body>
@@ -1466,6 +1472,26 @@
       </div>
     </div>
   </div>
+
+
+<script>
+(function(){
+  function fixDiscoveryScroll(){
+    const root=document.getElementById('discoveryLog');
+    if(!root) return;
+    root.querySelectorAll('.tab-panel,[role="tabpanel"],.tab-content,.discovery-content,.log-content,.content').forEach(el=>{
+      el.style.overflowY='auto';
+      el.style.webkitOverflowScrolling='touch';
+      el.style.maxHeight='calc(100vh - 190px)';
+      el.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+      el.addEventListener('touchmove',e=>e.stopPropagation(),{passive:true});
+    });
+  }
+  document.addEventListener('DOMContentLoaded',fixDiscoveryScroll);
+  document.addEventListener('click',e=>{ if(e.target.closest('#discoveryLog')) setTimeout(fixDiscoveryScroll,0); });
+  new MutationObserver(fixDiscoveryScroll).observe(document.body,{childList:true,subtree:true});
+})();
+</script>
 
 </body>
 </html>
