@@ -373,6 +373,60 @@
   flex-direction: column;
 }
 
+
+/* FINAL DISCOVERY + ELEMENT DETAIL LAYOUT FIX */
+#discovery-panel {
+  display: none;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  box-sizing: border-box;
+  overflow: hidden !important;
+  flex-direction: column !important;
+}
+#discovery-panel .dp-header,
+#discovery-panel .dp-tabs {
+  flex: 0 0 auto !important;
+}
+#discovery-panel .dp-tabs { min-height: 40px; }
+#discovery-panel > #tab-elements,
+#discovery-panel > #tab-log,
+#discovery-panel > #tab-stats,
+#discovery-panel > #tab-rules {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  max-height: none !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+}
+#discovery-panel .dp-tab { touch-action: manipulation; }
+
+/* Element detail is a standalone, full-page reading screen. */
+#explanation-panel {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-height: none !important;
+  box-sizing: border-box !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: #000 !important;
+  z-index: 11000 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  touch-action: pan-y !important;
+  padding: 20px 20px 40px !important;
+}
+#explanation-panel .ep-header { position: sticky; top: 0; background:#000; padding-bottom:14px; z-index:2; }
 </style>
 </head>
 <body>
@@ -852,8 +906,11 @@
       });
     }
 
+    let returnToDiscoveryAfterElement = false;
+
     function openSavedElement(sym) {
       const el = ELEMENTS[sym]; if (!el) return;
+      returnToDiscoveryAfterElement = true;
       document.getElementById('discovery-panel').style.display='none';
       document.getElementById('home-return').classList.add('show');
       const ep=document.getElementById('explanation-panel'); ep.style.display='block'; ep.classList.remove('fusion-mode');
@@ -1061,6 +1118,14 @@
       document.getElementById('explanation-panel').style.display = 'none';
       document.getElementById('debug-panel').style.zIndex = '999';
       document.getElementById('debug-toggle').style.zIndex = '1000';
+      if (returnToDiscoveryAfterElement) {
+        returnToDiscoveryAfterElement = false;
+        const panel = document.getElementById('discovery-panel');
+        panel.style.display = 'flex';
+        panel.style.zIndex = '10000';
+        buildElementLog();
+        switchTab('elements');
+      }
     }
 
     // ── Elements database (118) ──
@@ -1403,6 +1468,7 @@
       startCamera();
     }
     function goHome() {
+      returnToDiscoveryAfterElement = false;
       stopCameraForPage();
       document.getElementById('home-menu').classList.remove('hidden');
       document.getElementById('home-return').classList.remove('show');
@@ -1517,19 +1583,23 @@
 <script>
 (function(){
   function fixDiscoveryScroll(){
-    const root=document.getElementById('discoveryLog');
-    if(!root) return;
-    root.querySelectorAll('.tab-panel,[role="tabpanel"],.tab-content,.discovery-content,.log-content,.content').forEach(el=>{
+    const panel=document.getElementById('discovery-panel');
+    if(!panel) return;
+    ['elements','log','stats','rules'].forEach(t=>{
+      const el=document.getElementById('tab-'+t);
+      if(!el) return;
+      el.style.minHeight='0';
+      el.style.height='0';
+      el.style.flex='1 1 0';
       el.style.overflowY='auto';
+      el.style.overflowX='hidden';
       el.style.webkitOverflowScrolling='touch';
-      el.style.maxHeight='calc(100vh - 190px)';
-      el.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
-      el.addEventListener('touchmove',e=>e.stopPropagation(),{passive:true});
+      el.style.touchAction='pan-y';
+      el.style.overscrollBehavior='contain';
     });
   }
   document.addEventListener('DOMContentLoaded',fixDiscoveryScroll);
-  document.addEventListener('click',e=>{ if(e.target.closest('#discoveryLog')) setTimeout(fixDiscoveryScroll,0); });
-  new MutationObserver(fixDiscoveryScroll).observe(document.body,{childList:true,subtree:true});
+  window.addEventListener('resize',fixDiscoveryScroll);
 })();
 </script>
 
