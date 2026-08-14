@@ -487,14 +487,8 @@
     <div class="corner bl"></div><div class="corner br"></div>
   </div>
 
-  <div id="ar-scene-wrapper">
-    <a-scene embedded vr-mode-ui="enabled: false"
-      renderer="alpha: true; colorManagement: true"
-      style="background: transparent; width:100%; height:100%;">
-      <a-camera position="0 0 3" look-controls="enabled: false"></a-camera>
-      <a-entity id="ar-model" position="0 0 0"></a-entity>
-    </a-scene>
-  </div>
+  <div id="ar-scene-wrapper" style="display:none !important;"></div>
+  <div id="ar-scene-host"></div>
 
   <div id="status">Scanning...</div>
 
@@ -1500,6 +1494,20 @@
       log('All progress has been reset', '#FF4444');
     }
 
+    let arSceneStarted = false;
+    function startARSceneAfterPermission() {
+      if (arSceneStarted) return;
+      arSceneStarted = true;
+      const host = document.getElementById('ar-scene-host');
+      host.innerHTML = `
+        <div id="ar-scene-wrapper" style="position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;display:block;">
+          <a-scene embedded vr-mode-ui="enabled: false" renderer="alpha: true; colorManagement: true" style="background:transparent;width:100%;height:100%;">
+            <a-camera position="0 0 3" look-controls="enabled: false"></a-camera>
+            <a-entity id="ar-model" position="0 0 0"></a-entity>
+          </a-scene>
+        </div>`;
+    }
+
     async function requestIOSMotionPermission() {
       const needsMotion = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
       const needsOrientation = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
@@ -1531,6 +1539,8 @@
         return;
       }
       hideIOSPermissionScreen();
+      startARSceneAfterPermission();
+      startARSceneAfterPermission();
       document.getElementById('home-menu').classList.add('hidden');
       document.getElementById('home-return').classList.add('show');
       setScanningUIVisible(true);
