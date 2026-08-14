@@ -456,6 +456,17 @@
 </style>
 </head>
 <body>
+  <div id="ios-permission" style="display:none;position:fixed;inset:0;z-index:30000;background:#000;color:#fff;align-items:center;justify-content:center;padding:24px;font-family:monospace;text-align:center;">
+    <div style="max-width:420px;width:100%;">
+      <div style="font-size:42px;margin-bottom:16px;">📱</div>
+      <h2 style="margin:0 0 12px;">Motion Access Required</h2>
+      <p style="line-height:1.6;color:#ccc;">Untuk menggunakan AR di iPhone/iPad, aplikasi membutuhkan akses kamera dan sensor gerak perangkat.</p>
+      <p style="line-height:1.6;color:#aaa;font-size:13px;">Tekan tombol di bawah. Jika Safari menampilkan permintaan izin, pilih <b>Allow</b>.</p>
+      <button id="ios-permission-btn" style="margin-top:14px;padding:14px 22px;border:0;border-radius:10px;background:#fff;color:#000;font-weight:700;font-size:16px;">Allow Camera & Motion</button>
+      <button id="ios-permission-cancel" style="display:block;margin:14px auto 0;background:none;border:0;color:#aaa;padding:8px;">Cancel</button>
+      <div id="ios-permission-status" style="margin-top:12px;color:#888;font-size:12px;"></div>
+    </div>
+  </div>
   <div id="home-menu">
     <div class="home-box">
       <div class="home-title">PERIODIC TABLE AR</div>
@@ -1489,12 +1500,59 @@
       log('All progress has been reset', '#FF4444');
     }
 
-    function startFromHome() {
+    async function requestIOSMotionPermission() {
+      const needsMotion = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
+      const needsOrientation = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
+      if (!needsMotion && !needsOrientation) return true;
+      try {
+        const results = [];
+        if (needsMotion) results.push(await DeviceMotionEvent.requestPermission());
+        if (needsOrientation) results.push(await DeviceOrientationEvent.requestPermission());
+        return results.every(r => r === 'granted');
+      } catch (e) {
+        console.warn('Motion permission error:', e);
+        return false;
+      }
+    }
+
+    function showIOSPermissionScreen() {
+      const p=document.getElementById('ios-permission');
+      p.style.display='flex';
+      document.getElementById('ios-permission-status').textContent='';
+    }
+    function hideIOSPermissionScreen() { document.getElementById('ios-permission').style.display='none'; }
+
+    async function beginScanningAfterPermission() {
+      const status=document.getElementById('ios-permission-status');
+      status.textContent='Meminta izin sensor...';
+      const granted=await requestIOSMotionPermission();
+      if (!granted) {
+        status.textContent='Izin sensor belum diberikan. Coba tekan tombol lagi dan pilih Allow.';
+        return;
+      }
+      hideIOSPermissionScreen();
       document.getElementById('home-menu').classList.add('hidden');
       document.getElementById('home-return').classList.add('show');
       setScanningUIVisible(true);
       startCamera();
     }
+
+    function startFromHome() {
+      const needsMotion = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') ||
+                          (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function');
+      if (needsMotion) { showIOSPermissionScreen(); return; }
+      document.getElementById('home-menu').classList.add('hidden');
+      document.getElementById('home-return').classList.add('show');
+      setScanningUIVisible(true);
+      startCamera();
+    }
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      const b=document.getElementById('ios-permission-btn');
+      const c=document.getElementById('ios-permission-cancel');
+      if(b) b.onclick=beginScanningAfterPermission;
+      if(c) c.onclick=()=>{ hideIOSPermissionScreen(); };
+    });
     function goHome() {
       returnToDiscoveryAfterElement = false;
       stopCameraForPage();
