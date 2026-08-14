@@ -210,7 +210,7 @@
     #discovery-panel {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.95);
-      z-index: 50; display: none;
+      z-index: 2100; display: none;
       flex-direction: column;
       font-family: monospace;
     }
@@ -765,8 +765,18 @@
     }
 
     function openDiscoveryLog() {
-      buildDiscoveryList(); buildElementLog(); buildStatsChart();
-      document.getElementById('discovery-panel').style.display = 'flex';
+      // Discovery Log is a standalone page: hide the home menu first.
+      document.getElementById('home-menu').classList.add('hidden');
+      document.getElementById('home-return').classList.add('show');
+
+      // Do not require the camera/scanning screen to be active.
+      buildDiscoveryList();
+      buildElementLog();
+      buildStatsChart();
+
+      const panel = document.getElementById('discovery-panel');
+      panel.style.display = 'flex';
+      panel.style.zIndex = '2100';
       switchTab('elements');
     }
     function closeDiscoveryLog() {
