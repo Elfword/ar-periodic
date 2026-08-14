@@ -427,6 +427,32 @@
   padding: 20px 20px 40px !important;
 }
 #explanation-panel .ep-header { position: sticky; top: 0; background:#000; padding-bottom:14px; z-index:2; }
+/* MOBILE DISCOVERY SCROLL FIX */
+#discovery-panel {
+  pointer-events: auto !important;
+  touch-action: none !important;
+}
+#discovery-panel > #tab-elements,
+#discovery-panel > #tab-log,
+#discovery-panel > #tab-stats,
+#discovery-panel > #tab-rules {
+  position: relative !important;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain !important;
+}
+@media (max-width: 768px) {
+  #discovery-panel { height: 100vh !important; height: 100dvh !important; }
+  #discovery-panel .dp-header { flex: 0 0 auto !important; }
+  #discovery-panel .dp-tabs { flex: 0 0 auto !important; }
+}
 </style>
 </head>
 <body>
@@ -1369,6 +1395,7 @@
 
     document.addEventListener('touchstart', (e) => {
       if (document.getElementById('explanation-panel').style.display === 'block') return;
+      if (e.target.closest && e.target.closest('#discovery-panel')) return;
       if (e.touches.length === 2) {
         initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         initialScale = currentScale;
@@ -1377,6 +1404,7 @@
     });
     document.addEventListener('touchmove', (e) => {
       if (document.getElementById('explanation-panel').style.display === 'block') return;
+      if (e.target.closest && e.target.closest('#discovery-panel')) return;
       e.preventDefault();
       if (e.touches.length === 2 && initialDistance) {
         const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
