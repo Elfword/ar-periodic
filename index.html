@@ -134,6 +134,16 @@
     #explanation-panel.fusion-mode {
       border-top-color: rgba(255,110,199,0.5);
     }
+    /* Full-screen view when opening an element from Discovery Log.
+       This keeps the AR scanner hidden behind the log instead of returning to it. */
+    #explanation-panel.saved-mode {
+      top: 0; bottom: 0; left: 0; right: 0;
+      max-height: none;
+      border-radius: 0;
+      border-top: none;
+      z-index: 100;
+      padding: 24px 20px 40px;
+    }
     .ep-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .ep-left   { display: flex; align-items: baseline; gap: 10px; }
     .ep-symbol { font-size: 28px; font-weight: bold; color: #00FF88; }
@@ -195,36 +205,20 @@
     #home-menu.hidden { display:none; }
     #home-return { position:fixed; top:20px; left:16px; z-index:15; display:none; background:rgba(0,0,0,.75); color:#00FF88; border:1px solid rgba(0,255,136,.4); border-radius:20px; padding:6px 12px; font:12px monospace; cursor:pointer; }
     #home-return.show { display:block; }
+    
+    .element-progress-card{padding:12px;margin:8px 0 12px;border-radius:11px;background:rgba(0,255,136,.045);border:1px solid rgba(0,255,136,.14)}
+    .element-progress-top{display:flex;justify-content:space-between;align-items:center}
+    .element-progress-title{color:#fff;font-size:12px;font-weight:bold}
+    .element-progress-count{color:#00FF88;font-size:12px;font-weight:bold}
+    .element-progress-bg{height:8px;margin-top:8px;border-radius:5px;background:rgba(255,255,255,.08);overflow:hidden}
+    .element-progress-fill{height:100%;width:0%;background:#00FF88;border-radius:5px;transition:width .35s}
+    .element-progress-sub{margin-top:5px;color:#777;font-size:10px}
+    .discovery-search{width:100%;box-sizing:border-box;margin:8px 0 10px;padding:11px 12px;border-radius:10px;border:1px solid rgba(0,255,136,.18);background:#0b0b0b;color:#fff;font:12px monospace;outline:none}
+    .discovery-search:focus{border-color:rgba(0,255,136,.55)}
+    .discovery-search::placeholder{color:#666}
+    .dl-element-history{color:#777;font-size:10px;text-align:right;min-width:78px}
 
-    .discovery-search {
-      width:100%; box-sizing:border-box; margin:8px 0 10px; padding:11px 12px;
-      border-radius:10px; border:1px solid rgba(0,255,136,.18);
-      background:#0b0b0b; color:#fff; font:12px monospace; outline:none;
-    }
-    .discovery-search:focus { border-color:rgba(0,255,136,.55); }
-    .discovery-search::placeholder { color:#666; }
-    .element-progress-card {
-      padding:12px; margin:8px 0 12px; border-radius:11px;
-      background:rgba(0,255,136,.045); border:1px solid rgba(0,255,136,.14);
-    }
-    .element-progress-top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
-    .element-progress-title { color:#fff; font-size:12px; font-weight:bold; }
-    .element-progress-count { color:#00FF88; font-size:12px; font-weight:bold; }
-    .element-progress-bg { height:8px; margin-top:8px; border-radius:5px; background:rgba(255,255,255,.08); overflow:hidden; }
-    .element-progress-fill { height:100%; width:0%; background:linear-gradient(90deg,#00FF88,#00FFCC); border-radius:5px; transition:width .35s; }
-    .element-progress-sub { margin-top:5px; color:#777; font-size:10px; }
-    .dl-element-history { color:#777; font-size:10px; text-align:right; min-width:74px; }
-    .element-detail-section {
-      margin-top:12px; padding:13px; border-radius:11px;
-      background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07);
-    }
-    .element-detail-section-title { color:#00FF88; font-size:11px; font-weight:bold; margin-bottom:8px; letter-spacing:.5px; }
-    .element-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .element-detail-stat { background:rgba(255,255,255,.035); padding:9px; border-radius:8px; }
-    .element-detail-stat-label { color:#666; font-size:9px; }
-    .element-detail-stat-value { color:#fff; font-size:11px; margin-top:3px; word-break:break-word; }
-
-    .dl-element-item { display:flex; align-items:center; gap:10px; padding:12px 10px; margin:5px 0; background:rgba(255,255,255,.035); border:1px solid rgba(0,255,136,.12); border-radius:10px; cursor:pointer; }
+.dl-element-item { display:flex; align-items:center; gap:10px; padding:12px 10px; margin:5px 0; background:rgba(255,255,255,.035); border:1px solid rgba(0,255,136,.12); border-radius:10px; cursor:pointer; }
     .dl-element-symbol { width:42px; font-size:19px; font-weight:bold; color:#00FF88; }
     .dl-element-name { flex:1; color:#fff; }
     .dl-element-meta { color:#777; font-size:10px; text-align:right; }
@@ -238,9 +232,8 @@
     /* ── Discovery Log Panel ── */
     #discovery-panel {
       position: fixed; inset: 0;
-      background: #000 !important;
-      z-index: 10000 !important;
-      pointer-events: auto; display: none;
+      background: rgba(0,0,0,0.95);
+      z-index: 50; display: none;
       flex-direction: column;
       font-family: monospace;
     }
@@ -381,121 +374,54 @@
     .rc-confirm { background: #FF4444; border: none; color: #fff;
                   font-family: monospace; font-size: 14px; font-weight: bold;
                   padding: 10px 24px; border-radius: 10px; cursor: pointer; }
-  
-    .rules-list{display:flex;flex-direction:column;gap:10px;}
-    .rule-card{padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.035);}
-    .rule-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;}
-    .rule-text{font-size:13px;line-height:1.55;color:#c9c9c9;}
-    .rules-note{margin-top:14px;padding:12px;border-radius:10px;background:rgba(255,255,255,.035);font-size:12px;line-height:1.5;color:#aaa;}
+  </style>
 
-/* Discovery Log scrolling fix */
-#discovery-panel { overflow: hidden !important; min-height: 0; }
-#discovery-panel .dp-header, #discovery-panel .dp-tabs { flex: 0 0 auto; }
-#tab-elements, #tab-log, #tab-stats, #tab-rules {
-  min-height: 0 !important;
-  max-height: none !important;
-  -webkit-overflow-scrolling: touch !important;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
+<style>
+#discoveryDetailPage{
+  position:fixed; inset:0; z-index:99999; display:none;
+  background:#07111f; color:#fff; overflow-y:auto;
+  font-family:Arial,sans-serif;
 }
-#tab-elements, #tab-log, #tab-stats, #tab-rules {
-  flex-direction: column;
+#discoveryDetailPage .dd-header{
+  position:sticky; top:0; z-index:2; padding:18px 22px;
+  background:rgba(7,17,31,.96); border-bottom:1px solid rgba(255,255,255,.12);
+  display:flex; align-items:center; gap:14px;
 }
-
-
-/* FINAL DISCOVERY + ELEMENT DETAIL LAYOUT FIX */
-#discovery-panel {
-  display: none;
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100dvh;
-  box-sizing: border-box;
-  overflow: hidden !important;
-  flex-direction: column !important;
+#discoveryDetailPage .dd-back{
+  border:0; border-radius:12px; padding:10px 15px; cursor:pointer;
+  background:#1b2b42; color:#fff; font-weight:700;
 }
-#discovery-panel .dp-header,
-#discovery-panel .dp-tabs {
-  flex: 0 0 auto !important;
+#discoveryDetailPage .dd-content{max-width:900px; margin:0 auto; padding:28px 22px 50px}
+#discoveryDetailPage .dd-hero{
+  display:grid; grid-template-columns:150px 1fr; gap:24px; align-items:center;
+  padding:24px; border-radius:22px; background:linear-gradient(145deg,#10223a,#0b1728);
 }
-#discovery-panel .dp-tabs { min-height: 40px; }
-#discovery-panel > #tab-elements,
-#discovery-panel > #tab-log,
-#discovery-panel > #tab-stats,
-#discovery-panel > #tab-rules {
-  flex: 1 1 0 !important;
-  min-height: 0 !important;
-  height: 0 !important;
-  max-height: none !important;
-  box-sizing: border-box !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  -webkit-overflow-scrolling: touch !important;
-  overscroll-behavior: contain !important;
-  touch-action: pan-y !important;
+#discoveryDetailPage .dd-symbol{
+  width:150px;height:150px;border-radius:24px;display:grid;place-items:center;
+  font-size:64px;font-weight:900;background:#162d49;border:1px solid rgba(255,255,255,.15);
 }
-#discovery-panel .dp-tab { touch-action: manipulation; }
-
-/* Element detail is a standalone, full-page reading screen. */
-#explanation-panel {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100dvh !important;
-  max-height: none !important;
-  box-sizing: border-box !important;
-  border-radius: 0 !important;
-  border: none !important;
-  background: #000 !important;
-  z-index: 11000 !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  -webkit-overflow-scrolling: touch !important;
-  overscroll-behavior: contain !important;
-  touch-action: pan-y !important;
-  padding: 20px 20px 40px !important;
+#discoveryDetailPage .dd-name{font-size:38px;font-weight:900;margin:0 0 5px}
+#discoveryDetailPage .dd-meta{opacity:.72;font-size:16px}
+#discoveryDetailPage .dd-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px
 }
-#explanation-panel .ep-header { position: sticky; top: 0; background:#000; padding-bottom:14px; z-index:2; }
-/* MOBILE DISCOVERY SCROLL FIX */
-#discovery-panel {
-  pointer-events: auto !important;
-  touch-action: none !important;
+#discoveryDetailPage .dd-card{
+  padding:16px;border-radius:16px;background:#102036;border:1px solid rgba(255,255,255,.08)
 }
-#discovery-panel > #tab-elements,
-#discovery-panel > #tab-log,
-#discovery-panel > #tab-stats,
-#discovery-panel > #tab-rules {
-  position: relative !important;
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 0 !important;
-  min-height: 0 !important;
-  height: 0 !important;
-  overflow-y: scroll !important;
-  overflow-x: hidden !important;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-y !important;
-  overscroll-behavior-y: contain !important;
+#discoveryDetailPage .dd-label{font-size:12px;text-transform:uppercase;opacity:.55}
+#discoveryDetailPage .dd-value{font-size:18px;font-weight:800;margin-top:5px}
+#discoveryDetailPage .dd-section{
+  margin-top:20px;padding:22px;border-radius:20px;background:#102036;
+  border:1px solid rgba(255,255,255,.08)
 }
-@media (max-width: 768px) {
-  #discovery-panel { height: 100vh !important; height: 100dvh !important; }
-  #discovery-panel .dp-header { flex: 0 0 auto !important; }
-  #discovery-panel .dp-tabs { flex: 0 0 auto !important; }
+#discoveryDetailPage .dd-section h3{margin-top:0}
+@media(max-width:600px){
+  #discoveryDetailPage .dd-hero{grid-template-columns:1fr;text-align:center}
+  #discoveryDetailPage .dd-symbol{margin:auto}
 }
 </style>
 </head>
 <body>
-  <div id="ios-permission" style="display:none;position:fixed;inset:0;z-index:30000;background:#000;color:#fff;align-items:center;justify-content:center;padding:24px;font-family:monospace;text-align:center;">
-    <div style="max-width:420px;width:100%;">
-      <div style="font-size:42px;margin-bottom:16px;">📱</div>
-      <h2 style="margin:0 0 12px;">Motion Access Required</h2>
-      <p style="line-height:1.6;color:#ccc;">Untuk menggunakan AR di iPhone/iPad, aplikasi membutuhkan akses kamera dan sensor gerak perangkat.</p>
-      <p style="line-height:1.6;color:#aaa;font-size:13px;">Tekan tombol di bawah. Jika Safari menampilkan permintaan izin, pilih <b>Allow</b>.</p>
-      <button id="ios-permission-btn" style="margin-top:14px;padding:14px 22px;border:0;border-radius:10px;background:#fff;color:#000;font-weight:700;font-size:16px;">Allow Camera & Motion</button>
-      <button id="ios-permission-cancel" style="display:block;margin:14px auto 0;background:none;border:0;color:#aaa;padding:8px;">Cancel</button>
-      <div id="ios-permission-status" style="margin-top:12px;color:#888;font-size:12px;"></div>
-    </div>
-  </div>
   <div id="home-menu">
     <div class="home-box">
       <div class="home-title">PERIODIC TABLE AR</div>
@@ -516,8 +442,14 @@
     <div class="corner bl"></div><div class="corner br"></div>
   </div>
 
-  <div id="ar-scene-wrapper" style="display:none !important;"></div>
-  <div id="ar-scene-host"></div>
+  <div id="ar-scene-wrapper">
+    <a-scene embedded vr-mode-ui="enabled: false"
+      renderer="alpha: true; colorManagement: true"
+      style="background: transparent; width:100%; height:100%;">
+      <a-camera position="0 0 3" look-controls="enabled: false"></a-camera>
+      <a-entity id="ar-model" position="0 0 0"></a-entity>
+    </a-scene>
+  </div>
 
   <div id="status">Scanning...</div>
 
@@ -595,7 +527,7 @@
       <button class="dp-tab active" id="dptab-elements" onclick="switchTab('elements')">⚛ Elements</button>
       <button class="dp-tab" id="dptab-log" onclick="switchTab('log')">🧪 Compounds</button>
       <button class="dp-tab" id="dptab-stats" onclick="switchTab('stats')">📊 Progress</button>
-      <button class="dp-tab" id="dptab-rules" onclick="switchTab('rules')">📚 Rules</button>
+      <button class="dp-tab" id="dptab-rules" onclick="switchTab('rules')">📚 Chemistry Rules</button>
     </div>
 
     <!-- Scanned Elements tab -->
@@ -630,50 +562,64 @@
       <div class="dl-list" id="dl-list"></div>
     </div>
 
-    <!-- Periodic Table Rules / Reference tab -->
-    <div id="tab-rules" style="display:none;flex:1;overflow-y:auto;padding:14px 16px 32px;">
+    <!-- Chemistry Rules tab -->
+    <div id="tab-rules" style="display:none;flex:1;overflow-y:auto;padding:14px 16px 40px;">
+      <div class="dl-count">Panduan Dasar Tabel Periodik</div>
       <div class="quiz-note">Gunakan bagian ini sebagai referensi singkat saat mempelajari unsur.</div>
-      <div class="rules-list">
-      
-
-      
-
-        <div class="rule-card"><div class="rule-title">1. Golongan</div><div class="rule-text">Unsur yang berada dalam satu golongan memiliki jumlah elektron valensi yang sama sehingga memiliki beberapa kemiripan sifat kimia.</div></div>
-        <div class="rule-card"><div class="rule-title">2. Periode</div><div class="rule-text">Nomor periode menunjukkan jumlah kulit elektron yang dimiliki suatu atom.</div></div>
-        <div class="rule-card"><div class="rule-title">3. Nomor Atom</div><div class="rule-text">Nomor atom menunjukkan jumlah proton dalam inti atom. Pada atom netral, jumlah proton sama dengan jumlah elektron.</div></div>
-        <div class="rule-card"><div class="rule-title">4. Logam, Metaloid, dan Nonlogam</div><div class="rule-text">Unsur dalam tabel periodik dapat dikelompokkan menjadi logam, metaloid, dan nonlogam berdasarkan sifat-sifatnya.</div></div>
-        <div class="rule-card"><div class="rule-title">5. Jari-jari Atom</div><div class="rule-text">Secara umum, jari-jari atom meningkat dari atas ke bawah dalam satu golongan dan menurun dari kiri ke kanan dalam satu periode.</div></div>
-        <div class="rule-card"><div class="rule-title">6. Energi Ionisasi</div><div class="rule-text">Secara umum, energi ionisasi meningkat dari kiri ke kanan dalam satu periode dan menurun dari atas ke bawah dalam satu golongan.</div></div>
-        <div class="rule-card"><div class="rule-title">7. Keelektronegatifan</div><div class="rule-text">Secara umum, keelektronegatifan meningkat dari kiri ke kanan dan dari bawah ke atas dalam tabel periodik.</div></div>
-        <div class="rule-card"><div class="rule-title">8. Sifat Logam</div><div class="rule-text">Sifat logam secara umum meningkat dari kanan ke kiri dan dari atas ke bawah.</div></div>
-        <div class="rule-card"><div class="rule-title">9. Elektron Valensi</div><div class="rule-text">Elektron valensi adalah elektron pada kulit terluar yang berperan penting dalam menentukan sifat dan reaktivitas kimia suatu unsur.</div></div>
-        <div class="rule-card"><div class="rule-title">10. Konfigurasi Elektron</div><div class="rule-text">Susunan elektron suatu atom berkaitan dengan posisi unsur dalam tabel periodik dan dapat membantu menjelaskan sifat kimianya.</div></div>
-      
-<div class="rule-card">
-        <div class="rule-title">11. Kombinasi Logam dan Nonlogam</div>
-        <div class="rule-text">
-          Jenis unsur yang digabungkan dapat membantu menentukan jenis ikatan atau zat yang terbentuk.
-          <br><br>
-          <b>Logam + Logam:</b> dapat membentuk campuran logam atau <i>alloy</i>, seperti kuningan (Cu + Zn).
-          <br>
-          <b>Nonlogam + Nonlogam:</b> umumnya membentuk senyawa kovalen, seperti H₂O dan CO₂.
-          <br>
-          <b>Logam + Nonlogam:</b> umumnya membentuk senyawa ionik melalui perpindahan elektron, seperti NaCl.
-        </div>
+      <div class="dd-section">
+        <h3>1. Nomor Atom</h3><p>Nomor atom menunjukkan jumlah proton dalam atom. Pada atom netral, jumlah proton sama dengan jumlah elektron.</p>
       </div>
-<div class="rule-card">
-        <div class="rule-title">12. Perbedaan Campuran dan Senyawa</div>
-        <div class="rule-text">
-          <b>Campuran</b> adalah gabungan zat tanpa membentuk zat baru dan komponennya masih dapat memiliki sifat asalnya.
-          <br><br>
-          <b>Senyawa</b> terbentuk ketika unsur-unsur bergabung secara kimia dengan perbandingan tertentu sehingga menghasilkan zat dengan sifat baru.
-          <br><br>
-          Jadi, logam dan nonlogam <b>bukan berarti tidak dapat digabungkan</b>. Keduanya justru dapat membentuk senyawa, misalnya NaCl.
-        </div>
+      <div class="dd-section">
+        <h3>2. Periode</h3><p>Periode adalah baris horizontal pada Tabel Periodik. Terdapat 7 periode dan posisi periode berkaitan dengan tingkat kulit elektron utama yang terisi.</p>
+      </div>
+      <div class="dd-section">
+        <h3>3. Golongan</h3><p>Golongan adalah kolom vertikal. Terdapat 18 golongan. Unsur dalam golongan yang sama umumnya memiliki sifat kimia yang mirip.</p>
+      </div>
+      <div class="dd-section">
+        <h3>4. Elektron Valensi</h3><p>Elektron valensi adalah elektron pada kulit terluar yang sangat memengaruhi sifat dan reaktivitas kimia suatu unsur.</p>
+      </div>
+      <div class="dd-section">
+        <h3>5. Sifat Periodik</h3>
+        <ul>
+          <li>Jari-jari atom: umumnya mengecil dari kiri ke kanan dan membesar dari atas ke bawah.</li>
+          <li>Energi ionisasi: umumnya meningkat dari kiri ke kanan dan menurun dari atas ke bawah.</li>
+          <li>Keelektronegatifan: umumnya meningkat menuju kanan-atas.</li>
+          <li>Sifat logam: umumnya meningkat menuju kiri-bawah.</li>
+        </ul>
+      </div>
+      <div class="dd-section">
+        <h3>6. Logam, Nonlogam, dan Metaloid</h3><p>Logam terutama berada di sebelah kiri, nonlogam di sebelah kanan, sedangkan metaloid berada di sekitar garis berbentuk tangga.</p>
+      </div>
+      <div class="dd-section">
+        <h3>7. Golongan Penting</h3>
+        <ul>
+          <li>Golongan 1: Logam alkali</li><li>Golongan 2: Logam alkali tanah</li>
+          <li>Golongan 3–12: Logam transisi</li><li>Golongan 17: Halogen</li><li>Golongan 18: Gas mulia</li>
+          <li>Lantanida dan aktinida biasanya ditampilkan di bagian bawah.</li>
+        </ul>
+      </div>
+      <div class="dd-section">
+        <h3>8. Konfigurasi Elektron</h3><p>Susunan elektron suatu unsur mengikuti prinsip seperti Aufbau, Larangan Pauli, dan Aturan Hund. Struktur Tabel Periodik berkaitan erat dengan konfigurasi elektron.</p>
+      </div>
+      <div class="dd-section">
+        <h3>9. Ion</h3><p>Kehilangan elektron membentuk kation bermuatan positif, sedangkan menerima elektron membentuk anion bermuatan negatif.</p>
+      </div>
+      <div class="dd-section">
+        <h3>10. Kereaktifan</h3><p>Unsur dalam golongan yang sama umumnya memiliki pola kereaktifan yang serupa. Contohnya, logam alkali umumnya sangat reaktif sedangkan gas mulia memiliki kereaktifan yang rendah.</p>
+      </div>
+      <div class="dd-section">
+        <h3>11. Kombinasi Logam dan Nonlogam</h3>
+        <ul>
+          <li><b>Logam + Logam:</b> dapat membentuk campuran logam atau alloy, seperti kuningan (Cu + Zn).</li>
+          <li><b>Nonlogam + Nonlogam:</b> umumnya membentuk senyawa kovalen, seperti H₂O dan CO₂.</li>
+          <li><b>Logam + Nonlogam:</b> umumnya membentuk senyawa ionik, seperti NaCl.</li>
+        </ul>
+      </div>
+      <div class="dd-section">
+        <h3>12. Campuran dan Senyawa</h3>
+        <p><b>Campuran</b> adalah gabungan zat tanpa membentuk zat baru, sedangkan <b>senyawa</b> terbentuk ketika unsur-unsur bergabung secara kimia dengan perbandingan tertentu. Logam dan nonlogam tetap dapat bergabung secara kimia, contohnya NaCl.</p>
       </div>
 </div>
-      <div class="rules-note"><b>Catatan:</b> Tren periodik merupakan kecenderungan umum dan dapat memiliki pengecualian pada kondisi tertentu.</div>
-    </div>
 
     <!-- Stats tab -->
     <div id="tab-stats" style="display:none">
@@ -911,14 +857,6 @@
       document.getElementById('lb-count').textContent = Object.keys(discoveredCompounds).length;
     }
 
-    function formatLastScanned(symbol) {
-      const t = elementLastScanned[symbol];
-      if (!t) return 'No recent scan';
-      const d = new Date(t);
-      return 'Last: ' + d.toLocaleDateString(undefined, {day:'2-digit', month:'short'}) +
-             ' ' + d.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'});
-    }
-
     function recordDiscovery(key, compound) {
       const isNew = !discoveredCompounds[key];
       discoveredCompounds[key] = true;
@@ -941,65 +879,38 @@
       toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 3200);
     }
 
-    function setScanningUIVisible(visible) {
-      const ids = ['camera-feed','ar-scene-wrapper','scan-bar-wrapper','scan-frame','hint','log-btn','status','element-info','debug-panel','debug-toggle'];
-      ids.forEach(id => { const el=document.getElementById(id); if (el) el.style.visibility = visible ? 'visible' : 'hidden'; });
-    }
-
-    function stopCameraForPage() {
-      if (video && video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
-      }
-      setScanningUIVisible(false);
-    }
-
     function openDiscoveryLog() {
-      // Discovery Log is a completely separate page from the scanner.
       document.getElementById('home-menu').classList.add('hidden');
-      document.getElementById('home-return').classList.add('show');
-      stopCameraForPage();
-
-      buildDiscoveryList();
-      buildElementLog();
-      buildStatsChart();
-
-      const panel = document.getElementById('discovery-panel');
-      panel.style.display = 'flex';
-      panel.style.zIndex = '10000';
+      document.getElementById('home-return').classList.remove('show');
+      buildDiscoveryList(); buildElementLog(); buildStatsChart();
+      document.getElementById('discovery-panel').style.display = 'flex';
       switchTab('elements');
     }
     function closeDiscoveryLog() {
       document.getElementById('discovery-panel').style.display = 'none';
       document.getElementById('home-menu').classList.remove('hidden');
-      document.getElementById('home-return').classList.remove('show');
     }
     function switchTab(tab) {
       ['elements','log','stats','rules'].forEach(t => {
         const el = document.getElementById('tab-' + t);
-        const active = tab === t;
-        if (el) {
-          el.style.display = active ? 'flex' : 'none';
-          if (active) {
-            el.style.flex = '1 1 auto';
-            el.style.minHeight = '0';
-            el.style.overflowY = 'auto';
-            el.style.overflowX = 'hidden';
-            el.style.webkitOverflowScrolling = 'touch';
-            el.style.touchAction = 'pan-y';
-            el.style.overscrollBehavior = 'contain';
-            el.scrollTop = 0;
-          }
-        }
+        if (el) el.style.display = tab === t ? 'block' : 'none';
         const btn = document.getElementById('dptab-' + t);
-        if (btn) btn.classList.toggle('active', active);
+        if (btn) btn.classList.toggle('active', tab === t);
       });
       if (tab === 'elements') {
-        const search = document.getElementById('element-search');
+        const search=document.getElementById('element-search');
         buildElementLog(search ? search.value : '');
       }
       if (tab === 'log') buildDiscoveryList();
       if (tab === 'stats') buildStatsChart();
+    }
+
+    function formatLastScanned(symbol) {
+      const t = elementLastScanned[symbol];
+      if (!t) return 'Not scanned recently';
+      const d = new Date(t);
+      return d.toLocaleDateString(undefined,{day:'2-digit',month:'short'}) + ' ' +
+             d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
     }
 
     function buildElementLog(filter='') {
@@ -1007,77 +918,49 @@
       const entries = Object.entries(elementScanCount)
         .filter(([sym,c]) => c > 0 && ELEMENTS[sym])
         .sort((a,b)=>b[1]-a[1]);
-
-      const unique = entries.length;
-      const pct = Math.min(100, Math.round(unique / 118 * 100));
-      document.getElementById('el-count').textContent = unique + ' elements scanned';
-      document.getElementById('element-progress-count').textContent = unique + ' / 118';
-      document.getElementById('element-progress-fill').style.width = pct + '%';
-      document.getElementById('element-progress-sub').textContent =
-        unique === 118 ? 'All 118 elements discovered!' : (118 - unique) + ' elements remaining to discover.';
-
-      const q = String(filter || '').trim().toLowerCase();
-      const filtered = entries.filter(([sym]) => {
-        const el = ELEMENTS[sym];
-        return !q || sym.toLowerCase().includes(q) || el.name.toLowerCase().includes(q);
-      });
-
-      list.innerHTML = '';
-      if (!filtered.length) {
-        list.innerHTML = '<div class="dl-empty">' +
-          (entries.length ? 'No matching elements found.' : 'No elements scanned yet.<br>Start scanning to build your Discovery Log.') +
-          '</div>';
+      const unique=entries.length, pct=Math.round(unique/118*100);
+      document.getElementById('el-count').textContent=unique+' elements scanned';
+      const pc=document.getElementById('element-progress-count'); if(pc) pc.textContent=unique+' / 118';
+      const pf=document.getElementById('element-progress-fill'); if(pf) pf.style.width=Math.min(100,pct)+'%';
+      const ps=document.getElementById('element-progress-sub'); if(ps) ps.textContent=unique===118?'All 118 elements discovered!':(118-unique)+' elements remaining to discover.';
+      const q=String(filter||'').trim().toLowerCase();
+      const filtered=entries.filter(([sym])=>!q || sym.toLowerCase().includes(q) || ELEMENTS[sym].name.toLowerCase().includes(q));
+      list.innerHTML='';
+      if(!filtered.length){
+        list.innerHTML='<div class="dl-empty">'+(entries.length?'No matching elements found.':'No elements scanned yet.<br>Start scanning to build your Discovery Log.')+'</div>';
         return;
       }
-
-      filtered.forEach(([sym,count]) => {
-        const el = ELEMENTS[sym];
-        const row = document.createElement('div');
+      filtered.forEach(([sym,count])=>{
+        const el=ELEMENTS[sym], row=document.createElement('div');
         row.className='dl-element-item';
-        row.innerHTML =
-          '<span class="dl-element-symbol">'+sym+'</span>' +
-          '<span class="dl-element-name">'+el.name+'</span>' +
-          '<span class="dl-element-history">'+count+' scan'+(count===1?'':'s')+'<br>'+formatLastScanned(sym)+'</span>';
-        row.onclick = () => openSavedElement(sym);
+        row.innerHTML='<span class="dl-element-symbol">'+sym+'</span><span class="dl-element-name">'+el.name+'</span><span class="dl-element-history">'+count+' scan'+(count===1?'':'s')+'<br>'+formatLastScanned(sym)+'</span>';
+        row.onclick=()=>openSavedElement(sym);
         list.appendChild(row);
       });
     }
 
-    function filterElementLog(value) {
-      buildElementLog(value);
-    }
+    function filterElementLog(value){ buildElementLog(value); }
 
-    let returnToDiscoveryAfterElement = false;
 
     function openSavedElement(sym) {
       const el = ELEMENTS[sym]; if (!el) return;
-      returnToDiscoveryAfterElement = true;
-      document.getElementById('discovery-panel').style.display='none';
-      document.getElementById('home-return').classList.add('show');
-      const ep=document.getElementById('explanation-panel'); ep.style.display='block'; ep.classList.remove('fusion-mode');
+      // Keep the Discovery Log open underneath. The saved-element view is a
+      // separate full-screen layer, so it never exposes the AR scanner.
+      document.getElementById('home-return').classList.remove('show');
+      const ep=document.getElementById('explanation-panel');
+      ep.style.display='block';
+      ep.classList.remove('fusion-mode');
+      ep.classList.add('saved-mode');
       document.getElementById('ep-symbol').textContent=sym; document.getElementById('ep-name').textContent=el.name;
       document.getElementById('ep-number').textContent=el.number; document.getElementById('ep-mass').textContent=el.mass;
       document.getElementById('ep-category').textContent=el.category; document.getElementById('ep-state').textContent=el.state;
       document.getElementById('ep-period').textContent=el.period; document.getElementById('ep-config').textContent=el.config; document.getElementById('ep-desc').textContent=el.desc;
-
-      // Add persistent scan-history / learning facts to the existing detail page.
-      let extra = document.getElementById('element-learning-extra');
-      if (!extra) {
-        extra = document.createElement('div');
-        extra.id = 'element-learning-extra';
-        const desc = document.getElementById('ep-desc');
-        if (desc && desc.parentElement) desc.parentElement.appendChild(extra);
+      let extra=document.getElementById('element-learning-extra');
+      if(!extra){
+        extra=document.createElement('div'); extra.id='element-learning-extra';
+        const desc=document.getElementById('ep-desc'); if(desc&&desc.parentElement) desc.parentElement.appendChild(extra);
       }
-      extra.innerHTML =
-        '<div class="element-detail-section">' +
-          '<div class="element-detail-section-title">LEARNING & PROGRESS</div>' +
-          '<div class="element-detail-grid">' +
-            '<div class="element-detail-stat"><div class="element-detail-stat-label">Times Scanned</div><div class="element-detail-stat-value">'+(elementScanCount[sym]||0)+'</div></div>' +
-            '<div class="element-detail-stat"><div class="element-detail-stat-label">Last Scanned</div><div class="element-detail-stat-value">'+formatLastScanned(sym).replace('Last: ','')+'</div></div>' +
-            '<div class="element-detail-stat"><div class="element-detail-stat-label">Quiz Difficulty</div><div class="element-detail-stat-value">Level '+getQuizDifficulty(sym)+'</div></div>' +
-            '<div class="element-detail-stat"><div class="element-detail-stat-label">Element Progress</div><div class="element-detail-stat-value">'+Object.keys(elementScanCount).filter(s=>elementScanCount[s]>0).length+' / 118 discovered</div></div>' +
-          '</div>' +
-        '</div>';
+      extra.innerHTML='<div class="dd-section"><h3>Learning & Progress</h3><p>Times scanned: '+(elementScanCount[sym]||0)+'<br>Last scanned: '+formatLastScanned(sym)+'</p></div>';
     }
 
     function buildDiscoveryList() {
@@ -1115,9 +998,6 @@
       document.getElementById('stats-total').textContent  = totalScans;
       document.getElementById('stats-unique').textContent = Object.keys(elementScanCount).length;
       document.getElementById('stats-found').textContent  = Object.keys(discoveredCompounds).length;
-      const unique = Object.keys(elementScanCount).filter(s=>elementScanCount[s]>0 && ELEMENTS[s]).length;
-      const statsTitle = document.querySelector('#tab-stats .stats-title');
-      if (statsTitle) statsTitle.textContent = 'Element Discovery: '+unique+' / 118 ('+Math.round(unique/118*100)+'%)';
       const chart = document.getElementById('stats-chart');
       chart.innerHTML = '';
       const top = entries.slice(0,10), maxV = top.length ? top[0][1] : 1;
@@ -1278,16 +1158,16 @@
     }
 
     function closeExplanation() {
-      document.getElementById('explanation-panel').style.display = 'none';
+      const ep = document.getElementById('explanation-panel');
+      const wasSaved = ep.classList.contains('saved-mode');
+      ep.style.display = 'none';
+      ep.classList.remove('saved-mode');
       document.getElementById('debug-panel').style.zIndex = '999';
       document.getElementById('debug-toggle').style.zIndex = '1000';
-      if (returnToDiscoveryAfterElement) {
-        returnToDiscoveryAfterElement = false;
-        const panel = document.getElementById('discovery-panel');
-        panel.style.display = 'flex';
-        panel.style.zIndex = '10000';
+      if (wasSaved) {
+        // Return to the Discovery Log, not to the scanner.
+        document.getElementById('discovery-panel').style.display = 'flex';
         buildElementLog();
-        switchTab('elements');
       }
     }
 
@@ -1532,7 +1412,6 @@
 
     document.addEventListener('touchstart', (e) => {
       if (document.getElementById('explanation-panel').style.display === 'block') return;
-      if (e.target.closest && e.target.closest('#discovery-panel')) return;
       if (e.touches.length === 2) {
         initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         initialScale = currentScale;
@@ -1541,7 +1420,6 @@
     });
     document.addEventListener('touchmove', (e) => {
       if (document.getElementById('explanation-panel').style.display === 'block') return;
-      if (e.target.closest && e.target.closest('#discovery-panel')) return;
       e.preventDefault();
       if (e.touches.length === 2 && initialDistance) {
         const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -1582,7 +1460,12 @@
           if (found !== currentSymbol) { currentSymbol = found; showElement(found); }
         } else {
           notFoundCount++;
-          if (notFoundCount >= 3 && currentSymbol && !fusionActive) { currentSymbol = null; hideElement(); }
+          // Keep the last detected element visible so the learner has time to read it.
+          // The card/model is replaced only when another element is successfully detected.
+          if (notFoundCount >= 3 && currentSymbol && !fusionActive) {
+            statusEl.className = '';
+            statusEl.textContent = 'Ready — scan another element';
+          }
         }
       } catch (err) { log('OCR error: ' + err.message, '#FF4444'); }
       isProcessing = false;
@@ -1619,7 +1502,6 @@
       try {
         localStorage.removeItem('discoveredCompounds');
         localStorage.removeItem('elementScanCount');
-        localStorage.removeItem('elementLastScanned');
         localStorage.removeItem('totalScans');
       localStorage.removeItem('quizStats');
       } catch(e) {}
@@ -1630,78 +1512,12 @@
       log('All progress has been reset', '#FF4444');
     }
 
-    let arSceneStarted = false;
-    function startARSceneAfterPermission() {
-      if (arSceneStarted) return;
-      arSceneStarted = true;
-      const host = document.getElementById('ar-scene-host');
-      host.innerHTML = `
-        <div id="ar-scene-wrapper" style="position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;display:block;">
-          <a-scene embedded vr-mode-ui="enabled: false" renderer="alpha: true; colorManagement: true" style="background:transparent;width:100%;height:100%;">
-            <a-camera position="0 0 3" look-controls="enabled: false"></a-camera>
-            <a-entity id="ar-model" position="0 0 0"></a-entity>
-          </a-scene>
-        </div>`;
-    }
-
-    async function requestIOSMotionPermission() {
-      const needsMotion = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
-      const needsOrientation = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
-      if (!needsMotion && !needsOrientation) return true;
-      try {
-        const results = [];
-        if (needsMotion) results.push(await DeviceMotionEvent.requestPermission());
-        if (needsOrientation) results.push(await DeviceOrientationEvent.requestPermission());
-        return results.every(r => r === 'granted');
-      } catch (e) {
-        console.warn('Motion permission error:', e);
-        return false;
-      }
-    }
-
-    function showIOSPermissionScreen() {
-      const p=document.getElementById('ios-permission');
-      p.style.display='flex';
-      document.getElementById('ios-permission-status').textContent='';
-    }
-    function hideIOSPermissionScreen() { document.getElementById('ios-permission').style.display='none'; }
-
-    async function beginScanningAfterPermission() {
-      const status=document.getElementById('ios-permission-status');
-      status.textContent='Meminta izin sensor...';
-      const granted=await requestIOSMotionPermission();
-      if (!granted) {
-        status.textContent='Izin sensor belum diberikan. Coba tekan tombol lagi dan pilih Allow.';
-        return;
-      }
-      hideIOSPermissionScreen();
-      startARSceneAfterPermission();
-      startARSceneAfterPermission();
-      document.getElementById('home-menu').classList.add('hidden');
-      document.getElementById('home-return').classList.add('show');
-      setScanningUIVisible(true);
-      startCamera();
-    }
-
     function startFromHome() {
-      const needsMotion = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') ||
-                          (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function');
-      if (needsMotion) { showIOSPermissionScreen(); return; }
       document.getElementById('home-menu').classList.add('hidden');
       document.getElementById('home-return').classList.add('show');
-      setScanningUIVisible(true);
       startCamera();
     }
-
-    document.addEventListener('DOMContentLoaded',()=>{
-      const b=document.getElementById('ios-permission-btn');
-      const c=document.getElementById('ios-permission-cancel');
-      if(b) b.onclick=beginScanningAfterPermission;
-      if(c) c.onclick=()=>{ hideIOSPermissionScreen(); };
-    });
     function goHome() {
-      returnToDiscoveryAfterElement = false;
-      stopCameraForPage();
       document.getElementById('home-menu').classList.remove('hidden');
       document.getElementById('home-return').classList.remove('show');
       document.getElementById('discovery-panel').style.display='none';
@@ -1727,6 +1543,8 @@
       return {q:'In which '+el.period.split('/')[0].trim()+' is '+el.name+' located?',a:el.period.split('/')[0].replace('Period ','').trim(),field:'period'};
     }
     function openQuiz(){
+      document.getElementById('home-menu').classList.add('hidden');
+      document.getElementById('home-return').classList.remove('show');
       const scanned=Object.keys(elementScanCount).filter(s=>elementScanCount[s]>0 && ELEMENTS[s]);
       if(!scanned.length){
         document.getElementById('quiz-panel').style.display='flex'; document.getElementById('quiz-content').innerHTML='<div class="dl-empty">Scan at least one element first.<br>Your quiz will adapt to your scanned elements.</div>'; return;
@@ -1745,7 +1563,7 @@
     function answerQuiz(value,correct,sym){
       const stats=JSON.parse(localStorage.getItem('quizStats')||'{}'); stats[sym]=stats[sym]||{correct:0,wrong:0}; if(value===correct){quizScore++;stats[sym].correct++;}else stats[sym].wrong++; localStorage.setItem('quizStats',JSON.stringify(stats)); quizIndex++; renderQuizQuestion();
     }
-    function closeQuiz(){ document.getElementById('quiz-panel').style.display='none'; }
+    function closeQuiz(){ document.getElementById('quiz-panel').style.display='none'; document.getElementById('home-menu').classList.remove('hidden'); }
 
         loadSavedData();
     // ── Persistent storage ──
@@ -1774,6 +1592,7 @@
       totalScans          = 0;
       localStorage.removeItem('discoveredCompounds');
       localStorage.removeItem('elementScanCount');
+      localStorage.removeItem('elementLastScanned');
       localStorage.removeItem('totalScans');
       localStorage.removeItem('quizStats');
       document.getElementById('lb-count').textContent = 0;
@@ -1812,28 +1631,73 @@
   </div>
 
 
+<div id="discoveryDetailPage">
+  <div class="dd-header">
+    <button class="dd-back" onclick="closeDiscoveryDetail()">← Discovery Log</button>
+    <strong>Element Information</strong>
+  </div>
+  <div class="dd-content" id="discoveryDetailContent"></div>
+</div>
+
 <script>
-(function(){
-  function fixDiscoveryScroll(){
-    const panel=document.getElementById('discovery-panel');
-    if(!panel) return;
-    ['elements','log','stats','rules'].forEach(t=>{
-      const el=document.getElementById('tab-'+t);
-      if(!el) return;
-      el.style.minHeight='0';
-      el.style.height='0';
-      el.style.flex='1 1 0';
-      el.style.overflowY='auto';
-      el.style.overflowX='hidden';
-      el.style.webkitOverflowScrolling='touch';
-      el.style.touchAction='pan-y';
-      el.style.overscrollBehavior='contain';
-    });
-  }
-  document.addEventListener('DOMContentLoaded',fixDiscoveryScroll);
-  window.addEventListener('resize',fixDiscoveryScroll);
-})();
+function openDiscoveryDetail(symbol){
+  const el = (typeof ELEMENTS !== 'undefined') ? ELEMENTS[symbol] : null;
+  if (!el) return;
+
+  const scans = (typeof scanCounts !== 'undefined' && scanCounts[symbol]) ? scanCounts[symbol] : 0;
+  const stats = (typeof quizStats !== 'undefined' && quizStats[symbol]) ? quizStats[symbol] : {correct:0,wrong:0};
+  const totalQuiz = stats.correct + stats.wrong;
+  const accuracy = totalQuiz ? Math.round(stats.correct / totalQuiz * 100) : 0;
+
+  document.getElementById('discoveryDetailContent').innerHTML = `
+    <div class="dd-hero">
+      <div class="dd-symbol">${el.symbol || symbol}</div>
+      <div>
+        <div class="dd-name">${el.name || 'Unknown Element'}</div>
+        <div class="dd-meta">${el.category || ''}</div>
+        <div class="dd-grid">
+          <div class="dd-card"><div class="dd-label">Atomic Number</div><div class="dd-value">${el.atomicNumber ?? '-'}</div></div>
+          <div class="dd-card"><div class="dd-label">Period</div><div class="dd-value">${el.period ?? '-'}</div></div>
+          <div class="dd-card"><div class="dd-label">Group</div><div class="dd-value">${el.group ?? '-'}</div></div>
+          <div class="dd-card"><div class="dd-label">State</div><div class="dd-value">${el.state ?? '-'}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dd-section">
+      <h3>About ${el.name || symbol}</h3>
+      <p>${el.description || 'No description is available for this element yet.'}</p>
+    </div>
+
+    <div class="dd-section">
+      <h3>Element Details</h3>
+      <div class="dd-grid">
+        <div class="dd-card"><div class="dd-label">Electron Configuration</div><div class="dd-value">${el.electronConfiguration || '-'}</div></div>
+        <div class="dd-card"><div class="dd-label">Times Scanned</div><div class="dd-value">${scans}</div></div>
+        <div class="dd-card"><div class="dd-label">Quiz Accuracy</div><div class="dd-value">${totalQuiz ? accuracy + '%' : 'Not attempted'}</div></div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('discoveryDetailPage').style.display = 'block';
+}
+
+function closeDiscoveryDetail(){
+  document.getElementById('discoveryDetailPage').style.display = 'none';
+}
 </script>
 
+<script>
+(function(){
+  const originalOpen = window.openElementInfo;
+  window.openElementInfo = function(symbol){
+    openDiscoveryDetail(symbol);
+  };
+  const originalShow = window.showElementInfo;
+  window.showElementInfo = function(symbol){
+    openDiscoveryDetail(symbol);
+  };
+})();
+</script>
 </body>
 </html>
