@@ -172,9 +172,22 @@
       cursor: pointer;
     }
 
+    /* Language Switcher Buttons */
+    .lang-switcher-btn {
+      background: rgba(0,0,0,0.75); color: #00FF88;
+      border: 1px solid rgba(0,255,136,0.4);
+      border-radius: 20px; padding: 5px 12px;
+      font-size: 11px; font-family: inherit; font-weight: bold;
+      cursor: pointer; display: flex; align-items: center; gap: 4px;
+      transition: all 0.2s;
+    }
+    .lang-switcher-btn:hover { background: rgba(0,255,136,0.15); border-color: #00FF88; }
+    #home-lang-toggle { position: absolute; top: 20px; right: 20px; z-index: 2005; }
+    #top-lang-toggle { position: fixed; top: 20px; left: 100px; z-index: 15; display: none; }
+
     /* Home Menu */
     #home-menu { position: fixed; inset: 0; z-index: 2000; background: linear-gradient(180deg, #06110d 0%, #000 100%); display: flex; align-items: center; justify-content: center; padding: 24px; }
-    .home-box { width: min(430px, 100%); text-align: center; }
+    .home-box { width: min(430px, 100%); text-align: center; position: relative; }
     .home-title { color: #00FF88; font-size: 30px; font-weight: bold; letter-spacing: 2px; margin-bottom: 8px; }
     .home-subtitle { color: #888; font-size: 12px; margin-bottom: 28px; }
     .home-btn { width: 100%; padding: 17px 18px; margin: 7px 0; border-radius: 14px; border: 1px solid rgba(0,255,136,.35); background: rgba(0,255,136,.07); color: #fff; font: 600 15px monospace; cursor: pointer; text-align: left; }
@@ -400,8 +413,8 @@
   <div id="ios-permission" style="display:none;position:fixed;inset:0;z-index:30000;background:#000;color:#fff;align-items:center;justify-content:center;padding:24px;text-align:center;">
     <div style="max-width:420px;width:100%;">
       <div style="font-size:42px;margin-bottom:16px;">📱</div>
-      <h2 style="margin:0 0 12px;">Motion Access Required</h2>
-      <p style="line-height:1.6;color:#ccc;font-size:13px;">Untuk menggunakan AR di iPhone/iPad, aplikasi membutuhkan akses kamera dan sensor gerak.</p>
+      <h2 id="ios-perm-title" style="margin:0 0 12px;">Motion Access Required</h2>
+      <p id="ios-perm-desc" style="line-height:1.6;color:#ccc;font-size:13px;">To use AR on iPhone/iPad, the app requires camera and motion sensor access.</p>
       <button id="ios-permission-btn" style="margin-top:16px;padding:12px 20px;border:0;border-radius:10px;background:#00FF88;color:#000;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;">Allow Camera & Motion</button>
       <button id="ios-permission-cancel" style="display:block;margin:12px auto 0;background:none;border:0;color:#aaa;padding:8px;cursor:pointer;font-family:inherit;">Cancel</button>
       <div id="ios-permission-status" style="margin-top:12px;color:#888;font-size:12px;"></div>
@@ -410,17 +423,20 @@
 
   <!-- Home Menu -->
   <div id="home-menu">
+    <button class="lang-switcher-btn" id="home-lang-toggle" onclick="toggleLanguage()">🌐 EN | ID</button>
     <div class="home-box">
-      <div class="home-title">PERIODIC TABLE AR</div>
-      <div class="home-subtitle">Explore elements, review discoveries, and test your knowledge.</div>
-      <button class="home-btn" onclick="startFromHome()"><span class="hb-icon">⌖</span>Start Scanning<small>Scan an element and explore its 3D model.</small></button>
-      <button class="home-btn" onclick="openDiscoveryLog()"><span class="hb-icon">▣</span>Discovery Log<small>Review scanned elements, compounds, and progress.</small></button>
-      <button class="home-btn" onclick="openQuiz()"><span class="hb-icon">?</span>Quiz<small>Answer questions adapted to your activity.</small></button>
-      <div class="home-footer">Progress is automatically saved to local storage.</div>
+      <div class="home-title" id="hm-title">PERIODIC TABLE AR</div>
+      <div class="home-subtitle" id="hm-subtitle">Explore elements, review discoveries, and test your knowledge.</div>
+      <button class="home-btn" onclick="startFromHome()"><span class="hb-icon">⌖</span><span id="hm-btn-scan">Start Scanning</span><small id="hm-sub-scan">Scan an element and explore its 3D model.</small></button>
+      <button class="home-btn" onclick="openDiscoveryLog()"><span class="hb-icon">▣</span><span id="hm-btn-log">Discovery Log</span><small id="hm-sub-log">Review scanned elements, compounds, and progress.</small></button>
+      <button class="home-btn" onclick="openQuiz()"><span class="hb-icon">?</span><span id="hm-btn-quiz">Quiz</span><small id="hm-sub-quiz">Answer questions adapted to your activity.</small></button>
+      <div class="home-footer" id="hm-footer">Progress is automatically saved to local storage.</div>
     </div>
   </div>
 
-  <button id="home-return" onclick="goHome()">← Home</button>
+  <button id="home-return" onclick="goHome()">← <span id="hr-label">Home</span></button>
+  <button class="lang-switcher-btn" id="top-lang-toggle" onclick="toggleLanguage()">🌐 EN | ID</button>
+  
   <video id="camera-feed" autoplay playsinline muted></video>
   <canvas id="overlay-canvas"></canvas>
 
@@ -436,8 +452,8 @@
 
   <!-- Fusion bar -->
   <div id="fusion-bar">
-    🔒 <span id="fusion-locked-text">H locked</span> — scan 2nd element
-    <button onclick="cancelFusion()">✕ Cancel</button>
+    🔒 <span id="fusion-locked-text">H locked</span> — <span id="fusion-prompt-text">scan 2nd element</span>
+    <button onclick="cancelFusion()" id="fusion-cancel-btn">✕ Cancel</button>
   </div>
 
   <!-- Element Mini Card -->
@@ -445,7 +461,7 @@
     <div class="symbol" id="info-symbol">H</div>
     <div class="name" id="info-name">Hydrogen</div>
     <div class="number" id="info-number">Atomic No. 1</div>
-    <div class="tap-hint">Tap for details • 🔒 Lock to mix</div>
+    <div class="tap-hint" id="info-tap-hint">Tap for details • 🔒 Lock to mix</div>
   </div>
 
   <!-- Lock Button -->
@@ -457,7 +473,7 @@
     <div class="f-name" id="f-name">Water</div>
     <div class="f-equation" id="f-equation">2H + O → H₂O</div>
     <div class="f-rarity" id="f-rarity" style="font-size:11px;margin-top:3px">⬜ Common</div>
-    <div class="f-hint">Tap for details • 🔄 Scan again to mix more</div>
+    <div class="f-hint" id="f-hint">Tap for details • 🔄 Scan again to mix more</div>
   </div>
 
   <!-- Bottom Sheet Explanation -->
@@ -469,12 +485,12 @@
       </div>
       <button class="ep-close" onclick="closeExplanation()">×</button>
     </div>
-    <div class="ep-row"><span class="ep-label">Atomic Number</span> <span class="ep-value" id="ep-number">1</span></div>
-    <div class="ep-row"><span class="ep-label">Atomic Mass</span> <span class="ep-value" id="ep-mass">1.008 u</span></div>
-    <div class="ep-row"><span class="ep-label">Category</span> <span class="ep-value" id="ep-category">Nonmetal</span></div>
-    <div class="ep-row"><span class="ep-label">State at RT</span> <span class="ep-value" id="ep-state">Gas</span></div>
-    <div class="ep-row"><span class="ep-label">Period / Group</span> <span class="ep-value" id="ep-period">Period 1 / Group 1</span></div>
-    <div class="ep-row"><span class="ep-label">Electron Config</span> <span class="ep-value" id="ep-config">1s¹</span></div>
+    <div class="ep-row"><span class="ep-label" id="lbl-ep-number">Atomic Number</span> <span class="ep-value" id="ep-number">1</span></div>
+    <div class="ep-row"><span class="ep-label" id="lbl-ep-mass">Atomic Mass</span> <span class="ep-value" id="ep-mass">1.008 u</span></div>
+    <div class="ep-row"><span class="ep-label" id="lbl-ep-category">Category</span> <span class="ep-value" id="ep-category">Nonmetal</span></div>
+    <div class="ep-row"><span class="ep-label" id="lbl-ep-state">State at RT</span> <span class="ep-value" id="ep-state">Gas</span></div>
+    <div class="ep-row"><span class="ep-label" id="lbl-ep-period">Period / Group</span> <span class="ep-value" id="ep-period">Period 1 / Group 1</span></div>
+    <div class="ep-row"><span class="ep-label" id="lbl-ep-config">Electron Config</span> <span class="ep-value" id="ep-config">1s¹</span></div>
     <div class="ep-desc" id="ep-desc"></div>
   </div>
 
@@ -485,7 +501,7 @@
 
   <!-- Discovery Toast Notification -->
   <div id="discovery-toast">
-    <div class="dt-new">✨ NEW DISCOVERY</div>
+    <div class="dt-new" id="dt-new-lbl">✨ NEW DISCOVERY</div>
     <div class="dt-formula" id="toast-formula">H₂O</div>
     <div class="dt-name" id="toast-name">Water</div>
     <div class="dt-rarity" id="toast-rarity">⬜ Common</div>
@@ -493,14 +509,14 @@
 
   <!-- Adaptive Quiz Panel -->
   <div id="quiz-panel" style="position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:70;display:none;flex-direction:column;">
-    <div class="dp-header"><span class="dp-title">? Adaptive Quiz</span><button class="dp-close" onclick="closeQuiz()">×</button></div>
+    <div class="dp-header"><span class="dp-title" id="quiz-panel-title">? Adaptive Quiz</span><button class="dp-close" onclick="closeQuiz()">×</button></div>
     <div id="quiz-content" style="flex:1;overflow-y:auto;padding:18px 16px 40px;"></div>
   </div>
 
   <!-- Discovery Log Panel -->
   <div id="discovery-panel">
     <div class="dp-header">
-      <span class="dp-title">📖 Discovery Log</span>
+      <span class="dp-title" id="dp-main-title">📖 Discovery Log</span>
       <button class="dp-close" onclick="closeDiscoveryLog()">×</button>
     </div>
     <button id="reset-btn" onclick="openResetModal()">🗑️ Reset All Progress</button>
@@ -515,7 +531,7 @@
     <div id="tab-elements">
       <div class="element-progress-card">
         <div class="element-progress-top">
-          <div class="element-progress-title">Elements Discovered</div>
+          <div class="element-progress-title" id="el-prog-title">Elements Discovered</div>
           <div class="element-progress-count" id="element-progress-count">0 / 118</div>
         </div>
         <div class="element-progress-bg"><div class="element-progress-fill" id="element-progress-fill"></div></div>
@@ -523,7 +539,7 @@
       </div>
       <input id="element-search" class="discovery-search" type="search" placeholder="🔍 Search element or symbol..." oninput="filterElementLog(this.value)" autocomplete="off">
       <div class="dl-count" id="el-count">0 elements scanned</div>
-      <div class="quiz-note">Tap an element to review its detailed parameters.</div>
+      <div class="quiz-note" id="el-quiz-note">Tap an element to review its detailed parameters.</div>
       <div id="el-list"></div>
     </div>
 
@@ -535,64 +551,29 @@
         <div class="dl-pct" id="dl-pct">0%</div>
       </div>
       <div class="dl-rarity-grid">
-        <div class="dl-rarity-cell"><div class="dlr-count" id="dl-common" style="color:#aaa">0</div><div class="dlr-label">⬜ Common</div></div>
-        <div class="dl-rarity-cell"><div class="dlr-count" id="dl-uncommon" style="color:#4D96FF">0</div><div class="dlr-label">🟦 Uncommon</div></div>
-        <div class="dl-rarity-cell"><div class="dlr-count" id="dl-epic" style="color:#FFD700">0</div><div class="dlr-label">🟨 Rare</div></div>
-        <div class="dl-rarity-cell"><div class="dlr-count" id="dl-legendary" style="color:#FF4444">0</div><div class="dlr-label">🟥 Legendary</div></div>
+        <div class="dl-rarity-cell"><div class="dlr-count" id="dl-common" style="color:#aaa">0</div><div class="dlr-label" id="lbl-rarity-common">⬜ Common</div></div>
+        <div class="dl-rarity-cell"><div class="dlr-count" id="dl-uncommon" style="color:#4D96FF">0</div><div class="dlr-label" id="lbl-rarity-uncommon">🟦 Uncommon</div></div>
+        <div class="dl-rarity-cell"><div class="dlr-count" id="dl-epic" style="color:#FFD700">0</div><div class="dlr-label" id="lbl-rarity-epic">🟨 Rare</div></div>
+        <div class="dl-rarity-cell"><div class="dlr-count" id="dl-legendary" style="color:#FF4444">0</div><div class="dlr-label" id="lbl-rarity-legendary">🟥 Legendary</div></div>
       </div>
       <div class="dl-list" id="dl-list"></div>
     </div>
 
     <!-- Tab: Chemistry Rules -->
     <div id="tab-rules" style="display:none;">
-      <div class="dl-count">Panduan Dasar Tabel Periodik</div>
-      <div class="quiz-note">Gunakan bagian ini sebagai referensi singkat saat mempelajari unsur.</div>
-      <div class="dd-section">
-        <h3>1. Golongan</h3><p>Unsur yang berada dalam satu golongan memiliki jumlah elektron valensi yang sama sehingga memiliki kemiripan sifat kimia.</p>
-      </div>
-      <div class="dd-section">
-        <h3>2. Periode</h3><p>Nomor periode menunjukkan jumlah kulit elektron utama yang terisi oleh elektron dalam atom.</p>
-      </div>
-      <div class="dd-section">
-        <h3>3. Nomor Atom</h3><p>Nomor atom menunjukkan jumlah proton dalam inti atom. Pada atom netral, jumlah proton sama dengan jumlah elektron.</p>
-      </div>
-      <div class="dd-section">
-        <h3>4. Pengelompokan Unsur</h3><p>Unsur dapat dikelompokkan menjadi logam (kiri/tengah), metaloid (sepanjang tangga pemisah), dan nonlogam (kanan).</p>
-      </div>
-      <div class="dd-section">
-        <h3>5. Tren Sifat Periodik</h3>
-        <ul>
-          <li><b>Jari-jari atom:</b> membesar dari atas ke bawah, mengecil dari kiri ke kanan.</li>
-          <li><b>Energi ionisasi:</b> meningkat dari kiri ke kanan, menurun dari atas ke bawah.</li>
-          <li><b>Keelektronegatifan:</b> meningkat ke arah kanan atas (Fluorin tertinggi).</li>
-          <li><b>Sifat logam:</b> meningkat ke arah kiri bawah (Fransium tertinggi).</li>
-        </ul>
-      </div>
-      <div class="dd-section">
-        <h3>6. Elektron Valensi & Konfigurasi</h3><p>Susunan elektron valensi pada kulit terluar sangat menentukan reaktivitas unsur, mengikuti prinsip Aufbau, Larangan Pauli, dan Aturan Hund.</p>
-      </div>
-      <div class="dd-section">
-        <h3>7. Kombinasi Ikatan Kimia</h3>
-        <ul>
-          <li><b>Logam + Logam:</b> membentuk campuran logam atau paduan (alloy), seperti Kuningan (Cu + Zn).</li>
-          <li><b>Nonlogam + Nonlogam:</b> membentuk senyawa kovalen melalui pemakaian elektron bersama (H₂O, CO₂).</li>
-          <li><b>Logam + Nonlogam:</b> membentuk ikatan ionik melalui serah terima elektron (NaCl).</li>
-        </ul>
-      </div>
-      <div class="dd-section">
-        <h3>8. Campuran vs Senyawa</h3>
-        <p><b>Campuran</b> mempertahankan sifat komponen asalnya tanpa reaksi kimia baru. <b>Senyawa</b> terbentuk dari ikatan kimia antarunsur dengan perbandingan tetap menghasilkan zat baru dengan karakteristik berbeda.</p>
-      </div>
+      <div class="dl-count" id="rules-main-title">Basic Periodic Table Rules</div>
+      <div class="quiz-note" id="rules-main-subtitle">Use this section as a quick study guide for chemistry fundamentals.</div>
+      <div id="rules-container"></div>
     </div>
 
     <!-- Tab: Statistics -->
     <div id="tab-stats" style="display:none">
       <div class="stats-summary">
-        <div class="stats-card"><div class="sc-val" id="stats-total">0</div><div class="sc-lbl">Total Scans</div></div>
-        <div class="stats-card"><div class="sc-val" id="stats-unique">0</div><div class="sc-lbl">Elements Used</div></div>
-        <div class="stats-card"><div class="sc-val" id="stats-found">0</div><div class="sc-lbl">Compounds Found</div></div>
+        <div class="stats-card"><div class="sc-val" id="stats-total">0</div><div class="sc-lbl" id="lbl-stat-total">Total Scans</div></div>
+        <div class="stats-card"><div class="sc-val" id="stats-unique">0</div><div class="sc-lbl" id="lbl-stat-unique">Elements Used</div></div>
+        <div class="stats-card"><div class="sc-val" id="stats-found">0</div><div class="sc-lbl" id="lbl-stat-found">Compounds Found</div></div>
       </div>
-      <div class="stats-title">Top 10 Most Scanned Elements</div>
+      <div class="stats-title" id="lbl-stat-top">Top 10 Most Scanned Elements</div>
       <div id="stats-chart"></div>
     </div>
   </div>
@@ -600,8 +581,8 @@
   <!-- Dedicated Full-Screen Discovery Detail View -->
   <div id="discoveryDetailPage">
     <div class="dd-header">
-      <button class="dd-back" onclick="closeDiscoveryDetail()">← Discovery Log</button>
-      <strong>Element Information</strong>
+      <button class="dd-back" onclick="closeDiscoveryDetail()">← <span id="dd-back-lbl">Discovery Log</span></button>
+      <strong id="dd-header-title">Element Information</strong>
     </div>
     <div class="dd-content" id="discoveryDetailContent"></div>
   </div>
@@ -610,8 +591,8 @@
   <div id="reset-modal">
     <div class="rm-box">
       <div class="rm-icon">⚠️</div>
-      <div class="rm-title">Reset All Progress?</div>
-      <div class="rm-body">
+      <div class="rm-title" id="rm-title">Reset All Progress?</div>
+      <div class="rm-body" id="rm-body">
         This will permanently delete:<br>
         <strong>• All discovered compounds</strong><br>
         <strong>• All scan statistics</strong><br>
@@ -619,8 +600,8 @@
         This action <strong style="color:#FF4444">cannot be undone</strong>.
       </div>
       <div class="rm-btns">
-        <button class="rm-cancel" onclick="closeResetModal()">Cancel</button>
-        <button class="rm-confirm" onclick="confirmReset()">Yes, Reset</button>
+        <button class="rm-cancel" onclick="closeResetModal()" id="rm-btn-cancel">Cancel</button>
+        <button class="rm-confirm" onclick="confirmReset()" id="rm-btn-confirm">Yes, Reset</button>
       </div>
     </div>
   </div>
@@ -630,6 +611,282 @@
   <button id="debug-toggle" onclick="toggleDebug()">LOG</button>
 
   <script>
+    // ── Internationalization (i18n) Engine ──
+    let currentLang = localStorage.getItem('appLanguage') || 'en';
+
+    const UI_STRINGS = {
+      en: {
+        langBtn: '🌐 EN | ID',
+        homeTitle: 'PERIODIC TABLE AR',
+        homeSubtitle: 'Explore elements, review discoveries, and test your knowledge.',
+        btnScan: 'Start Scanning',
+        subScan: 'Scan an element and explore its 3D model.',
+        btnLog: 'Discovery Log',
+        subLog: 'Review scanned elements, compounds, and progress.',
+        btnQuiz: 'Quiz',
+        subQuiz: 'Answer questions adapted to your activity.',
+        homeFooter: 'Progress is automatically saved to local storage.',
+        homeReturn: 'Home',
+        statusScanning: 'Scanning...',
+        statusFound: 'Found: ',
+        statusReady: 'Ready — scan another element',
+        statusNoReaction: '⚠️ No known reaction between ',
+        cameraDenied: 'Camera denied',
+        lockedText: ' locked',
+        scanSecond: 'scan 2nd element',
+        cancel: 'Cancel',
+        tapDetails: 'Tap for details • 🔒 Lock to mix',
+        tapFusion: 'Tap for details • 🔄 Scan again to mix more',
+        atomicNoPrefix: 'Atomic No. ',
+        epAtomicNumber: 'Atomic Number',
+        epAtomicMass: 'Atomic Mass',
+        epCategory: 'Category',
+        epState: 'State at RT',
+        epPeriodGroup: 'Period / Group',
+        epPeriod: 'Period',
+        epGroup: 'Group',
+        epConfig: 'Electron Config',
+        compoundCategory: 'Compound',
+        newDiscovery: '✨ NEW DISCOVERY',
+        logBtn: 'Log',
+        discoveryLogTitle: '📖 Discovery Log',
+        resetAllBtn: '🗑️ Reset All Progress',
+        tabElements: '⚛ Elements',
+        tabCompounds: '🧪 Compounds',
+        tabProgress: '📊 Progress',
+        tabRules: '📚 Chemistry Rules',
+        elementsDiscovered: 'Elements Discovered',
+        discoverHelp: 'Discover elements by scanning them.',
+        allElementsFound: 'All 118 elements discovered!',
+        elementsRemaining: ' elements remaining to discover.',
+        searchPlaceholder: '🔍 Search element or symbol...',
+        elementsScannedSuffix: ' elements scanned',
+        tapToReview: 'Tap an element to review its detailed parameters.',
+        noMatching: 'No matching elements found.',
+        noScansYet: 'No elements scanned yet.<br>Start scanning to build your Discovery Log.',
+        scansSingle: ' scan',
+        scansMulti: ' scans',
+        notScannedRecently: 'Not scanned recently',
+        compoundsDiscovered: ' discovered',
+        undiscovered: 'Undiscovered',
+        rarityCommon: '⬜ Common',
+        rarityUncommon: '🟦 Uncommon',
+        rarityEpic: '🟨 Rare',
+        rarityLegendary: '🟥 Legendary',
+        statTotal: 'Total Scans',
+        statUnique: 'Elements Used',
+        statFound: 'Compounds Found',
+        statTop: 'Top 10 Most Scanned Elements',
+        noScansRecorded: 'No scans recorded yet!',
+        rulesTitle: 'Basic Periodic Table Rules',
+        rulesSub: 'Use this section as a quick study guide for chemistry fundamentals.',
+        detailHeader: 'Element Information',
+        aboutPrefix: 'About ',
+        techMetrics: 'Technical & Activity Metrics',
+        timesScanned: 'Times Scanned',
+        lastScanned: 'Last Scanned',
+        quizAccuracy: 'Quiz Accuracy',
+        unattempted: 'Unattempted',
+        rmTitle: 'Reset All Progress?',
+        rmBody: 'This will permanently delete:<br><strong>• All discovered compounds</strong><br><strong>• All scan statistics</strong><br><strong>• Quiz performance records</strong><br><br>This action <strong style="color:#FF4444">cannot be undone</strong>.',
+        rmCancel: 'Cancel',
+        rmConfirm: 'Yes, Reset',
+        hintScan: 'Point camera at an element cell',
+        quizTitle: '? Adaptive Quiz',
+        quizNeedScan: 'Scan at least one element first.<br>Your quiz will adapt to your scanned elements.',
+        quizComplete: 'Quiz Complete',
+        quizCorrect: ' correct',
+        quizTryAnother: 'Try Another Set',
+        questionPrefix: 'Question ',
+        diffLevel: 'Difficulty L',
+        qAtomicNo: 'What is the atomic number of {name}?',
+        qSymbol: 'What is the chemical symbol of {name}?',
+        qCategory: 'Which category best describes {name}?',
+        qPeriod: 'In which period is {name} located?',
+        iosPermTitle: 'Motion Access Required',
+        iosPermDesc: 'To use AR on iPhone/iPad, the app requires camera and motion sensor access.',
+        iosPermBtn: 'Allow Camera & Motion'
+      },
+      id: {
+        langBtn: '🌐 ID | EN',
+        homeTitle: 'AR TABEL PERIODIK',
+        homeSubtitle: 'Eksplorasi unsur, pantau penemuan senyawa, dan uji pemahaman Anda.',
+        btnScan: 'Mulai Memindai',
+        subScan: 'Pindai unsur kimia dan amati model 3D interaktifnya.',
+        btnLog: 'Catatan Penemuan',
+        subLog: 'Tinjau riwayat unsur, koleksi senyawa, dan progres belajar.',
+        btnQuiz: 'Kuis Adaptif',
+        subQuiz: 'Jawab kuis yang dirancang khusus berdasarkan aktivitas pindai Anda.',
+        homeFooter: 'Progres otomatis tersimpan di memori lokal peramban.',
+        homeReturn: 'Menu',
+        statusScanning: 'Memindai...',
+        statusFound: 'Ditemukan: ',
+        statusReady: 'Siap — silakan pindai unsur lain',
+        statusNoReaction: '⚠️ Tidak ada reaksi yang tercatat antara ',
+        cameraDenied: 'Akses kamera ditolak',
+        lockedText: ' dikunci',
+        scanSecond: 'pindai unsur ke-2',
+        cancel: 'Batal',
+        tapDetails: 'Ketuk untuk rincian • 🔒 Kunci untuk gabung',
+        tapFusion: 'Ketuk untuk rincian • 🔄 Pindai lagi untuk senyawa lain',
+        atomicNoPrefix: 'Nomor Atom ',
+        epAtomicNumber: 'Nomor Atom',
+        epAtomicMass: 'Massa Atom',
+        epCategory: 'Kategori',
+        epState: 'Wujud (Suhu Kamar)',
+        epPeriodGroup: 'Periode / Golongan',
+        epPeriod: 'Periode',
+        epGroup: 'Golongan',
+        epConfig: 'Konfigurasi Elektron',
+        compoundCategory: 'Senyawa Kimia',
+        newDiscovery: '✨ SENYAWA BARU DITEMUKAN',
+        logBtn: 'Catatan',
+        discoveryLogTitle: '📖 Catatan Penemuan',
+        resetAllBtn: '🗑️ Reset Semua Progres',
+        tabElements: '⚛ Unsur',
+        tabCompounds: '🧪 Senyawa',
+        tabProgress: '📊 Progres',
+        tabRules: '📚 Panduan Kimia',
+        elementsDiscovered: 'Unsur Ditemukan',
+        discoverHelp: 'Temukan unsur dengan memindai tabel periodik fisik.',
+        allElementsFound: 'Semua 118 unsur berhasil ditemukan!',
+        elementsRemaining: ' unsur lagi untuk melengkapi koleksi.',
+        searchPlaceholder: '🔍 Cari nama unsur atau simbol...',
+        elementsScannedSuffix: ' unsur terpindai',
+        tapToReview: 'Ketuk unsur untuk meninjau parameter kimia lengkap.',
+        noMatching: 'Unsur tidak ditemukan.',
+        noScansYet: 'Belum ada unsur yang dipindai.<br>Mulai pemindaian untuk membuka catatan penemuan.',
+        scansSingle: ' kali',
+        scansMulti: ' kali',
+        notScannedRecently: 'Belum dipindai baru-baru ini',
+        compoundsDiscovered: ' senyawa ditemukan',
+        undiscovered: 'Belum Ditemukan',
+        rarityCommon: '⬜ Umum',
+        rarityUncommon: '🟦 Tidak Umum',
+        rarityEpic: '🟨 Langka',
+        rarityLegendary: '🟥 Legendaris',
+        statTotal: 'Total Pemindaian',
+        statUnique: 'Unsur Digunakan',
+        statFound: 'Senyawa Terbuka',
+        statTop: '10 Unsur Paling Sering Dipindai',
+        noScansRecorded: 'Belum ada data pemindaian!',
+        rulesTitle: 'Panduan Dasar Tabel Periodik',
+        rulesSub: 'Gunakan bagian ini sebagai referensi singkat saat mempelajari konsep kimia.',
+        detailHeader: 'Informasi Unsur',
+        aboutPrefix: 'Tentang ',
+        techMetrics: 'Parameter Teknis & Aktivitas',
+        timesScanned: 'Total Dipindai',
+        lastScanned: 'Terakhir Dipindai',
+        quizAccuracy: 'Akurasi Kuis',
+        unattempted: 'Belum Dicoba',
+        rmTitle: 'Reset Semua Progres?',
+        rmBody: 'Tindakan ini akan menghapus permanen:<br><strong>• Semua penemuan senyawa</strong><br><strong>• Semua statistik pemindaian</strong><br><strong>• Riwayat skor kuis</strong><br><br>Data yang dihapus <strong style="color:#FF4444">tidak dapat dikembalikan</strong>.',
+        rmCancel: 'Batal',
+        rmConfirm: 'Ya, Reset',
+        hintScan: 'Arahkan kamera ke kotak simbol unsur',
+        quizTitle: '? Kuis Adaptif',
+        quizNeedScan: 'Pindai minimal satu unsur terlebih dahulu.<br>Kuis akan menyesuaikan dengan materi yang sudah Anda pelajari.',
+        quizComplete: 'Kuis Selesai',
+        quizCorrect: ' benar',
+        quizTryAnother: 'Coba Set Soal Lain',
+        questionPrefix: 'Pertanyaan ',
+        diffLevel: 'Tingkat ',
+        qAtomicNo: 'Berapakah nomor atom dari {name}?',
+        qSymbol: 'Apakah lambang kimia dari unsur {name}?',
+        qCategory: 'Manakah kategori yang tepat untuk unsur {name}?',
+        qPeriod: 'Pada periode berapakah unsur {name} terletak?',
+        iosPermTitle: 'Akses Sensor Diperlukan',
+        iosPermDesc: 'Untuk menggunakan AR di iPhone/iPad, aplikasi memerlukan izin kamera dan sensor gerak.',
+        iosPermBtn: 'Izinkan Kamera & Sensor'
+      }
+    };
+
+    function t(key) {
+      return (UI_STRINGS[currentLang] && UI_STRINGS[currentLang][key]) || UI_STRINGS['en'][key] || key;
+    }
+
+    function toggleLanguage() {
+      currentLang = (currentLang === 'en') ? 'id' : 'en';
+      localStorage.setItem('appLanguage', currentLang);
+      applyLanguage();
+    }
+
+    function applyLanguage() {
+      // Buttons & Header
+      document.getElementById('home-lang-toggle').textContent = t('langBtn');
+      document.getElementById('top-lang-toggle').textContent  = t('langBtn');
+      document.getElementById('hm-title').textContent         = t('homeTitle');
+      document.getElementById('hm-subtitle').textContent      = t('homeSubtitle');
+      document.getElementById('hm-btn-scan').textContent      = t('btnScan');
+      document.getElementById('hm-sub-scan').textContent      = t('subScan');
+      document.getElementById('hm-btn-log').textContent       = t('btnLog');
+      document.getElementById('hm-sub-log').textContent       = t('subLog');
+      document.getElementById('hm-btn-quiz').textContent      = t('btnQuiz');
+      document.getElementById('hm-sub-quiz').textContent      = t('subQuiz');
+      document.getElementById('hm-footer').textContent        = t('homeFooter');
+      document.getElementById('hr-label').textContent         = t('homeReturn');
+      document.getElementById('lb-label').textContent         = t('logBtn');
+
+      // Scanner Texts
+      document.getElementById('hint').textContent             = t('hintScan');
+      document.getElementById('info-tap-hint').textContent    = t('tapDetails');
+      document.getElementById('f-hint').textContent           = t('tapFusion');
+      document.getElementById('dt-new-lbl').textContent       = t('newDiscovery');
+      document.getElementById('fusion-prompt-text').textContent = t('scanSecond');
+      document.getElementById('fusion-cancel-btn').textContent  = '✕ ' + t('cancel');
+
+      // Explanation Sheet Labels
+      document.getElementById('lbl-ep-number').textContent   = t('epAtomicNumber');
+      document.getElementById('lbl-ep-mass').textContent     = t('epAtomicMass');
+      document.getElementById('lbl-ep-category').textContent = t('epCategory');
+      document.getElementById('lbl-ep-state').textContent    = t('epState');
+      document.getElementById('lbl-ep-period').textContent   = t('epPeriodGroup');
+      document.getElementById('lbl-ep-config').textContent   = t('epConfig');
+
+      // Discovery Log Modal
+      document.getElementById('dp-main-title').textContent   = t('discoveryLogTitle');
+      document.getElementById('reset-btn').textContent       = t('resetAllBtn');
+      document.getElementById('dptab-elements').textContent  = t('tabElements');
+      document.getElementById('dptab-log').textContent       = t('tabCompounds');
+      document.getElementById('dptab-stats').textContent     = t('tabProgress');
+      document.getElementById('dptab-rules').textContent     = t('tabRules');
+      document.getElementById('el-prog-title').textContent   = t('elementsDiscovered');
+      document.getElementById('element-search').placeholder  = t('searchPlaceholder');
+      document.getElementById('el-quiz-note').textContent    = t('tapToReview');
+      
+      document.getElementById('lbl-rarity-common').textContent    = t('rarityCommon');
+      document.getElementById('lbl-rarity-uncommon').textContent  = t('rarityUncommon');
+      document.getElementById('lbl-rarity-epic').textContent      = t('rarityEpic');
+      document.getElementById('lbl-rarity-legendary').textContent = t('rarityLegendary');
+
+      document.getElementById('lbl-stat-total').textContent  = t('statTotal');
+      document.getElementById('lbl-stat-unique').textContent = t('statUnique');
+      document.getElementById('lbl-stat-found').textContent  = t('statFound');
+      document.getElementById('lbl-stat-top').textContent    = t('statTop');
+
+      // Reset Modal
+      document.getElementById('rm-title').textContent       = t('rmTitle');
+      document.getElementById('rm-body').innerHTML          = t('rmBody');
+      document.getElementById('rm-btn-cancel').textContent  = t('rmCancel');
+      document.getElementById('rm-btn-confirm').textContent = t('rmConfirm');
+
+      // iOS Permission
+      document.getElementById('ios-perm-title').textContent     = t('iosPermTitle');
+      document.getElementById('ios-perm-desc').textContent      = t('iosPermDesc');
+      document.getElementById('ios-permission-btn').textContent = t('iosPermBtn');
+      document.getElementById('ios-permission-cancel').textContent = t('cancel');
+
+      // Refresh dynamic UI elements
+      renderRulesTab();
+      if (document.getElementById('discovery-panel').style.display === 'flex') {
+        buildDiscoveryList();
+        buildElementLog(document.getElementById('element-search').value);
+        buildStatsChart();
+      }
+      if (currentSymbol) showElement(currentSymbol);
+      if (currentCompound) showFusionResult(currentCompound, [lockedElement, currentSymbol].sort().join('+'));
+    }
+
     // ── Debug Logger ──
     const debugPanel = document.getElementById('debug-panel');
     let debugVisible = true;
@@ -643,59 +900,59 @@
       debugPanel.scrollTop = debugPanel.scrollHeight;
     }
 
-    // ── Compounds Database ──
+    // ── Compounds Database (Bilingual) ──
     const COMPOUNDS = {
-      'H+O':   { formula:'H₂O',    name:'Water',                  equation:'2H₂ + O₂ → 2H₂O',      model:'models/compounds/water.glb',       desc:'The most essential compound for life. Covers 71% of Earth\'s surface. Universal solvent.' },
-      'H+CL':  { formula:'HCl',    name:'Hydrochloric Acid',      equation:'H₂ + Cl₂ → 2HCl',        model:'models/compounds/hcl.glb',         desc:'Strong acid found in stomach acid that aids digestion. Used in PVC production and industrial cleaning.' },
-      'H+N':   { formula:'NH₃',    name:'Ammonia',                equation:'N₂ + 3H₂ → 2NH₃',        model:'models/compounds/ammonia.glb',     desc:'Pungent-smelling gas used in fertilizers and cleaning products. Key industrial nitrogen compound.' },
-      'H+F':   { formula:'HF',     name:'Hydrofluoric Acid',      equation:'H₂ + F₂ → 2HF',          model:'models/compounds/hf.glb',          desc:'Extremely corrosive acid that dissolves glass and silica. Essential in semiconductor etching.' },
-      'H+BR':  { formula:'HBr',    name:'Hydrobromic Acid',       equation:'H₂ + Br₂ → 2HBr',        model:'models/compounds/hbr.glb',         desc:'Strong acid used in pharmaceutical synthesis and organic catalytic synthesis.' },
-      'H+I':   { formula:'HI',     name:'Hydroiodic Acid',        equation:'H₂ + I₂ → 2HI',          model:'models/compounds/hi.glb',          desc:'Strong acid and potent reducing agent used in organic synthesis.' },
-      'H+S':   { formula:'H₂S',    name:'Hydrogen Sulfide',       equation:'2H₂ + S₂ → 2H₂S',        model:'models/compounds/h2s.glb',         desc:'Toxic gas with a rotten egg smell. Found in volcanic emissions and natural gas deposits.' },
-      'H+LI':  { formula:'LiH',    name:'Lithium Hydride',        equation:'2Li + H₂ → 2LiH',         model:'models/compounds/lih.glb',         desc:'Lightweight solid with very high hydrogen storage capability. Used as a nuclear shielding component.' },
-      'H+NA':  { formula:'NaH',    name:'Sodium Hydride',         equation:'2Na + H₂ → 2NaH',         model:'models/compounds/nah.glb',         desc:'Strong combustible base used for deprotonation in organic chemistry synthesis.' },
-      'H+CA':  { formula:'CaH₂',   name:'Calcium Hydride',        equation:'Ca + H₂ → CaH₂',          model:'models/compounds/cah2.glb',        desc:'Desiccant reagent that reacts with trace moisture to evolve hydrogen gas.' },
-      'H+P':   { formula:'PH₃',    name:'Phosphine',              equation:'P₄ + 6H₂ → 4PH₃',        model:'models/compounds/ph3.glb',         desc:'Extremely toxic flammable gas used as a grain fumigant and in semiconductor doping.' },
-      'H+SI':  { formula:'SiH₄',   name:'Silane',                 equation:'Si + 2H₂ → SiH₄',        model:'models/compounds/sih4.glb',        desc:'Pyrophoric gas used to deposit ultra-pure silicon layers for microelectronics and solar panels.' },
-      'NA+O':  { formula:'Na₂O',   name:'Sodium Oxide',           equation:'4Na + O₂ → 2Na₂O',       model:'models/compounds/na2o.glb',        desc:'Basic metal oxide used as an essential component in ceramic and glass manufacturing.' },
-      'K+O':   { formula:'K₂O',    name:'Potassium Oxide',        equation:'4K + O₂ → 2K₂O',         model:'models/compounds/k2o.glb',         desc:'Highly reactive basic oxide used in specialized optical glasses and fertilizers.' },
-      'LI+O':  { formula:'Li₂O',   name:'Lithium Oxide',          equation:'4Li + O₂ → 2Li₂O',       model:'models/compounds/li2o.glb',        desc:'Thermal barrier ceramic and flux utilized in modern lithium battery cathode manufacturing.' },
-      'C+O':   { formula:'CO₂',    name:'Carbon Dioxide',         equation:'C + O₂ → CO₂',             model:'models/compounds/co2.glb',         desc:'Primary greenhouse gas essential for plant photosynthesis and carbonation cycles.' },
-      'CO+O':  { formula:'CO',     name:'Carbon Monoxide',        equation:'2C + O₂ → 2CO',           model:'models/compounds/co.glb',          desc:'Colorless, odorless, toxic gas that binds strongly to blood hemoglobin.' },
-      'FE+O':  { formula:'Fe₂O₃',  name:'Iron Oxide (Rust)',      equation:'4Fe + 3O₂ → 2Fe₂O₃',     model:'models/compounds/rust.glb',        desc:'Occurs naturally as hematite. The principal source of industrial iron metal.' },
-      'MG+O':  { formula:'MgO',    name:'Magnesium Oxide',        equation:'2Mg + O₂ → 2MgO',         model:'models/compounds/mgo.glb',         desc:'Refractory mineral with exceptional thermal stability used to line high-temperature furnaces.' },
-      'AL+O':  { formula:'Al₂O₃',  name:'Aluminum Oxide',         equation:'4Al + 3O₂ → 2Al₂O₃',     model:'models/compounds/al2o3.glb',       desc:'Naturally occurring as corundum (sapphire/ruby). Exceptional abrasive and ceramic insulator.' },
-      'SI+O':  { formula:'SiO₂',   name:'Silicon Dioxide',        equation:'Si + O₂ → SiO₂',          model:'models/compounds/sio2.glb',        desc:'Quartz and sand base; principal component for making window glass and silica wafers.' },
-      'CA+O':  { formula:'CaO',    name:'Quicklime',              equation:'2Ca + O₂ → 2CaO',         model:'models/compounds/quicklime.glb',   desc:'Alkaline material used in cement, steel purification, and environmental flue scrubbing.' },
-      'S+O':   { formula:'SO₂',    name:'Sulfur Dioxide',         equation:'S + O₂ → SO₂',             model:'models/compounds/so2.glb',         desc:'Pungent atmospheric gas produced in volcanic activity and sulfuric acid synthesis.' },
-      'N+O':   { formula:'NO₂',    name:'Nitrogen Dioxide',       equation:'N₂ + 2O₂ → 2NO₂',         model:'models/compounds/no2.glb',         desc:'Prominent reddish-brown photochemical smog component and intermediate in nitric acid creation.' },
-      'P+O':   { formula:'P₂O₅',   name:'Phosphorus Pentoxide',   equation:'4P + 5O₂ → 2P₂O₅',       model:'models/compounds/p2o5.glb',        desc:'Exceptionally aggressive dehydrating compound used across analytical organic chemistry.' },
-      'CU+O':  { formula:'CuO',    name:'Copper Oxide',           equation:'2Cu + O₂ → 2CuO',         model:'models/compounds/cuo.glb',         desc:'Black semiconductor oxide used in pigments, battery electrodes, and catalysts.' },
-      'ZN+O':  { formula:'ZnO',    name:'Zinc Oxide',             equation:'2Zn + O₂ → 2ZnO',         model:'models/compounds/zno.glb',         desc:'Broad-spectrum UV filter compound utilized in sunscreens, paints, and vulcanized rubber.' },
-      'TI+O':  { formula:'TiO₂',   name:'Titanium Dioxide',       equation:'Ti + O₂ → TiO₂',          model:'models/compounds/tio2.glb',        desc:'Highest refractive index white pigment used globally in coatings and solar photocatalysis.' },
-      'MN+O':  { formula:'MnO₂',   name:'Manganese Dioxide',      equation:'Mn + O₂ → MnO₂',          model:'models/compounds/mno2.glb',        desc:'Cathode active material in alkaline batteries and common laboratory oxidation catalyst.' },
-      'CR+O':  { formula:'Cr₂O₃',  name:'Chromium Oxide',         equation:'4Cr + 3O₂ → 2Cr₂O₃',     model:'models/compounds/cr2o3.glb',       desc:'Robust green mineral pigment that withstands severe abrasive and high-heat wear.' },
-      'NI+O':  { formula:'NiO',    name:'Nickel Oxide',           equation:'2Ni + O₂ → 2NiO',         model:'models/compounds/nio.glb',         desc:'Specialty ceramic coloring oxide and active precursor in solid oxide fuel cells.' },
-      'NA+CL': { formula:'NaCl',   name:'Table Salt',             equation:'2Na + Cl₂ → 2NaCl',      model:'models/compounds/salt.glb',        desc:'Essential electrolyte for life, standard culinary spice, and large-scale industrial feedstock.' },
-      'K+CL':  { formula:'KCl',    name:'Potassium Chloride',     equation:'2K + Cl₂ → 2KCl',         model:'models/compounds/kcl.glb',         desc:'Major potash fertilizer salt and critical medical electrolyte replenishment agent.' },
-      'CA+CL': { formula:'CaCl₂',  name:'Calcium Chloride',       equation:'Ca + Cl₂ → CaCl₂',        model:'models/compounds/cacl2.glb',       desc:'Extremely hygroscopic salt used for roadway de-icing and structural moisture control.' },
-      'MG+CL': { formula:'MgCl₂',  name:'Magnesium Chloride',     equation:'Mg + Cl₂ → MgCl₂',        model:'models/compounds/mgcl2.glb',       desc:'Seawater derived salt used for tofu coagulation (nigari) and magnesium extraction.' },
-      'AL+CL': { formula:'AlCl₃',  name:'Aluminum Chloride',      equation:'2Al + 3Cl₂ → 2AlCl₃',     model:'models/compounds/alcl3.glb',       desc:'Lewis acid catalyst fundamental for Friedel-Crafts alkylations and acylations.' },
-      'FE+CL': { formula:'FeCl₃',  name:'Iron(III) Chloride',     equation:'2Fe + 3Cl₂ → 2FeCl₃',     model:'models/compounds/fecl3.glb',       desc:'Wastewater flocculant and industrial chemical etchant for copper printed circuit boards.' },
-      'CU+CL': { formula:'CuCl₂',  name:'Copper Chloride',        equation:'Cu + Cl₂ → CuCl₂',        model:'models/compounds/cucl2.glb',       desc:'Catalyst used in industrial chemical chlorination and blue-green pyrotechnic displays.' },
-      'ZN+CL': { formula:'ZnCl₂',  name:'Zinc Chloride',          equation:'Zn + Cl₂ → ZnCl₂',        model:'models/compounds/zncl2.glb',       desc:'Soldering flux agent that strips oxide tarnish from contact metals.' },
-      'AG+CL': { formula:'AgCl',   name:'Silver Chloride',        equation:'2Ag + Cl₂ → 2AgCl',       model:'models/compounds/agcl.glb',        desc:'Photosensitive salt historically foundational in traditional silver halide photography.' },
-      'FE+S':  { formula:'FeS₂',   name:'Iron Pyrite (Fool\'s Gold)', equation:'Fe + 2S → FeS₂',      model:'models/compounds/fes.glb',         desc:'Brass-yellow sulfide mineral historically mistaken for gold; major source of sulfur dioxide.' },
-      'CU+S':  { formula:'CuS',    name:'Copper Sulfide',         equation:'Cu + S → CuS',             model:'models/compounds/cus.glb',         desc:'Naturally occurring covellite mineral used in solar thin films and copper refining.' },
-      'ZN+S':  { formula:'ZnS',    name:'Zinc Sulfide',           equation:'Zn + S → ZnS',             model:'models/compounds/zns.glb',         desc:'Phosphorescent semiconductor base for glow materials and infrared optical windows.' },
-      'PB+S':  { formula:'PbS',    name:'Lead Sulfide (Galena)',  equation:'Pb + S → PbS',             model:'models/compounds/pbs.glb',         desc:'Chief ore of lead metal; historically utilized as radio crystal detectors.' },
-      'HG+S':  { formula:'HgS',    name:'Cinnabar',               equation:'Hg + S → HgS',             model:'models/compounds/hgs.glb',         desc:'Scarlet red pigment mineral (vermilion) and historical source of elemental mercury.' },
-      'C+H':   { formula:'CH₄',    name:'Methane',                equation:'C + 2H₂ → CH₄',            model:'models/compounds/methane.glb',     desc:'Primary hydrocarbon component of natural gas fuel and major atmospheric greenhouse gas.' },
-      'CU+ZN': { formula:'CuZn',   name:'Brass',                  equation:'Cu + Zn → CuZn alloy',     model:'models/compounds/brass.glb',       desc:'Malleable golden alloy with acoustic resonance used extensively in instruments and fittings.' },
-      'CU+SN': { formula:'CuSn',   name:'Bronze',                 equation:'Cu + Sn → CuSn alloy',     model:'models/compounds/bronze.glb',      desc:'Historic alloy that revolutionized human tools, weaponry, bells, and precision bearings.' },
-      'FE+CR': { formula:'FeCr',   name:'Stainless Steel',        equation:'Fe + Cr → FeCr alloy',     model:'models/compounds/stainless.glb',   desc:'Passivated iron alloy with exceptional corrosion resistance for cutlery and surgical tools.' },
-      'AL+CU': { formula:'AlCu',   name:'Duralumin',              equation:'Al + Cu → AlCu alloy',     model:'models/compounds/duralumin.glb',   desc:'Age-hardened lightweight aluminum alloy fundamental to aeronautical engineering.' },
-      'NI+TI': { formula:'NiTi',   name:'Nitinol (Shape Memory)', equation:'Ni + Ti → NiTi alloy',     model:'models/compounds/nitinol.glb',     desc:'Smart shape-memory metal that springs back to its heat-set shape; vital for medical stents.' }
+      'H+O':   { formula:'H₂O',    name:{ en:'Water', id:'Air' },                  equation:'2H₂ + O₂ → 2H₂O',      model:'models/compounds/water.glb',       desc:{ en:'The most essential compound for life. Covers 71% of Earth\'s surface. Universal solvent.', id:'Senyawa paling esensial bagi kehidupan. Menutupi 71% permukaan bumi dan bertindak sebagai pelarut universal.' } },
+      'H+CL':  { formula:'HCl',    name:{ en:'Hydrochloric Acid', id:'Asam Klorida' }, equation:'H₂ + Cl₂ → 2HCl',        model:'models/compounds/hcl.glb',         desc:{ en:'Strong acid found in stomach acid that aids digestion. Used in PVC production and industrial cleaning.', id:'Asam kuat yang terdapat pada cairan lambung untuk mencerna makanan serta digunakan dalam produksi PVC.' } },
+      'H+N':   { formula:'NH₃',    name:{ en:'Ammonia', id:'Amonia' },             equation:'N₂ + 3H₂ → 2NH₃',        model:'models/compounds/ammonia.glb',     desc:{ en:'Pungent-smelling gas used in fertilizers and cleaning products. Key industrial nitrogen compound.', id:'Gas berbau menyengat yang menjadi bahan baku utama pupuk tanaman dan produk pembersih industri.' } },
+      'H+F':   { formula:'HF',     name:{ en:'Hydrofluoric Acid', id:'Asam Fluorida' }, equation:'H₂ + F₂ → 2HF',          model:'models/compounds/hf.glb',          desc:{ en:'Extremely corrosive acid that dissolves glass and silica. Essential in semiconductor etching.', id:'Asam sangat korosif yang dapat melarutkan kaca dan silika; vital pada proses etsa semikonduktor.' } },
+      'H+BR':  { formula:'HBr',    name:{ en:'Hydrobromic Acid', id:'Asam Bromida' }, equation:'H₂ + Br₂ → 2HBr',        model:'models/compounds/hbr.glb',         desc:{ en:'Strong acid used in pharmaceutical synthesis and organic catalytic synthesis.', id:'Asam kuat yang digunakan dalam sintesis farmasi dan katalis sintesis organik.' } },
+      'H+I':   { formula:'HI',     name:{ en:'Hydroiodic Acid', id:'Asam Iodida' }, equation:'H₂ + I₂ → 2HI',          model:'models/compounds/hi.glb',          desc:{ en:'Strong acid and potent reducing agent used in organic synthesis.', id:'Asam kuat dan agen pereduksi kuat yang banyak digunakan dalam sintesis kimia organik.' } },
+      'H+S':   { formula:'H₂S',    name:{ en:'Hydrogen Sulfide', id:'Hidrogen Sulfida' }, equation:'2H₂ + S₂ → 2H₂S',        model:'models/compounds/h2s.glb',         desc:{ en:'Toxic gas with a rotten egg smell. Found in volcanic emissions and natural gas deposits.', id:'Gas beracun berbau khas telur busuk yang ditemukan pada emisi kawah vulkanik dan gas alam.' } },
+      'H+LI':  { formula:'LiH',    name:{ en:'Lithium Hydride', id:'Litium Hidrida' }, equation:'2Li + H₂ → 2LiH',         model:'models/compounds/lih.glb',         desc:{ en:'Lightweight solid with very high hydrogen storage capability. Used as a nuclear shielding component.', id:'Padatan ringan dengan kapasitas penyimpanan hidrogen sangat tinggi; peredam radiasi nuklir.' } },
+      'H+NA':  { formula:'NaH',    name:{ en:'Sodium Hydride', id:'Natrium Hidrida' }, equation:'2Na + H₂ → 2NaH',         model:'models/compounds/nah.glb',         desc:{ en:'Strong combustible base used for deprotonation in organic chemistry synthesis.', id:'Basa kuat yang mudah terbakar, digunakan sebagai agen deprotonasi dalam reaksi sintesis organik.' } },
+      'H+CA':  { formula:'CaH₂',   name:{ en:'Calcium Hydride', id:'Kalsium Hidrida' }, equation:'Ca + H₂ → CaH₂',          model:'models/compounds/cah2.glb',        desc:{ en:'Desiccant reagent that reacts with trace moisture to evolve hydrogen gas.', id:'Reagen pengering (desikan) yang bereaksi dengan uap air menghasilkan gas hidrogen.' } },
+      'H+P':   { formula:'PH₃',    name:{ en:'Phosphine', id:'Fosfina' },           equation:'P₄ + 6H₂ → 4PH₃',        model:'models/compounds/ph3.glb',         desc:{ en:'Extremely toxic flammable gas used as a grain fumigant and in semiconductor doping.', id:'Gas sangat beracun dan mudah menyala yang digunakan untuk fumigasi gudang pangan dan semikonduktor.' } },
+      'H+SI':  { formula:'SiH₄',   name:{ en:'Silane', id:'Silana' },              equation:'Si + 2H₂ → SiH₄',        model:'models/compounds/sih4.glb',        desc:{ en:'Pyrophoric gas used to deposit ultra-pure silicon layers for microelectronics and solar panels.', id:'Gas piroforik untuk mendeposisikan lapisan silikon ultra-murni pada panel surya dan microchip.' } },
+      'NA+O':  { formula:'Na₂O',   name:{ en:'Sodium Oxide', id:'Natrium Oksida' }, equation:'4Na + O₂ → 2Na₂O',       model:'models/compounds/na2o.glb',        desc:{ en:'Basic metal oxide used as an essential component in ceramic and glass manufacturing.', id:'Oksida logam basa yang menjadi komponen penting dalam industri manufaktur keramik dan kaca.' } },
+      'K+O':   { formula:'K₂O',    name:{ en:'Potassium Oxide', id:'Kalium Oksida' }, equation:'4K + O₂ → 2K₂O',         model:'models/compounds/k2o.glb',         desc:{ en:'Highly reactive basic oxide used in specialized optical glasses and fertilizers.', id:'Oksida basa reaktif yang dimanfaatkan pada kaca optik khusus serta formulasi pupuk.' } },
+      'LI+O':  { formula:'Li₂O',   name:{ en:'Lithium Oxide', id:'Litium Oksida' }, equation:'4Li + O₂ → 2Li₂O',       model:'models/compounds/li2o.glb',        desc:{ en:'Thermal barrier ceramic and flux utilized in modern lithium battery cathode manufacturing.', id:'Bahan keramik penghalang termal dan fluks dalam pembuatan katoda baterai litium modern.' } },
+      'C+O':   { formula:'CO₂',    name:{ en:'Carbon Dioxide', id:'Karbon Dioksida' }, equation:'C + O₂ → CO₂',             model:'models/compounds/co2.glb',         desc:{ en:'Primary greenhouse gas essential for plant photosynthesis and carbonation cycles.', id:'Gas rumah kaca utama yang dibutuhkan tumbuhan untuk fotosintesis dan siklus karbon bumi.' } },
+      'CO+O':  { formula:'CO',     name:{ en:'Carbon Monoxide', id:'Karbon Monoksida' }, equation:'2C + O₂ → 2CO',           model:'models/compounds/co.glb',          desc:{ en:'Colorless, odorless, toxic gas that binds strongly to blood hemoglobin.', id:'Gas beracun tanpa warna dan bau yang mengikat kuat hemoglobin dalam sel darah merah.' } },
+      'FE+O':  { formula:'Fe₂O₃',  name:{ en:'Iron Oxide (Rust)', id:'Besi(III) Oksida (Karat)' }, equation:'4Fe + 3O₂ → 2Fe₂O₃',     model:'models/compounds/rust.glb',        desc:{ en:'Occurs naturally as hematite. The principal source of industrial iron metal.', id:'Terbentuk alami sebagai mineral hematit; merupakan sumber bijih utama industri logam besi.' } },
+      'MG+O':  { formula:'MgO',    name:{ en:'Magnesium Oxide', id:'Magnesium Oksida' }, equation:'2Mg + O₂ → 2MgO',         model:'models/compounds/mgo.glb',         desc:{ en:'Refractory mineral with exceptional thermal stability used to line high-temperature furnaces.', id:'Mineral tahan panas dengan stabilitas termal tinggi untuk melapisi dinding tungku peleburan.' } },
+      'AL+O':  { formula:'Al₂O₃',  name:{ en:'Aluminum Oxide', id:'Aluminium Oksida' }, equation:'4Al + 3O₂ → 2Al₂O₃',     model:'models/compounds/al2o3.glb',       desc:{ en:'Naturally occurring as corundum (sapphire/ruby). Exceptional abrasive and ceramic insulator.', id:'Ditemukan alami sebagai korundum (safir/rubi); bahan abrasif dan isolator keramik unggul.' } },
+      'SI+O':  { formula:'SiO₂',   name:{ en:'Silicon Dioxide', id:'Silikon Dioksida' }, equation:'Si + O₂ → SiO₂',          model:'models/compounds/sio2.glb',        desc:{ en:'Quartz and sand base; principal component for making window glass and silica wafers.', id:'Mineral kuarsa dan komponen utama pasir; bahan baku pembuatan kaca jendela dan wafer silikon.' } },
+      'CA+O':  { formula:'CaO',    name:{ en:'Quicklime', id:'Kalsium Oksida (Kapur Tohor)' }, equation:'2Ca + O₂ → 2CaO',         model:'models/compounds/quicklime.glb',   desc:{ en:'Alkaline material used in cement, steel purification, and environmental flue scrubbing.', id:'Zat basa kuat yang digunakan dalam semen bangunan, pemurnian baja, dan netralisasi limbah.' } },
+      'S+O':   { formula:'SO₂',    name:{ en:'Sulfur Dioxide', id:'Belerang Dioksida' }, equation:'S + O₂ → SO₂',             model:'models/compounds/so2.glb',         desc:{ en:'Pungent atmospheric gas produced in volcanic activity and sulfuric acid synthesis.', id:'Gas berbau tajam hasil letusan gunung berapi dan zat perantara dalam pembuatan asam sulfat.' } },
+      'N+O':   { formula:'NO₂',    name:{ en:'Nitrogen Dioxide', id:'Nitrogen Dioksida' }, equation:'N₂ + 2O₂ → 2NO₂',         model:'models/compounds/no2.glb',         desc:{ en:'Prominent reddish-brown photochemical smog component and intermediate in nitric acid creation.', id:'Gas polutan berwarna cokelat kemerahan pada asap fotokimia dan zat antara pembuatan asam nitrat.' } },
+      'P+O':   { formula:'P₂O₅',   name:{ en:'Phosphorus Pentoxide', id:'Fosfor Pentoksida' }, equation:'4P + 5O₂ → 2P₂O₅',       model:'models/compounds/p2o5.glb',        desc:{ en:'Exceptionally aggressive dehydrating compound used across analytical organic chemistry.', id:'Senyawa penarik air (dehidrator) sangat kuat yang digunakan dalam analisis kimia organik.' } },
+      'CU+O':  { formula:'CuO',    name:{ en:'Copper Oxide', id:'Tembaga(II) Oksida' }, equation:'2Cu + O₂ → 2CuO',         model:'models/compounds/cuo.glb',         desc:{ en:'Black semiconductor oxide used in pigments, battery electrodes, and catalysts.', id:'Oksida semikonduktor hitam untuk pigmen keramik, elektroda baterai, dan katalis reaksi.' } },
+      'ZN+O':  { formula:'ZnO',    name:{ en:'Zinc Oxide', id:'Seng Oksida' }, equation:'2Zn + O₂ → 2ZnO',         model:'models/compounds/zno.glb',         desc:{ en:'Broad-spectrum UV filter compound utilized in sunscreens, paints, and vulcanized rubber.', id:'Senyawa penyaring sinar UV yang digunakan pada tabir surya, cat putih, dan pengolahan karet.' } },
+      'TI+O':  { formula:'TiO₂',   name:{ en:'Titanium Dioxide', id:'Titanium Dioksida' }, equation:'Ti + O₂ → TiO₂',          model:'models/compounds/tio2.glb',        desc:{ en:'Highest refractive index white pigment used globally in coatings and solar photocatalysis.', id:'Pigmen putih berdaya bias sangat tinggi untuk cat dinding, kosmetik, dan fotokatalisis.' } },
+      'MN+O':  { formula:'MnO₂',   name:{ en:'Manganese Dioxide', id:'Mangan Dioksida' }, equation:'Mn + O₂ → MnO₂',          model:'models/compounds/mno2.glb',        desc:{ en:'Cathode active material in alkaline batteries and common laboratory oxidation catalyst.', id:'Bahan aktif katoda pada baterai alkalin dan katalis oksidasi di laboratorium kimia.' } },
+      'CR+O':  { formula:'Cr₂O₃',  name:{ en:'Chromium Oxide', id:'Kromium(III) Oksida' }, equation:'4Cr + 3O₂ → 2Cr₂O₃',     model:'models/compounds/cr2o3.glb',       desc:{ en:'Robust green mineral pigment that withstands severe abrasive and high-heat wear.', id:'Pigmen hijau berkekuatan tinggi yang tahan gesekan mekanis dan temperatur ekstrem.' } },
+      'NI+O':  { formula:'NiO',    name:{ en:'Nickel Oxide', id:'Nikel Oksida' }, equation:'2Ni + O₂ → 2NiO',         model:'models/compounds/nio.glb',         desc:{ en:'Specialty ceramic coloring oxide and active precursor in solid oxide fuel cells.', id:'Bahan pewarna keramik khusus dan komponen aktif sel bahan bakar padat (fuel cells).' } },
+      'NA+CL': { formula:'NaCl',   name:{ en:'Table Salt', id:'Garam Dapur' }, equation:'2Na + Cl₂ → 2NaCl',      model:'models/compounds/salt.glb',        desc:{ en:'Essential electrolyte for life, standard culinary spice, and large-scale industrial feedstock.', id:'Elektrolit esensial bagi tubuh, bumbu masak utama, dan bahan baku industri petrokimia.' } },
+      'K+CL':  { formula:'KCl',    name:{ en:'Potassium Chloride', id:'Kalium Klorida' }, equation:'2K + Cl₂ → 2KCl',         model:'models/compounds/kcl.glb',         desc:{ en:'Major potash fertilizer salt and critical medical electrolyte replenishment agent.', id:'Garam pupuk kalium utama dan larutan elektrolit medis untuk mengatasi defisiensi kalium.' } },
+      'CA+CL': { formula:'CaCl₂',  name:{ en:'Calcium Chloride', id:'Kalsium Klorida' }, equation:'Ca + Cl₂ → CaCl₂',        model:'models/compounds/cacl2.glb',       desc:{ en:'Extremely hygroscopic salt used for roadway de-icing and structural moisture control.', id:'Garam higroskopis tinggi untuk pencair es jalan raya dan penyerap kelembapan udara.' } },
+      'MG+CL': { formula:'MgCl₂',  name:{ en:'Magnesium Chloride', id:'Magnesium Klorida' }, equation:'Mg + Cl₂ → MgCl₂',        model:'models/compounds/mgcl2.glb',       desc:{ en:'Seawater derived salt used for tofu coagulation (nigari) and magnesium extraction.', id:'Garam air laut untuk koagulan pembuatan tahu (nigari) dan bahan baku ekstraksi magnesium.' } },
+      'AL+CL': { formula:'AlCl₃',  name:{ en:'Aluminum Chloride', id:'Aluminium Klorida' }, equation:'2Al + 3Cl₂ → 2AlCl₃',     model:'models/compounds/alcl3.glb',       desc:{ en:'Lewis acid catalyst fundamental for Friedel-Crafts alkylations and acylations.', id:'Katalis asam Lewis yang esensial dalam reaksi alkilasi dan asilasi Friedel-Crafts organik.' } },
+      'FE+CL': { formula:'FeCl₃',  name:{ en:'Iron(III) Chloride', id:'Besi(III) Klorida' }, equation:'2Fe + 3Cl₂ → 2FeCl₃',     model:'models/compounds/fecl3.glb',       desc:{ en:'Wastewater flocculant and industrial chemical etchant for copper printed circuit boards.', id:'Koagulan pengolahan limbah air dan larutan etsa pelarut tembaga pada papan PCB elektronik.' } },
+      'CU+CL': { formula:'CuCl₂',  name:{ en:'Copper Chloride', id:'Tembaga(II) Klorida' }, equation:'Cu + Cl₂ → CuCl₂',        model:'models/compounds/cucl2.glb',       desc:{ en:'Catalyst used in industrial chemical chlorination and blue-green pyrotechnic displays.', id:'Katalis reaksi klorinasi industri dan penghasil percikan warna biru kehijauan pada kembang api.' } },
+      'ZN+CL': { formula:'ZnCl₂',  name:{ en:'Zinc Chloride', id:'Seng Klorida' }, equation:'Zn + Cl₂ → ZnCl₂',        model:'models/compounds/zncl2.glb',       desc:{ en:'Soldering flux agent that strips oxide tarnish from contact metals.', id:'Bahan fluks penyolderan logam untuk membersihkan karat oksida sebelum penyambungan timah.' } },
+      'AG+CL': { formula:'AgCl',   name:{ en:'Silver Chloride', id:'Perak Klorida' }, equation:'2Ag + Cl₂ → 2AgCl',       model:'models/compounds/agcl.glb',        desc:{ en:'Photosensitive salt historically foundational in traditional silver halide photography.', id:'Garam peka cahaya yang menjadi dasar emulsi film fotografi perak halida tradisional.' } },
+      'FE+S':  { formula:'FeS₂',   name:{ en:'Iron Pyrite (Fool\'s Gold)', id:'Pirit Besi (Emas Palsu)' }, equation:'Fe + 2S → FeS₂',      model:'models/compounds/fes.glb',         desc:{ en:'Brass-yellow sulfide mineral historically mistaken for gold; major source of sulfur dioxide.', id:'Mineral sulfida berwarna kuning emas berkilau; sumber utama pembuatan gas belerang dioksida.' } },
+      'CU+S':  { formula:'CuS',    name:{ en:'Copper Sulfide', id:'Tembaga(II) Sulfida' }, equation:'Cu + S → CuS',             model:'models/compounds/cus.glb',         desc:{ en:'Naturally occurring covellite mineral used in solar thin films and copper refining.', id:'Mineral alami kovelit yang dimanfaatkan pada lapisan tipis sel surya dan pemurnian tembaga.' } },
+      'ZN+S':  { formula:'ZnS',    name:{ en:'Zinc Sulfide', id:'Seng Sulfida' }, equation:'Zn + S → ZnS',             model:'models/compounds/zns.glb',         desc:{ en:'Phosphorescent semiconductor base for glow materials and infrared optical windows.', id:'Semikonduktor fosforesen untuk materi berpendar dalam gelap (glow) dan jendela optik inframerah.' } },
+      'PB+S':  { formula:'PbS',    name:{ en:'Lead Sulfide (Galena)', id:'Timbal Sulfida (Galena)' }, equation:'Pb + S → PbS',             model:'models/compounds/pbs.glb',         desc:{ en:'Chief ore of lead metal; historically utilized as radio crystal detectors.', id:'Bijih mineral utama timbal yang dahulu digunakan sebagai detektor gelombang radio kristal.' } },
+      'HG+S':  { formula:'HgS',    name:{ en:'Cinnabar', id:'Sinabar (Raksa Sulfida)' }, equation:'Hg + S → HgS',             model:'models/compounds/hgs.glb',         desc:{ en:'Scarlet red pigment mineral (vermilion) and historical source of elemental mercury.', id:'Mineral merah kirmizi (vermilion) dan sumber utama penambangan raksa/merkuri alami.' } },
+      'C+H':   { formula:'CH₄',    name:{ en:'Methane', id:'Metana' }, equation:'C + 2H₂ → CH₄',            model:'models/compounds/methane.glb',     desc:{ en:'Primary hydrocarbon component of natural gas fuel and major atmospheric greenhouse gas.', id:'Komponen hidrokarbon utama gas alam untuk bahan bakar dan gas rumah kaca atmosferik.' } },
+      'CU+ZN': { formula:'CuZn',   name:{ en:'Brass', id:'Kuningan' }, equation:'Cu + Zn → CuZn alloy',     model:'models/compounds/brass.glb',       desc:{ en:'Malleable golden alloy with acoustic resonance used extensively in instruments and fittings.', id:'Paduan logam tembaga-seng beresonansi merdu untuk alat musik tiup dan sanitasi air.' } },
+      'CU+SN': { formula:'CuSn',   name:{ en:'Bronze', id:'Perunggu' }, equation:'Cu + Sn → CuSn alloy',     model:'models/compounds/bronze.glb',      desc:{ en:'Historic alloy that revolutionized human tools, weaponry, bells, and precision bearings.', id:'Paduan tembaga-timah bersejarah yang mengawali zaman perunggu, patung, lonceng, dan bantalan mesin.' } },
+      'FE+CR': { formula:'FeCr',   name:{ en:'Stainless Steel', id:'Baja Tahan Karat' }, equation:'Fe + Cr → FeCr alloy',     model:'models/compounds/stainless.glb',   desc:{ en:'Passivated iron alloy with exceptional corrosion resistance for cutlery and surgical tools.', id:'Paduan besi-kromium yang tahan karat untuk peralatan bedah medis dan peralatan masak.' } },
+      'AL+CU': { formula:'AlCu',   name:{ en:'Duralumin', id:'Duralumin' }, equation:'Al + Cu → AlCu alloy',     model:'models/compounds/duralumin.glb',   desc:{ en:'Age-hardened lightweight aluminum alloy fundamental to aeronautical engineering.', id:'Paduan aluminium kuat dan ringan yang menjadi material krusial dalam konstruksi pesawat terbang.' } },
+      'NI+TI': { formula:'NiTi',   name:{ en:'Nitinol (Shape Memory)', id:'Nitinol (Logam Pengingat Bentuk)' }, equation:'Ni + Ti → NiTi alloy',     model:'models/compounds/nitinol.glb',     desc:{ en:'Smart shape-memory metal that springs back to its heat-set shape; vital for medical stents.', id:'Logam pintar yang dapat kembali ke bentuk aslinya saat dipanaskan; vital untuk ring jantung/stent.' } }
     };
 
     const LEGENDARY_KEYS = ['NI+TI','AU+O','HG+AU','NA+HG','C+W','B+TI','MO+S','CU+ZN','CU+SN','FE+CR','AL+CU','AG+CU','AU+CU','PB+SN'];
@@ -703,41 +960,66 @@
     const UNCOMMON_KEYS  = ['H+F','H+BR','H+I','H+LI','H+NA','H+CA','H+P','H+SI','K+O','LI+O','FE+CL','CU+CL','ZN+CL','AL+CL','PB+O','SN+O','BA+O','SR+O','FE+S','CU+S','ZN+S','MN+S','AG+S','NA+S','CA+S','AL+S','LI+N','MG+N','AL+N','SI+N','B+N','FE+N','CA+P','NA+P','FE+P','ZN+P','K+I','NA+I','NA+BR','K+BR','MG+BR','W+S','BI+S','SN+S','NA+CR','K+CR','K+MN','NA+AL'];
 
     function getCompoundRarity(key) {
-      if (LEGENDARY_KEYS.includes(key)) return { tier:'legendary', label:'🟥 Legendary', color:'#FF4444' };
-      if (EPIC_KEYS.includes(key))      return { tier:'epic',      label:'🟨 Rare',      color:'#FFD700' };
-      if (UNCOMMON_KEYS.includes(key))  return { tier:'uncommon',  label:'🟦 Uncommon',  color:'#4D96FF' };
-      return { tier:'common', label:'⬜ Common', color:'#aaaaaa' };
+      if (LEGENDARY_KEYS.includes(key)) return { tier:'legendary', label: t('rarityLegendary'), color:'#FF4444' };
+      if (EPIC_KEYS.includes(key))      return { tier:'epic',      label: t('rarityEpic'),      color:'#FFD700' };
+      if (UNCOMMON_KEYS.includes(key))  return { tier:'uncommon',  label: t('rarityUncommon'),  color:'#4D96FF' };
+      return { tier:'common', label: t('rarityCommon'), color:'#aaaaaa' };
     }
 
-    // ── Elements Database (118) ──
+    // ── Elements Database (118 Elements, Bilingual) ──
     const ELEMENTS = {
-      'H':   { name:'Hydrogen',      number:1,   color:'#FF6B6B', shape:'sphere',   model:'models/hydrogen.glb',      mass:'1.008 u',     category:'Reactive Nonmetal',    state:'Gas',    period:'1', group:'1',  config:'1s¹',               desc:'The lightest and most abundant element in the universe. Found in stars, water, and all organic life.' },
-      'HE':  { name:'Helium',        number:2,   color:'#FFD93D', shape:'sphere',   model:'models/helium.glb',        mass:'4.003 u',     category:'Noble Gas',            state:'Gas',    period:'1', group:'18', config:'1s²',               desc:'Inert, lightweight noble gas used in cryogenics, MRI cooling, and buoyant balloons.' },
-      'LI':  { name:'Lithium',       number:3,   color:'#6BCB77', shape:'box',      model:'models/lithium.glb',       mass:'6.941 u',     category:'Alkali Metal',         state:'Solid',  period:'2', group:'1',  config:'[He] 2s¹',          desc:'Soft, low-density alkali metal critical for rechargeable lithium-ion battery technology.' },
-      'BE':  { name:'Beryllium',     number:4,   color:'#4D96FF', shape:'box',      model:'models/beryllium.glb',     mass:'9.012 u',     category:'Alkaline Earth Metal', state:'Solid',  period:'2', group:'2',  config:'[He] 2s²',          desc:'Lightweight structural metal with high stiffness used in aerospace instruments and X-ray windows.' },
-      'B':   { name:'Boron',         number:5,   color:'#FF8C00', shape:'cone',     model:'models/boron.glb',         mass:'10.811 u',    category:'Metalloid',            state:'Solid',  period:'2', group:'13', config:'[He] 2s² 2p¹',      desc:'Metalloid element used in borosilicate thermal glassware, ceramics, and structural semiconductors.' },
-      'C':   { name:'Carbon',        number:6,   color:'#555555', shape:'box',      model:'models/carbon.glb',        mass:'12.011 u',    category:'Reactive Nonmetal',    state:'Solid',  period:'2', group:'14', config:'[He] 2s² 2p²',      desc:'The chemical backbone of organic life, forming diamond, graphite, carbon nanotubes, and fullerenes.' },
-      'N':   { name:'Nitrogen',      number:7,   color:'#4D96FF', shape:'sphere',   model:'models/nitrogen.glb',      mass:'14.007 u',    category:'Reactive Nonmetal',    state:'Gas',    period:'2', group:'15', config:'[He] 2s² 2p³',      desc:'Constitutes 78% of Earth\'s atmosphere. Fundamental to nucleic acids and amino acids.' },
-      'O':   { name:'Oxygen',        number:8,   color:'#FF4444', shape:'sphere',   model:'models/oxygen.glb',        mass:'15.999 u',    category:'Reactive Nonmetal',    state:'Gas',    period:'2', group:'16', config:'[He] 2s² 2p⁴',      desc:'Highly electronegative gas essential for cellular aerobic respiration and planetary combustion.' },
-      'F':   { name:'Fluorine',      number:9,   color:'#FFD93D', shape:'sphere',   model:'models/fluorine.glb',      mass:'18.998 u',    category:'Reactive Nonmetal',    state:'Gas',    period:'2', group:'17', config:'[He] 2s² 2p⁵',      desc:'The most electronegative and reactive element, used in fluoropolymers and dental enamel protection.' },
-      'NE':  { name:'Neon',          number:10,  color:'#FF6EC7', shape:'sphere',   model:'models/neon.glb',          mass:'20.180 u',    category:'Noble Gas',            state:'Gas',    period:'2', group:'18', config:'[He] 2s² 2p⁶',      desc:'Chemically inert noble gas renowned for its vibrant reddish-orange electrical discharge glow.' },
-      'NA':  { name:'Sodium',        number:11,  color:'#6BCB77', shape:'box',      model:'models/sodium.glb',        mass:'22.990 u',    category:'Alkali Metal',         state:'Solid',  period:'3', group:'1',  config:'[Ne] 3s¹',          desc:'Soft, highly reactive alkali metal essential for cellular neural osmotic regulation.' },
-      'MG':  { name:'Magnesium',     number:12,  color:'#4D96FF', shape:'cylinder', model:'models/magnesium.glb',     mass:'24.305 u',    category:'Alkaline Earth Metal', state:'Solid',  period:'3', group:'2',  config:'[Ne] 3s²',          desc:'Structural light metal that burns brilliant white; core coordination atom in plant chlorophyll.' },
-      'AL':  { name:'Aluminum',      number:13,  color:'#C0C0C0', shape:'box',      model:'models/aluminum.glb',      mass:'26.982 u',    category:'Post-transition Metal',state:'Solid',  period:'3', group:'13', config:'[Ne] 3s² 3p¹',      desc:'Lightweight, highly recyclable metal with remarkable natural passivated corrosion resistance.' },
-      'SI':  { name:'Silicon',       number:14,  color:'#A0522D', shape:'box',      model:'models/silicon.glb',       mass:'28.086 u',    category:'Metalloid',            state:'Solid',  period:'3', group:'14', config:'[Ne] 3s² 3p²',      desc:'Semiconductor substrate powering the modern computing, transistor, and solar industries.' },
-      'P':   { name:'Phosphorus',    number:15,  color:'#FF8C00', shape:'cone',     model:'models/phosphorus.glb',    mass:'30.974 u',    category:'Reactive Nonmetal',    state:'Solid',  period:'3', group:'15', config:'[Ne] 3s² 3p³',      desc:'Essential biological structural element found in cellular ATP energy units and DNA backbones.' },
-      'S':   { name:'Sulfur',        number:16,  color:'#FFD700', shape:'sphere',   model:'models/sulfur.glb',        mass:'32.065 u',    category:'Reactive Nonmetal',    state:'Solid',  period:'3', group:'16', config:'[Ne] 3s² 3p⁴',      desc:'Yellow nonmetal used extensively in global industrial sulfuric acid synthesis and rubber curing.' },
-      'CL':  { name:'Chlorine',      number:17,  color:'#7CFC00', shape:'sphere',   model:'models/chlorine.glb',      mass:'35.453 u',    category:'Reactive Nonmetal',    state:'Gas',    period:'3', group:'17', config:'[Ne] 3s² 3p⁵',      desc:'Halogen gas used globally for clean water sanitation, PVC manufacturing, and table salt.' },
-      'AR':  { name:'Argon',         number:18,  color:'#00CED1', shape:'sphere',   model:'models/argon.glb',         mass:'39.948 u',    category:'Noble Gas',            state:'Gas',    period:'3', group:'18', config:'[Ne] 3s² 3p⁶',      desc:'Abundant inert noble gas used for thermal insulation windows and protective shielding in welding.' },
-      'K':   { name:'Potassium',     number:19,  color:'#9B59B6', shape:'box',      model:'models/potassium.glb',     mass:'39.098 u',    category:'Alkali Metal',         state:'Solid',  period:'4', group:'1',  config:'[Ar] 4s¹',          desc:'Essential electrolyte metal managing human cellular electrical impulses and agricultural fertilizers.' },
-      'CA':  { name:'Calcium',       number:20,  color:'#F0E68C', shape:'cylinder', model:'models/calcium.glb',       mass:'40.078 u',    category:'Alkaline Earth Metal', state:'Solid',  period:'4', group:'2',  config:'[Ar] 4s²',          desc:'Structural alkaline earth metal vital for skeletal bone mineralization, teeth, and industrial cement.' },
-      'TI':  { name:'Titanium',      number:22,  color:'#778899', shape:'cylinder', model:'models/titanium.glb',      mass:'47.867 u',    category:'Transition Metal',     state:'Solid',  period:'4', group:'4',  config:'[Ar] 3d² 4s²',      desc:'High strength-to-weight ratio biocompatible metal heavily used in aerospace and medical implants.' },
-      'FE':  { name:'Iron',          number:26,  color:'#A0522D', shape:'box',      model:'models/iron.glb',          mass:'55.845 u',    category:'Transition Metal',     state:'Solid',  period:'4', group:'8',  config:'[Ar] 3d⁶ 4s²',      desc:'The most widely used metal on Earth; core component of steel engineering and blood hemoglobin.' },
-      'CU':  { name:'Copper',        number:29,  color:'#FF8C00', shape:'cylinder', model:'models/copper.glb',        mass:'63.546 u',    category:'Transition Metal',     state:'Solid',  period:'4', group:'11', config:'[Ar] 3d¹⁰ 4s¹',     desc:'Ductile metal with exceptional thermal and electrical conductivity used across global electrical grids.' },
-      'ZN':  { name:'Zinc',          number:30,  color:'#708090', shape:'box',      model:'models/zinc.glb',          mass:'65.38 u',     category:'Transition Metal',     state:'Solid',  period:'4', group:'12', config:'[Ar] 3d¹⁰ 4s²',     desc:'Anti-corrosion galvanizing coating for structural steel and vital enzymatic biological mineral.' },
-      'AG':  { name:'Silver',        number:47,  color:'#C0C0C0', shape:'sphere',   model:'models/silver.glb',        mass:'107.868 u',   category:'Transition Metal',     state:'Solid',  period:'5', group:'11', config:'[Kr] 4d¹⁰ 5s¹',     desc:'Metal boasting the highest electrical and thermal conductivity and highest optical reflectivity.' },
-      'AU':  { name:'Gold',          number:79,  color:'#FFD700', shape:'sphere',   model:'models/gold.glb',          mass:'196.967 u',   category:'Transition Metal',     state:'Solid',  period:'6', group:'11', config:'[Xe] 4f¹⁴ 5d¹⁰ 6s¹',desc:'Highly prized noble metal immune to corrosion, widely used in precision microelectronics and bullion.' }
+      'H':   { name:{ en:'Hydrogen', id:'Hidrogen' }, number:1,   color:'#FF6B6B', shape:'sphere',   model:'models/hydrogen.glb',  mass:'1.008 u', category:{ en:'Reactive Nonmetal', id:'Nonlogam Reaktif' }, state:{ en:'Gas', id:'Gas' }, period:'1', group:'1',  config:'1s¹', desc:{ en:'The lightest and most abundant element in the universe. Found in stars, water, and organic life.', id:'Unsur paling ringan dan paling melimpah di alam semesta. Ditemukan pada bintang, air, dan materi organik.' } },
+      'HE':  { name:{ en:'Helium', id:'Helium' }, number:2,   color:'#FFD93D', shape:'sphere',   model:'models/helium.glb',    mass:'4.003 u', category:{ en:'Noble Gas', id:'Gas Mulia' }, state:{ en:'Gas', id:'Gas' }, period:'1', group:'18', config:'1s²', desc:{ en:'Inert, lightweight noble gas used in cryogenics, MRI cooling, and buoyant balloons.', id:'Gas mulia yang sangat ringan dan tidak reaktif; digunakan untuk pendingin MRI serta balon udara.' } },
+      'LI':  { name:{ en:'Lithium', id:'Litium' }, number:3,   color:'#6BCB77', shape:'box',      model:'models/lithium.glb',   mass:'6.941 u', category:{ en:'Alkali Metal', id:'Logam Alkali' }, state:{ en:'Solid', id:'Padat' }, period:'2', group:'1',  config:'[He] 2s¹', desc:{ en:'Soft, low-density alkali metal critical for rechargeable lithium-ion battery technology.', id:'Logam alkali lunak berdensitas rendah yang menjadi material utama baterai isi ulang litium-ion.' } },
+      'BE':  { name:{ en:'Beryllium', id:'Berilium' }, number:4,   color:'#4D96FF', shape:'box',      model:'models/beryllium.glb', mass:'9.012 u', category:{ en:'Alkaline Earth Metal', id:'Logam Alkali Tanah' }, state:{ en:'Solid', id:'Padat' }, period:'2', group:'2',  config:'[He] 2s²', desc:{ en:'Lightweight structural metal with high stiffness used in aerospace and X-ray windows.', id:'Logam ringan berdaya kaku tinggi yang digunakan dalam komponen pesawat antariksa dan jendela tabung sinar-X.' } },
+      'B':   { name:{ en:'Boron', id:'Boron' }, number:5,   color:'#FF8C00', shape:'cone',     model:'models/boron.glb',     mass:'10.811 u', category:{ en:'Metalloid', id:'Metaloid' }, state:{ en:'Solid', id:'Padat' }, period:'2', group:'13', config:'[He] 2s² 2p¹', desc:{ en:'Metalloid element used in borosilicate glassware, ceramics, and semiconductors.', id:'Unsur metaloid yang digunakan dalam kaca tahan panas borosilikat, keramik, dan semikonduktor.' } },
+      'C':   { name:{ en:'Carbon', id:'Karbon' }, number:6,   color:'#555555', shape:'box',      model:'models/carbon.glb',    mass:'12.011 u', category:{ en:'Reactive Nonmetal', id:'Nonlogam Reaktif' }, state:{ en:'Solid', id:'Padat' }, period:'2', group:'14', config:'[He] 2s² 2p²', desc:{ en:'The chemical backbone of organic life, forming diamond, graphite, and fullerenes.', id:'Tulang punggung kimiawi kehidupan organik; membentuk alotrop intan, grafit, dan karbon aktif.' } },
+      'N':   { name:{ en:'Nitrogen', id:'Nitrogen' }, number:7,   color:'#4D96FF', shape:'sphere',   model:'models/nitrogen.glb',  mass:'14.007 u', category:{ en:'Reactive Nonmetal', id:'Nonlogam Reaktif' }, state:{ en:'Gas', id:'Gas' }, period:'2', group:'15', config:'[He] 2s² 2p³', desc:{ en:'Constitutes 78% of Earth\'s atmosphere. Fundamental to proteins and nucleic acids.', id:'Menyusun 78% atmosfer bumi serta menjadi unsur pembangun asam amino, protein, dan DNA.' } },
+      'O':   { name:{ en:'Oxygen', id:'Oksigen' }, number:8,   color:'#FF4444', shape:'sphere',   model:'models/oxygen.glb',    mass:'15.999 u', category:{ en:'Reactive Nonmetal', id:'Nonlogam Reaktif' }, state:{ en:'Gas', id:'Gas' }, period:'2', group:'16', config:'[He] 2s² 2p⁴', desc:{ en:'Highly electronegative gas essential for cellular aerobic respiration and combustion.', id:'Gas sangat elektronegatif yang mutlak dibutuhkan untuk respirasi seluler makhluk hidup dan pembakaran.' } },
+      'F':   { name:{ en:'Fluorine', id:'Fluorin' }, number:9,   color:'#FFD93D', shape:'sphere',   model:'models/fluorine.glb',  mass:'18.998 u', category:{ en:'Reactive Nonmetal', id:'Nonlogam Reaktif' }, state:{ en:'Gas', id:'Gas' }, period:'2', group:'17', config:'[He] 2s² 2p⁵', desc:{ en:'The most electronegative element, used in fluoropolymers and dental fluoride.', id:'Unsur paling elektronegatif dan reaktif; dimanfaatkan dalam lapisan teflon serta perlindungan gigi.' } },
+      'NE':  { name:{ en:'Neon', id:'Neon' }, number:10,  color:'#FF6EC7', shape:'sphere',   model:'models/neon.glb',      mass:'20.180 u', category:{ en:'Noble Gas', id:'Gas Mulia' }, state:{ en:'Gas', id:'Gas' }, period:'2', group:'18', config:'[He] 2s² 2p⁶', desc:{ en:'Chemically inert noble gas renowned for its vibrant reddish-orange electrical glow.', id:'Gas mulia yang menghasilkan pendaran merah-oranye terang saat dialiri arus listrik pada lampu tabung neon.' } },
+      'NA':  { name:{ en:'Sodium', id:'Natrium' }, number:11,  color:'#6BCB77', shape:'box',      model:'models/sodium.glb',    mass:'22.990 u', category:{ en:'Alkali Metal', id:'Logam Alkali' }, state:{ en:'Solid', id:'Padat' }, period:'3', group:'1',  config:'[Ne] 3s¹', desc:{ en:'Soft, highly reactive alkali metal essential for neural osmotic balance.', id:'Logam alkali lunak yang sangat reaktif; berperan penting dalam transmisi impuls saraf biologis.' } },
+      'MG':  { name:{ en:'Magnesium', id:'Magnesium' }, number:12,  color:'#4D96FF', shape:'cylinder', model:'models/magnesium.glb', mass:'24.305 u', category:{ en:'Alkaline Earth Metal', id:'Logam Alkali Tanah' }, state:{ en:'Solid', id:'Padat' }, period:'3', group:'2',  config:'[Ne] 3s²', desc:{ en:'Light structural metal; burns brilliant white; core atom in plant chlorophyll.', id:'Logam ringan yang menyala putih terang saat dibakar; atom pusat dalam molekul klorofil daun.' } },
+      'AL':  { name:{ en:'Aluminum', id:'Aluminium' }, number:13,  color:'#C0C0C0', shape:'box',      model:'models/aluminum.glb',  mass:'26.982 u', category:{ en:'Post-transition Metal', id:'Logam Pascatransisi' }, state:{ en:'Solid', id:'Padat' }, period:'3', group:'13', config:'[Ne] 3s² 3p¹', desc:{ en:'Lightweight, recyclable metal with remarkable natural corrosion resistance.', id:'Logam ringan dan mudah didaur ulang dengan lapisan oksida alami yang sangat tahan karat.' } },
+      'SI':  { name:{ en:'Silicon', id:'Silikon' }, number:14,  color:'#A0522D', shape:'box',      model:'models/silicon.glb',   mass:'28.086 u', category:{ en:'Metalloid', id:'Metaloid' }, state:{ en:'Solid', id:'Padat' }, period:'3', group:'14', config:'[Ne] 3s² 3p²', desc:{ en:'Semiconductor substrate powering the computing, transistor, and solar industries.', id:'Material semikonduktor utama yang menggerakkan industri microchip, komputer, dan panel surya.' } },
+      'P':   { name:{ en:'Phosphorus', id:'Fosfor' }, number:15,  color:'#FF8C00', shape:'cone',     model:'models/phosphorus.glb',mass:'30.974 u', category:{ en:'Reactive Nonmetal', id:'Nonlogam Reaktif' }, state:{ en:'Solid', id:'Padat' }, period:'3', group:'15', config:'[Ne] 3s² 3p³', desc:{ en:'Essential biological element found in cellular ATP energy units and DNA backbones.', id:'Unsur hayati esensial yang menyusun rantai molekul DNA dan molekul pembawa energi ATP sel.' } },
+      'S':   { name:{ en:'Sulfur', id:'Belerang' }, number:16,  color:'#FFD700', shape:'sphere',   model:'models/sulfur.glb',    mass:'32.065 u', category:{ en:'Reactive Nonmetal', id:'Nonlogam Reaktif' }, state:{ en:'Solid', id:'Padat' }, period:'3', group:'16', config:'[Ne] 3s² 3p⁴', desc:{ en:'Yellow nonmetal used extensively in sulfuric acid synthesis and rubber vulcanization.', id:'Nonlogam kuning yang banyak digunakan dalam produksi asam sulfat industri dan vulkanisasi karet.' } },
+      'CL':  { name:{ en:'Chlorine', id:'Klorin' }, number:17,  color:'#7CFC00', shape:'sphere',   model:'models/chlorine.glb',  mass:'35.453 u', category:{ en:'Reactive Nonmetal', id:'Nonlogam Reaktif' }, state:{ en:'Gas', id:'Gas' }, period:'3', group:'17', config:'[Ne] 3s² 3p⁵', desc:{ en:'Halogen gas used for clean water sanitation, PVC manufacturing, and table salt.', id:'Gas halogen untuk disinfeksi pengolahan air bersih, bahan baku plastik PVC, dan garam dapur.' } },
+      'AR':  { name:{ en:'Argon', id:'Argon' }, number:18,  color:'#00CED1', shape:'sphere',   model:'models/argon.glb',     mass:'39.948 u', category:{ en:'Noble Gas', id:'Gas Mulia' }, state:{ en:'Gas', id:'Gas' }, period:'3', group:'18', config:'[Ne] 3s² 3p⁶', desc:{ en:'Abundant noble gas used for thermal window insulation and welding gas shielding.', id:'Gas mulia melimpah di udara; digunakan sebagai gas pelindung dalam pengelasan logam mulia.' } },
+      'K':   { name:{ en:'Potassium', id:'Kalium' }, number:19,  color:'#9B59B6', shape:'box',      model:'models/potassium.glb', mass:'39.098 u', category:{ en:'Alkali Metal', id:'Logam Alkali' }, state:{ en:'Solid', id:'Padat' }, period:'4', group:'1',  config:'[Ar] 4s¹', desc:{ en:'Essential electrolyte metal managing cell electrical impulses and plant fertilizers.', id:'Logam elektrolit penting pengatur impuls saraf jantung dan unsur hara utama pupuk tanaman.' } },
+      'CA':  { name:{ en:'Calcium', id:'Kalsium' }, number:20,  color:'#F0E68C', shape:'cylinder', model:'models/calcium.glb',   mass:'40.078 u', category:{ en:'Alkaline Earth Metal', id:'Logam Alkali Tanah' }, state:{ en:'Solid', id:'Padat' }, period:'4', group:'2',  config:'[Ar] 4s²', desc:{ en:'Vital for skeletal bone mineralization, teeth, shells, and structural cement.', id:'Unsur pembentuk struktur tulang, gigi, cangkang hewan laut, serta bahan baku semen cor.' } },
+      'TI':  { name:{ en:'Titanium', id:'Titanium' }, number:22,  color:'#778899', shape:'cylinder', model:'models/titanium.glb',  mass:'47.867 u', category:{ en:'Transition Metal', id:'Logam Transisi' }, state:{ en:'Solid', id:'Padat' }, period:'4', group:'4',  config:'[Ar] 3d² 4s²', desc:{ en:'Biocompatible high-strength metal widely used in aerospace and medical implants.', id:'Logam biokompatibel berkekuatan tinggi untuk turbin jet pesawat dan implan tulang medis.' } },
+      'FE':  { name:{ en:'Iron', id:'Besi' }, number:26,  color:'#A0522D', shape:'box',      model:'models/iron.glb',      mass:'55.845 u', category:{ en:'Transition Metal', id:'Logam Transisi' }, state:{ en:'Solid', id:'Padat' }, period:'4', group:'8',  config:'[Ar] 3d⁶ 4s²', desc:{ en:'The most widely used metal on Earth; core component of steel and blood hemoglobin.', id:'Logam paling banyak digunakan di bumi; bahan baku utama baja konstruksi dan hemoglobin darah.' } },
+      'CU':  { name:{ en:'Copper', id:'Tembaga' }, number:29,  color:'#FF8C00', shape:'cylinder', model:'models/copper.glb',    mass:'63.546 u', category:{ en:'Transition Metal', id:'Logam Transisi' }, state:{ en:'Solid', id:'Padat' }, period:'4', group:'11', config:'[Ar] 3d¹⁰ 4s¹', desc:{ en:'Ductile metal with superior electrical and thermal conductivity for wiring and pipes.', id:'Logam liat penghantar listrik dan panas yang sangat baik untuk kabel kelistrikan dan pipa.' } },
+      'ZN':  { name:{ en:'Zinc', id:'Seng' }, number:30,  color:'#708090', shape:'box',      model:'models/zinc.glb',      mass:'65.38 u',  category:{ en:'Transition Metal', id:'Logam Transisi' }, state:{ en:'Solid', id:'Padat' }, period:'4', group:'12', config:'[Ar] 3d¹⁰ 4s²', desc:{ en:'Anti-corrosion galvanizing metal for steel and vital biological enzyme mineral.', id:'Logam pelapis galvanis anti-karat pada baja dan mineral penting bagi enzim tubuh manusia.' } },
+      'AG':  { name:{ en:'Silver', id:'Perak' }, number:47,  color:'#C0C0C0', shape:'sphere',   model:'models/silver.glb',    mass:'107.868 u',category:{ en:'Transition Metal', id:'Logam Transisi' }, state:{ en:'Solid', id:'Padat' }, period:'5', group:'11', config:'[Kr] 4d¹⁰ 5s¹', desc:{ en:'Metal with the highest electrical conductivity, thermal conductivity, and reflectivity.', id:'Logam mulia dengan konduktivitas listrik, konduktivitas termal, dan reflektivitas optik tertinggi.' } },
+      'AU':  { name:{ en:'Gold', id:'Emas' }, number:79,  color:'#FFD700', shape:'sphere',   model:'models/gold.glb',      mass:'196.967 u',category:{ en:'Transition Metal', id:'Logam Transisi' }, state:{ en:'Solid', id:'Padat' }, period:'6', group:'11', config:'[Xe] 4f¹⁴ 5d¹⁰ 6s¹', desc:{ en:'Precious metal immune to corrosion, widely used in electronics, jewelry, and bullion.', id:'Logam mulia yang tidak bereaksi terhadap karat; digunakan dalam konektor elektronik dan perhiasan.' } }
     };
+
+    function getElementName(el) {
+      if (!el) return '';
+      return (typeof el.name === 'object') ? (el.name[currentLang] || el.name.en) : el.name;
+    }
+    function getElementCategory(el) {
+      if (!el) return '';
+      return (typeof el.category === 'object') ? (el.category[currentLang] || el.category.en) : el.category;
+    }
+    function getElementState(el) {
+      if (!el) return '';
+      return (typeof el.state === 'object') ? (el.state[currentLang] || el.state.en) : el.state;
+    }
+    function getElementDesc(el) {
+      if (!el) return '';
+      return (typeof el.desc === 'object') ? (el.desc[currentLang] || el.desc.en) : el.desc;
+    }
+    function getCompoundName(c) {
+      if (!c) return '';
+      return (typeof c.name === 'object') ? (c.name[currentLang] || c.name.en) : c.name;
+    }
+    function getCompoundDesc(c) {
+      if (!c) return '';
+      return (typeof c.desc === 'object') ? (c.desc[currentLang] || c.desc.en) : c.desc;
+    }
 
     // ── Application State & Persistent Storage ──
     let discoveredCompounds = {};
@@ -791,7 +1073,7 @@
       const rarity = getCompoundRarity(key);
       const toast  = document.getElementById('discovery-toast');
       document.getElementById('toast-formula').textContent = compound.formula;
-      document.getElementById('toast-name').textContent    = compound.name;
+      document.getElementById('toast-name').textContent    = getCompoundName(compound);
       document.getElementById('toast-rarity').textContent  = rarity.label;
       document.getElementById('toast-rarity').style.color  = rarity.color;
       toast.style.display = 'flex';
@@ -800,11 +1082,11 @@
     }
 
     function formatLastScanned(symbol) {
-      const t = elementLastScanned[symbol];
-      if (!t) return 'Not scanned recently';
-      const d = new Date(t);
-      return d.toLocaleDateString(undefined, { day:'2-digit', month:'short' }) + ' ' +
-             d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+      const tVal = elementLastScanned[symbol];
+      if (!tVal) return t('notScannedRecently');
+      const d = new Date(tVal);
+      return d.toLocaleDateString(currentLang === 'id' ? 'id-ID' : 'en-GB', { day:'2-digit', month:'short' }) + ' ' +
+             d.toLocaleTimeString(currentLang === 'id' ? 'id-ID' : 'en-GB', { hour:'2-digit', minute:'2-digit' });
     }
 
     // ── Navigation & Scanner Controls ──
@@ -817,11 +1099,12 @@
     let arModel = null;
 
     function setScanningUIVisible(visible) {
-      const ids = ['camera-feed','ar-scene-host','scan-bar-wrapper','scan-frame','hint','log-btn','status','element-info','debug-panel','debug-toggle'];
+      const ids = ['camera-feed','ar-scene-host','scan-bar-wrapper','scan-frame','hint','log-btn','status','element-info','debug-panel','debug-toggle','top-lang-toggle'];
       ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.visibility = visible ? 'visible' : 'hidden';
       });
+      document.getElementById('top-lang-toggle').style.display = visible ? 'flex' : 'none';
     }
 
     function stopCameraForPage() {
@@ -860,7 +1143,7 @@
           startScanning();
         };
       } catch (err) {
-        statusEl.textContent = 'Camera denied';
+        statusEl.textContent = t('cameraDenied');
         log('Camera err: ' + err.message, '#FF4444');
       }
     }
@@ -920,7 +1203,9 @@
       for (const [symbol, el] of Object.entries(ELEMENTS)) {
         let score = 0;
         if (tokens.includes(symbol)) score += 2;
-        if (lower.includes(el.name.toLowerCase())) score += 3;
+        const nEn = (el.name.en || '').toLowerCase();
+        const nId = (el.name.id || '').toLowerCase();
+        if (lower.includes(nEn) || lower.includes(nId)) score += 3;
         if (tokens.includes(String(el.number))) score += 2;
         if (score >= 3 && score > bestScore) { bestScore = score; bestSymbol = symbol; }
       }
@@ -954,14 +1239,14 @@
       }
 
       statusEl.className = 'found';
-      statusEl.textContent = 'Found: ' + symbol + ' — ' + el.name;
+      statusEl.textContent = t('statusFound') + symbol + ' — ' + getElementName(el);
       infoEl.style.display = 'block';
       document.getElementById('lock-btn').style.display = 'flex';
       document.getElementById('fusion-result').style.display = 'none';
       hintEl.style.display = 'none';
       document.getElementById('info-symbol').textContent = symbol;
-      document.getElementById('info-name').textContent   = el.name;
-      document.getElementById('info-number').textContent = 'Atomic No. ' + el.number;
+      document.getElementById('info-name').textContent   = getElementName(el);
+      document.getElementById('info-number').textContent = t('atomicNoPrefix') + el.number;
 
       if (arModel) {
         const modelEl = document.createElement('a-gltf-model');
@@ -977,7 +1262,7 @@
 
     function hideElement() {
       statusEl.className = '';
-      statusEl.textContent = 'Scanning...';
+      statusEl.textContent = t('statusScanning');
       infoEl.style.display = 'none';
       document.getElementById('lock-btn').style.display = 'none';
       document.getElementById('fusion-result').style.display = 'none';
@@ -991,10 +1276,10 @@
       lockedElement = currentSymbol;
       fusionActive  = true;
       document.getElementById('fusion-bar').style.display = 'flex';
-      document.getElementById('fusion-locked-text').textContent = lockedElement + ' locked';
+      document.getElementById('fusion-locked-text').textContent = lockedElement + t('lockedText');
       document.getElementById('lock-btn').style.display = 'none';
       document.getElementById('status').className = 'locked';
-      document.getElementById('status').textContent = '🔒 ' + lockedElement + ' locked — scan 2nd element';
+      document.getElementById('status').textContent = '🔒 ' + lockedElement + t('lockedText') + ' — ' + t('scanSecond');
     }
 
     function cancelFusion() {
@@ -1004,7 +1289,7 @@
       document.getElementById('fusion-bar').style.display = 'none';
       document.getElementById('fusion-result').style.display = 'none';
       document.getElementById('status').className = '';
-      document.getElementById('status').textContent = 'Scanning...';
+      document.getElementById('status').textContent = t('statusScanning');
       hideElement();
     }
 
@@ -1016,7 +1301,7 @@
         showFusionResult(compound, key);
       } else {
         document.getElementById('status').className = 'locked';
-        document.getElementById('status').textContent = '⚠️ ' + lockedElement + ' + ' + symbol2 + ' — no known reaction';
+        document.getElementById('status').textContent = t('statusNoReaction') + lockedElement + ' + ' + symbol2;
       }
     }
 
@@ -1024,10 +1309,10 @@
       document.getElementById('element-info').style.display = 'none';
       document.getElementById('fusion-result').style.display = 'block';
       document.getElementById('f-formula').textContent = compound.formula;
-      document.getElementById('f-name').textContent = compound.name;
+      document.getElementById('f-name').textContent = getCompoundName(compound);
       document.getElementById('f-equation').textContent = compound.equation;
       document.getElementById('status').className = 'fused';
-      document.getElementById('status').textContent = '✨ ' + compound.formula + ' — ' + compound.name;
+      document.getElementById('status').textContent = '✨ ' + compound.formula + ' — ' + getCompoundName(compound);
       document.getElementById('fusion-bar').style.display = 'none';
 
       recordDiscovery(key, compound);
@@ -1066,14 +1351,14 @@
       ep.classList.remove('fusion-mode');
       document.getElementById('ep-symbol').textContent = sym;
       document.getElementById('ep-symbol').classList.remove('fusion');
-      document.getElementById('ep-name').textContent = el.name;
+      document.getElementById('ep-name').textContent = getElementName(el);
       document.getElementById('ep-number').textContent = el.number;
       document.getElementById('ep-mass').textContent = el.mass;
-      document.getElementById('ep-category').textContent = el.category;
-      document.getElementById('ep-state').textContent = el.state;
-      document.getElementById('ep-period').textContent = 'Period ' + el.period + ' / Group ' + (el.group || '-');
+      document.getElementById('ep-category').textContent = getElementCategory(el);
+      document.getElementById('ep-state').textContent = getElementState(el);
+      document.getElementById('ep-period').textContent = t('epPeriod') + ' ' + el.period + ' / ' + t('epGroup') + ' ' + (el.group || '-');
       document.getElementById('ep-config').textContent = el.config;
-      document.getElementById('ep-desc').textContent = el.desc;
+      document.getElementById('ep-desc').textContent = getElementDesc(el);
     }
 
     function openFusionExplanation() {
@@ -1084,14 +1369,14 @@
       const sym = document.getElementById('ep-symbol');
       sym.textContent = currentCompound.formula;
       sym.classList.add('fusion');
-      document.getElementById('ep-name').textContent = currentCompound.name;
+      document.getElementById('ep-name').textContent = getCompoundName(currentCompound);
       document.getElementById('ep-number').textContent = '—';
       document.getElementById('ep-mass').textContent = '—';
-      document.getElementById('ep-category').textContent = 'Compound';
+      document.getElementById('ep-category').textContent = t('compoundCategory');
       document.getElementById('ep-state').textContent = '—';
       document.getElementById('ep-period').textContent = currentCompound.equation;
       document.getElementById('ep-config').textContent = '—';
-      document.getElementById('ep-desc').textContent = currentCompound.desc;
+      document.getElementById('ep-desc').textContent = getCompoundDesc(currentCompound);
     }
 
     function closeExplanation() {
@@ -1108,33 +1393,36 @@
       const totalQuiz = stats.correct + stats.wrong;
       const accuracy = totalQuiz ? Math.round((stats.correct / totalQuiz) * 100) : 0;
 
+      document.getElementById('dd-back-lbl').textContent = t('btnLog');
+      document.getElementById('dd-header-title').textContent = t('detailHeader');
+
       document.getElementById('discoveryDetailContent').innerHTML = `
         <div class="dd-hero">
           <div class="dd-symbol">${symbol}</div>
           <div>
-            <div class="dd-name">${el.name}</div>
-            <div class="dd-meta">${el.category}</div>
+            <div class="dd-name">${getElementName(el)}</div>
+            <div class="dd-meta">${getElementCategory(el)}</div>
             <div class="dd-grid">
-              <div class="dd-card"><div class="dd-label">Atomic Number</div><div class="dd-value">${el.number}</div></div>
-              <div class="dd-card"><div class="dd-label">Atomic Mass</div><div class="dd-value">${el.mass}</div></div>
-              <div class="dd-card"><div class="dd-label">Period / Group</div><div class="dd-value">P: ${el.period} | G: ${el.group || '-'}</div></div>
-              <div class="dd-card"><div class="dd-label">State at RT</div><div class="dd-value">${el.state}</div></div>
+              <div class="dd-card"><div class="dd-label">${t('epAtomicNumber')}</div><div class="dd-value">${el.number}</div></div>
+              <div class="dd-card"><div class="dd-label">${t('epAtomicMass')}</div><div class="dd-value">${el.mass}</div></div>
+              <div class="dd-card"><div class="dd-label">${t('epPeriodGroup')}</div><div class="dd-value">P: ${el.period} | G: ${el.group || '-'}</div></div>
+              <div class="dd-card"><div class="dd-label">${t('epState')}</div><div class="dd-value">${getElementState(el)}</div></div>
             </div>
           </div>
         </div>
 
         <div class="dd-section">
-          <h3>About ${el.name}</h3>
-          <p>${el.desc}</p>
+          <h3>${t('aboutPrefix')}${getElementName(el)}</h3>
+          <p>${getElementDesc(el)}</p>
         </div>
 
         <div class="dd-section">
-          <h3>Technical & Activity Metrics</h3>
+          <h3>${t('techMetrics')}</h3>
           <div class="dd-grid">
-            <div class="dd-card"><div class="dd-label">Electron Config</div><div class="dd-value">${el.config}</div></div>
-            <div class="dd-card"><div class="dd-label">Times Scanned</div><div class="dd-value">${scans}</div></div>
-            <div class="dd-card"><div class="dd-label">Last Scanned</div><div class="dd-value">${formatLastScanned(symbol)}</div></div>
-            <div class="dd-card"><div class="dd-label">Quiz Accuracy</div><div class="dd-value">${totalQuiz ? accuracy + '%' : 'Unattempted'}</div></div>
+            <div class="dd-card"><div class="dd-label">${t('epConfig')}</div><div class="dd-value">${el.config}</div></div>
+            <div class="dd-card"><div class="dd-label">${t('timesScanned')}</div><div class="dd-value">${scans}</div></div>
+            <div class="dd-card"><div class="dd-label">${t('lastScanned')}</div><div class="dd-value">${formatLastScanned(symbol)}</div></div>
+            <div class="dd-card"><div class="dd-label">${t('quizAccuracy')}</div><div class="dd-value">${totalQuiz ? accuracy + '%' : t('unattempted')}</div></div>
           </div>
         </div>
       `;
@@ -1143,6 +1431,86 @@
 
     function closeDiscoveryDetail() {
       document.getElementById('discoveryDetailPage').style.display = 'none';
+    }
+
+    // ── Chemistry Rules Rendering (Bilingual) ──
+    function renderRulesTab() {
+      const container = document.getElementById('rules-container');
+      if (!container) return;
+
+      if (currentLang === 'id') {
+        container.innerHTML = `
+          <div class="dd-section">
+            <h3>1. Golongan (Group)</h3><p>Unsur yang berada dalam satu kolom (golongan) memiliki jumlah elektron valensi yang sama sehingga memiliki kemiripan sifat kimia.</p>
+          </div>
+          <div class="dd-section">
+            <h3>2. Periode (Period)</h3><p>Nomor baris (periode) menunjukkan jumlah kulit elektron utama yang terisi elektron pada atom tersebut.</p>
+          </div>
+          <div class="dd-section">
+            <h3>3. Nomor Atom (Atomic Number)</h3><p>Nomor atom menyatakan jumlah proton di dalam inti atom. Pada atom netral, jumlah proton sama dengan jumlah elektron.</p>
+          </div>
+          <div class="dd-section">
+            <h3>4. Klasifikasi Unsur</h3><p>Unsur dikelompokkan menjadi Logam (kiri & tengah), Metaloid (sepanjang garis diagonal pemisah), dan Nonlogam (kanan atas).</p>
+          </div>
+          <div class="dd-section">
+            <h3>5. Tren Periodik</h3>
+            <ul>
+              <li><b>Jari-jari atom:</b> membesar dari atas ke bawah, mengecil dari kiri ke kanan.</li>
+              <li><b>Energi ionisasi:</b> meningkat dari kiri ke kanan, menurun dari atas ke bawah.</li>
+              <li><b>Keelektronegatifan:</b> semakin tinggi ke arah kanan atas (Fluorin tertinggi).</li>
+            </ul>
+          </div>
+          <div class="dd-section">
+            <h3>6. Konfigurasi Elektron</h3><p>Penataan elektron pada orbital atom mengikuti prinsip Aufbau, kaidah Hund, dan larangan Pauli yang menentukan reaktivitas unsur.</p>
+          </div>
+          <div class="dd-section">
+            <h3>7. Jenis Ikatan Kimia</h3>
+            <ul>
+              <li><b>Logam + Nonlogam:</b> Ikatan Ionik melalui serah terima elektron (contoh: NaCl).</li>
+              <li><b>Nonlogam + Nonlogam:</b> Ikatan Kovalen melalui pemakaian bersama pasangan elektron (contoh: H₂O).</li>
+              <li><b>Logam + Logam:</b> Ikatan Logam / Paduan (contoh: Kuningan Cu+Zn).</li>
+            </ul>
+          </div>
+          <div class="dd-section">
+            <h3>8. Senyawa vs Campuran</h3><p>Senyawa terbentuk melalui reaksi kimia antarunsur dengan perbandingan massa tetap menghasilkan zat baru, sedangkan paduan logam adalah campuran homogen.</p>
+          </div>`;
+      } else {
+        container.innerHTML = `
+          <div class="dd-section">
+            <h3>1. Groups</h3><p>Elements in the same vertical column (group) share identical valence electron configurations and exhibit similar chemical properties.</p>
+          </div>
+          <div class="dd-section">
+            <h3>2. Periods</h3><p>The row number (period) corresponds to the highest occupied principal energy level (electron shell) of the atom.</p>
+          </div>
+          <div class="dd-section">
+            <h3>3. Atomic Number</h3><p>Indicates the total count of protons inside the atomic nucleus. In a neutral atom, protons equal electrons.</p>
+          </div>
+          <div class="dd-section">
+            <h3>4. Element Classification</h3><p>Elements are divided into Metals (left & center), Metalloids (along the divider stair-step), and Nonmetals (upper right).</p>
+          </div>
+          <div class="dd-section">
+            <h3>5. Periodic Trends</h3>
+            <ul>
+              <li><b>Atomic Radius:</b> Increases down a group, decreases left-to-right across a period.</li>
+              <li><b>Ionization Energy:</b> Increases left-to-right across a period, decreases down a group.</li>
+              <li><b>Electronegativity:</b> Increases toward the upper right corner (Fluorine is highest).</li>
+            </ul>
+          </div>
+          <div class="dd-section">
+            <h3>6. Electron Configurations</h3><p>Electrons fill atomic orbitals following the Aufbau Principle, Hund's Rule, and Pauli Exclusion, governing reactivity.</p>
+          </div>
+          <div class="dd-section">
+            <h3>7. Chemical Bonding Combinations</h3>
+            <ul>
+              <li><b>Metal + Nonmetal:</b> Ionic bond formed through electron transfer (e.g., NaCl).</li>
+              <li><b>Nonmetal + Nonmetal:</b> Covalent bond formed by sharing electron pairs (e.g., H₂O).</li>
+              <li><b>Metal + Metal:</b> Metallic bonding and solid solution alloys (e.g., Brass Cu+Zn).</li>
+            </ul>
+          </div>
+          <div class="dd-section">
+            <h3>8. Compounds vs Alloys</h3><p>Chemical compounds form when elements react in fixed stoichiometric proportions creating brand new substances with distinct identities.</p>
+          </div>`;
+      }
     }
 
     // ── Discovery Log View ──
@@ -1154,6 +1522,7 @@
       buildDiscoveryList();
       buildElementLog();
       buildStatsChart();
+      renderRulesTab();
 
       document.getElementById('discovery-panel').style.display = 'flex';
       switchTab('elements');
@@ -1166,11 +1535,11 @@
     }
 
     function switchTab(tab) {
-      ['elements','log','stats','rules'].forEach(t => {
-        const el = document.getElementById('tab-' + t);
-        if (el) el.style.display = tab === t ? 'block' : 'none';
-        const btn = document.getElementById('dptab-' + t);
-        if (btn) btn.classList.toggle('active', tab === t);
+      ['elements','log','stats','rules'].forEach(tKey => {
+        const el = document.getElementById('tab-' + tKey);
+        if (el) el.style.display = tab === tKey ? 'block' : 'none';
+        const btn = document.getElementById('dptab-' + tKey);
+        if (btn) btn.classList.toggle('active', tab === tKey);
       });
       if (tab === 'elements') {
         const search = document.getElementById('element-search');
@@ -1188,23 +1557,22 @@
 
       const unique = entries.length;
       const pct = Math.min(100, Math.round((unique / 118) * 100));
-      document.getElementById('el-count').textContent = unique + ' elements scanned';
+      document.getElementById('el-count').textContent = unique + t('elementsScannedSuffix');
       document.getElementById('element-progress-count').textContent = unique + ' / 118';
       document.getElementById('element-progress-fill').style.width = pct + '%';
       document.getElementById('element-progress-sub').textContent =
-        unique === 118 ? 'All 118 elements discovered!' : (118 - unique) + ' elements remaining to discover.';
+        unique === 118 ? t('allElementsFound') : (118 - unique) + t('elementsRemaining');
 
       const q = String(filter || '').trim().toLowerCase();
       const filtered = entries.filter(([sym]) => {
         const el = ELEMENTS[sym];
-        return !q || sym.toLowerCase().includes(q) || el.name.toLowerCase().includes(q);
+        const n = getElementName(el).toLowerCase();
+        return !q || sym.toLowerCase().includes(q) || n.includes(q);
       });
 
       list.innerHTML = '';
       if (!filtered.length) {
-        list.innerHTML = '<div class="dl-empty">' +
-          (entries.length ? 'No matching elements found.' : 'No elements scanned yet.<br>Start scanning to build your Discovery Log.') +
-          '</div>';
+        list.innerHTML = '<div class="dl-empty">' + (entries.length ? t('noMatching') : t('noScansYet')) + '</div>';
         return;
       }
 
@@ -1212,10 +1580,11 @@
         const el = ELEMENTS[sym];
         const row = document.createElement('div');
         row.className = 'dl-element-item';
+        const countSuffix = count === 1 ? t('scansSingle') : t('scansMulti');
         row.innerHTML =
           '<span class="dl-element-symbol">' + sym + '</span>' +
-          '<span class="dl-element-name">' + el.name + '</span>' +
-          '<span class="dl-element-history">' + count + ' scan' + (count === 1 ? '' : 's') + '<br>' + formatLastScanned(sym) + '</span>';
+          '<span class="dl-element-name">' + getElementName(el) + '</span>' +
+          '<span class="dl-element-history">' + count + countSuffix + '<br>' + formatLastScanned(sym) + '</span>';
         row.onclick = () => openDiscoveryDetail(sym);
         list.appendChild(row);
       });
@@ -1227,7 +1596,7 @@
       const total = Object.keys(COMPOUNDS).length;
       const found = Object.keys(discoveredCompounds).length;
       const pct = Math.round((found / total) * 100);
-      document.getElementById('dl-count').textContent = found + ' / ' + total + ' discovered';
+      document.getElementById('dl-count').textContent = found + ' / ' + total + t('compoundsDiscovered');
       document.getElementById('dl-bar-fill').style.width = pct + '%';
       document.getElementById('dl-pct').textContent = pct + '%';
 
@@ -1249,8 +1618,8 @@
         el.className = 'dl-item';
         el.style.opacity = isFound ? '1' : '0.3';
         el.innerHTML = isFound
-          ? '<span class="dl-formula" style="color:' + r.color + '">' + c.formula + '</span><span class="dl-iname">' + c.name + '</span><span class="dl-rarity" style="color:' + r.color + '">' + r.label + '</span>'
-          : '<span class="dl-formula" style="color:#555">???</span><span class="dl-iname" style="color:#444">Undiscovered</span><span class="dl-rarity" style="color:#333">' + r.label + '</span>';
+          ? '<span class="dl-formula" style="color:' + r.color + '">' + c.formula + '</span><span class="dl-iname">' + getCompoundName(c) + '</span><span class="dl-rarity" style="color:' + r.color + '">' + r.label + '</span>'
+          : '<span class="dl-formula" style="color:#555">???</span><span class="dl-iname" style="color:#444">' + t('undiscovered') + '</span><span class="dl-rarity" style="color:#333">' + r.label + '</span>';
         list.appendChild(el);
       });
     }
@@ -1264,7 +1633,7 @@
       const chart = document.getElementById('stats-chart');
       chart.innerHTML = '';
       const top = entries.slice(0, 10), maxV = top.length ? top[0][1] : 1;
-      if (!top.length) { chart.innerHTML = '<div style="color:#555;padding:12px 0;font-size:11px">No scans recorded yet!</div>'; return; }
+      if (!top.length) { chart.innerHTML = '<div style="color:#555;padding:12px 0;font-size:11px">' + t('noScansRecorded') + '</div>'; return; }
 
       top.forEach(([sym, count]) => {
         const row = document.createElement('div');
@@ -1275,7 +1644,7 @@
       });
     }
 
-    // ── Adaptive Quiz System ──
+    // ── Adaptive Quiz System (Bilingual) ──
     let quizQuestions = [], quizIndex = 0, quizScore = 0;
 
     function getQuizDifficulty(sym) {
@@ -1290,19 +1659,21 @@
     function makeQuestion(sym, diff) {
       const el = ELEMENTS[sym];
       const type = diff % 4;
-      if (type === 0) return { q: 'What is the atomic number of ' + el.name + '?', a: String(el.number), field: 'number' };
-      if (type === 1) return { q: 'What is the chemical symbol of ' + el.name + '?', a: sym, field: 'symbol' };
-      if (type === 2) return { q: 'Which category best describes ' + el.name + '?', a: el.category, field: 'category' };
-      return { q: 'In which period is ' + el.name + ' located?', a: String(el.period), field: 'period' };
+      const name = getElementName(el);
+      if (type === 0) return { q: t('qAtomicNo').replace('{name}', name), a: String(el.number), field: 'number' };
+      if (type === 1) return { q: t('qSymbol').replace('{name}', name), a: sym, field: 'symbol' };
+      if (type === 2) return { q: t('qCategory').replace('{name}', name), a: getElementCategory(el), field: 'category' };
+      return { q: t('qPeriod').replace('{name}', name), a: String(el.period), field: 'period' };
     }
 
     function openQuiz() {
       document.getElementById('home-menu').classList.add('hidden');
       document.getElementById('home-return').classList.remove('show');
+      document.getElementById('quiz-panel-title').textContent = t('quizTitle');
       const scanned = Object.keys(elementScanCount).filter(s => elementScanCount[s] > 0 && ELEMENTS[s]);
       if (!scanned.length) {
         document.getElementById('quiz-panel').style.display = 'flex';
-        document.getElementById('quiz-content').innerHTML = '<div class="dl-empty">Scan at least one element first.<br>Your quiz will adapt to your scanned elements.</div>';
+        document.getElementById('quiz-content').innerHTML = '<div class="dl-empty">' + t('quizNeedScan') + '</div>';
         return;
       }
       quizQuestions = scanned.slice().sort(() => Math.random() - 0.5).slice(0, 5).map(sym => ({ sym, diff: getQuizDifficulty(sym) }));
@@ -1316,8 +1687,8 @@
       if (quizIndex >= quizQuestions.length) {
         document.getElementById('quiz-content').innerHTML = `
           <div class="quiz-result">
-            Quiz Complete<br>${quizScore} / ${quizQuestions.length} correct<br>
-            <button class="home-btn" style="margin-top:20px" onclick="openQuiz()">Try Another Set</button>
+            ${t('quizComplete')}<br>${quizScore} / ${quizQuestions.length}${t('quizCorrect')}<br>
+            <button class="home-btn" style="margin-top:20px;text-align:center;" onclick="openQuiz()">${t('quizTryAnother')}</button>
           </div>`;
         return;
       }
@@ -1327,12 +1698,12 @@
       let opts = [q.a];
       while (opts.length < 4) {
         const x = ELEMENTS[all[Math.floor(Math.random() * all.length)]];
-        const v = q.field === 'number' ? String(x.number) : q.field === 'symbol' ? Object.keys(ELEMENTS).find(k => ELEMENTS[k] === x) : q.field === 'category' ? x.category : String(x.period);
+        const v = q.field === 'number' ? String(x.number) : q.field === 'symbol' ? Object.keys(ELEMENTS).find(k => ELEMENTS[k] === x) : q.field === 'category' ? getElementCategory(x) : String(x.period);
         if (!opts.includes(v)) opts.push(v);
       }
       opts.sort(() => Math.random() - 0.5);
       document.getElementById('quiz-content').innerHTML = `
-        <div style="color:#777;font-size:11px">Question ${quizIndex + 1} / ${quizQuestions.length} · Difficulty L${item.diff}</div>
+        <div style="color:#777;font-size:11px">${t('questionPrefix')}${quizIndex + 1} / ${quizQuestions.length} · ${t('diffLevel')}${item.diff}</div>
         <div class="quiz-question">${q.q}</div>
         ${opts.map(v => `<button class="quiz-option" onclick="answerQuiz('${v}','${q.a}','${item.sym}')">${v}</button>`).join('')}
       `;
@@ -1408,7 +1779,7 @@
           notFoundCount++;
           if (notFoundCount >= 3 && currentSymbol && !fusionActive) {
             statusEl.className = '';
-            statusEl.textContent = 'Ready — scan another element';
+            statusEl.textContent = t('statusReady');
           }
         }
       } catch (err) {
@@ -1463,6 +1834,7 @@
     // ── App Initialization ──
     document.addEventListener('DOMContentLoaded', () => {
       loadSavedData();
+      applyLanguage();
       const b = document.getElementById('ios-permission-btn');
       const c = document.getElementById('ios-permission-cancel');
       if (b) b.onclick = async () => {
