@@ -202,34 +202,68 @@
     #status.warn::before   { background: #FBBF24; animation: none; }
 
     /* ── Scan result overlay (Screen 7) ──────────────────────── */
-    #element-info {
-      position: fixed; inset: 0; z-index: 16; display: none;
-      flex-direction: column; align-items: center; justify-content: center;
-      padding: 24px; background: rgba(8,17,32,.80); backdrop-filter: blur(3px);
-      animation: fadeIn .22s ease;
+    /* ── Detection toast: temporary, non-blocking, auto-dismisses ──
+       Same pattern as #discovery-toast (opacity+translateY transition,
+       pointer-events:none so it never intercepts touches on the model). */
+    #detect-toast {
+      position: fixed; top: calc(var(--safe-t) + 64px); left: 50%;
+      transform: translateX(-50%) translateY(-14px);
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(8,17,32,.86); backdrop-filter: blur(10px);
+      border: 1px solid rgba(74,222,128,.4);
+      border-radius: 99px; padding: 10px 20px 10px 14px; z-index: 17;
+      opacity: 0; pointer-events: none;
+      transition: opacity .28s ease, transform .28s cubic-bezier(.4,0,.2,1);
+      max-width: 86%; box-shadow: var(--sh-3);
     }
-    #element-info.show { display: flex; }
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-    .si-check {
-      width: 72px; height: 72px; border-radius: 50%;
+    #detect-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #detect-toast .dtc-icon {
+      width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%;
       background: var(--c-success); color: #fff;
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 18px; box-shadow: 0 6px 22px rgba(22,163,74,.45);
-      animation: popIn .34s cubic-bezier(.34,1.56,.64,1);
     }
-    .si-check svg { width: 38px; height: 38px; }
-    @keyframes popIn { from{transform:scale(.4);opacity:0} to{transform:scale(1);opacity:1} }
-    #element-info .si-heading { color: #fff; font-size: 21px; font-weight: 700; margin-bottom: 18px; }
-    .si-card {
-      background: #fff; border-radius: var(--r-lg); padding: 18px 34px;
-      text-align: center; box-shadow: var(--sh-3); min-width: 172px; margin-bottom: 22px;
+    #detect-toast .dtc-icon svg { width: 14px; height: 14px; }
+    #detect-toast .dtc-l1 { color: rgba(255,255,255,.7); font-size: 11px; font-weight: 650; letter-spacing: .2px; }
+    #detect-toast .dtc-l2 { color: #fff; font-size: 14.5px; font-weight: 650; }
+
+    /* ── Result card: compact, bottom-anchored, never covers the model.
+       Same #element-info / #fusion-result ids other functions already
+       target, restyled from a full-screen modal into a small card. */
+    #element-info, #fusion-result {
+      position: fixed; left: 50%; bottom: calc(var(--safe-b) + 14px);
+      transform: translateX(-50%) translateY(16px);
+      width: min(340px, calc(100% - 28px));
+      background: #fff; border-radius: var(--r-lg); box-shadow: var(--sh-3);
+      padding: 16px 18px calc(16px + var(--safe-b) * 0);
+      z-index: 12; display: none; opacity: 0;
+      transition: opacity .24s ease, transform .24s cubic-bezier(.4,0,.2,1);
     }
-    #element-info .number { font-size: 13px; color: var(--c-muted); font-weight: 600; }
-    #element-info .symbol { font-size: 46px; font-weight: 750; color: var(--c-accent); line-height: 1.05; }
-    #element-info .name   { font-size: 16px; color: var(--c-navy); font-weight: 600; margin-top: 2px; }
-    .si-actions { width: min(340px, 100%); display: flex; flex-direction: column; gap: 10px; }
-    .si-actions .btn-secondary { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.28); color: #fff; }
-    #element-info .tap-hint { color: rgba(255,255,255,.55); font-size: 12px; margin-top: 14px; text-align: center; }
+    #element-info.show, #fusion-result.show { display: block; opacity: 1; transform: translateX(-50%) translateY(0); }
+    .dc-row1 { display: flex; align-items: center; gap: 12px; }
+    .dc-symbol {
+      width: 50px; height: 50px; flex-shrink: 0; border-radius: 12px;
+      background: var(--c-accent-soft); color: var(--c-accent-dark);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px; font-weight: 750;
+    }
+    #fusion-result .dc-symbol { background: #EDE9FE; color: var(--c-purple); font-size: 15px;
+      width: auto; min-width: 50px; padding: 0 10px; white-space: nowrap; }
+    .dc-titles { min-width: 0; flex: 1; }
+    .dc-titles .name { font-size: 16.5px; font-weight: 700; color: var(--c-navy); line-height: 1.25;
+                        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dc-titles .sub  { font-size: 12.5px; color: var(--c-muted); margin-top: 1px; }
+    .dc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 4px; }
+    .dc-stat { background: var(--c-bg); border-radius: var(--r-sm); padding: 8px 10px; }
+    .dc-stat .l { font-size: 10.5px; color: var(--c-muted); font-weight: 650; text-transform: uppercase; letter-spacing: .2px; }
+    .dc-stat .v { font-size: 15px; color: var(--c-navy); font-weight: 700; margin-top: 1px; }
+    .dc-learn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; margin-top: 12px; padding: 11px 14px; border: 0;
+      border-radius: var(--r-md); background: var(--c-accent-tint); color: var(--c-accent-dark);
+      font-size: 14px; font-weight: 650; cursor: pointer;
+    }
+    #fusion-result .dc-learn { background: #F3EEFF; color: var(--c-purple); }
+    #fusion-result .f-equation { font-size: 12px; color: var(--c-muted); margin-top: 6px; }
 
     /* ── Fusion ──────────────────────────────────────────────── */
     #fusion-bar {
@@ -293,7 +327,10 @@
                  background: var(--c-accent-tint); font-size: 14.5px; color: var(--c-body); line-height: 1.65; }
 
     #lock-btn {
-      position: fixed; bottom: calc(var(--safe-b) + 100px); right: 16px;
+      /* Sits above the result card (card height ~190px) rather than beside
+         it, so the two never overlap regardless of card width on narrow
+         phones. */
+      position: fixed; bottom: calc(var(--safe-b) + 220px); right: 16px;
       background: #fff; color: var(--c-warn);
       border: 1px solid var(--c-line); border-radius: 50%;
       width: 56px; height: 56px; font-size: 22px; display: none;
@@ -697,6 +734,15 @@
       .ob-title { font-size: 23px; }
       #scan-frame { width: 240px; height: 155px; }
       #scan-instruction { top: calc(46% + 96px); font-size: 13.5px; }
+      /* Shrink the result card on short phones (e.g. SE-class, ~568px tall)
+         so its top edge can't reach into the reticle band above it. */
+      #element-info, #fusion-result { padding: 12px 14px; bottom: calc(var(--safe-b) + 8px); }
+      .dc-symbol { width: 42px; height: 42px; font-size: 16px; }
+      .dc-titles .name { font-size: 15px; }
+      .dc-stats { margin: 9px 0 2px; gap: 6px; }
+      .dc-stat { padding: 6px 8px; }
+      .dc-learn { margin-top: 9px; padding: 9px 12px; }
+      #lock-btn { bottom: calc(var(--safe-b) + 176px); width: 48px; height: 48px; font-size: 19px; }
     }
     @media (max-width: 340px) {
       .home-duo { grid-template-columns: 1fr; }
@@ -787,37 +833,44 @@
   </div>
 
   <!-- Element Mini Card -->
-  <div id="element-info">
-    <div class="si-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
-    <div class="si-heading" id="si-heading">Element Detected!</div>
-    <div class="si-card">
-      <div class="number" id="info-number">1</div>
-      <div class="symbol" id="info-symbol">H</div>
-      <div class="name" id="info-name">Hydrogen</div>
+  <div id="detect-toast">
+    <span class="dtc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+    <span>
+      <span class="dtc-l1" id="dtc-l1">Element Detected</span>
+      <div class="dtc-l2" id="dtc-l2">H — Hydrogen</div>
+    </span>
+  </div>
+
+  <div id="element-info" onclick="openExplanation()">
+    <div class="dc-row1">
+      <div class="dc-symbol" id="info-symbol">H</div>
+      <div class="dc-titles">
+        <div class="name" id="info-name">Hydrogen</div>
+        <div class="sub" id="info-tap-hint">Tap to lock · mix with another element</div>
+      </div>
     </div>
-    <div class="si-actions">
-      <button class="btn-primary" onclick="openExplanation()"><span id="si-view">View Element</span> →</button>
-      <button class="btn-secondary" onclick="dismissScanResult()"><span id="si-again">Scan Again</span></button>
+    <div class="dc-stats">
+      <div class="dc-stat"><div class="l" id="lbl-info-number">Atomic Number</div><div class="v" id="info-number">1</div></div>
+      <div class="dc-stat"><div class="l" id="lbl-info-mass">Atomic Mass</div><div class="v" id="info-mass">1.008</div></div>
     </div>
-    <div class="tap-hint" id="info-tap-hint">Lock this element to mix it with another</div>
+    <button class="dc-learn" onclick="event.stopPropagation();openExplanation()"><span id="si-view">Learn More</span> →</button>
   </div>
 
   <!-- Lock Button -->
   <div id="lock-btn" onclick="lockElement()">🔒</div>
 
   <!-- Fusion Result Card -->
-  <div id="fusion-result">
-    <div class="fr-card">
-      <div class="f-formula" id="f-formula">H₂O</div>
-      <div class="f-name" id="f-name">Water</div>
-      <div class="f-equation" id="f-equation">2H + O → H₂O</div>
-      <div class="f-rarity" id="f-rarity">⬜ Common</div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
-        <button class="btn-primary" onclick="openFusionExplanation()"><span id="fr-view">View Compound</span> →</button>
-        <button class="btn-secondary" onclick="dismissScanResult()"><span id="fr-again">Scan Again</span></button>
+  <div id="fusion-result" onclick="openFusionExplanation()">
+    <div class="dc-row1">
+      <div class="dc-symbol" id="f-formula">H₂O</div>
+      <div class="dc-titles">
+        <div class="name" id="f-name">Water</div>
+        <div class="sub" id="f-sub">Compound</div>
       </div>
     </div>
-    <div class="f-hint" id="f-hint">Scan another element to keep mixing</div>
+    <div class="f-equation" id="f-equation">2H + O → H₂O</div>
+    <div class="f-rarity" id="f-rarity">⬜ Common</div>
+    <button class="dc-learn" onclick="event.stopPropagation();openFusionExplanation()"><span id="fr-view">Learn More</span> →</button>
   </div>
 
   <!-- Bottom Sheet Explanation -->
@@ -1148,10 +1201,9 @@
         homeFooter:'Progress is automatically saved on this device.',
         scanTitle:'Scan Element',
         scanInstruction:'Place the element symbol inside the box',
-        siHeading:'Element Detected!', siView:'View Element', siAgain:'Scan Again',
-        siHint:'Lock this element to mix it with another',
-        frView:'View Compound', frAgain:'Scan Again',
-        frHint:'Scan another element to keep mixing',
+        toastElementDetected:'Element Detected', toastCompoundDetected:'Compound Formed',
+        siView:'Learn More', siHint:'Tap to lock \u00b7 mix with another element',
+        frView:'Learn More',
         ocrNoMatch:"Couldn't recognize the symbol",
         ocrCloser:'Move closer or improve lighting.',
         ocrInside:'Try keeping the symbol inside the box.',
@@ -1290,10 +1342,9 @@
         homeFooter:'Progres tersimpan otomatis di perangkat ini.',
         scanTitle:'Pindai Unsur',
         scanInstruction:'Letakkan simbol unsur di dalam kotak',
-        siHeading:'Unsur Terdeteksi!', siView:'Lihat Unsur', siAgain:'Pindai Lagi',
-        siHint:'Kunci unsur ini untuk dicampur dengan unsur lain',
-        frView:'Lihat Senyawa', frAgain:'Pindai Lagi',
-        frHint:'Pindai unsur lain untuk terus mencampur',
+        toastElementDetected:'Unsur Terdeteksi', toastCompoundDetected:'Senyawa Terbentuk',
+        siView:'Pelajari Lebih Lanjut', siHint:'Ketuk untuk mengunci \u00b7 campur dengan unsur lain',
+        frView:'Pelajari Lebih Lanjut',
         ocrNoMatch:'Simbol belum dikenali',
         ocrCloser:'Dekatkan kamera atau perbaiki pencahayaan.',
         ocrInside:'Pastikan simbol berada di dalam kotak.',
@@ -1361,9 +1412,14 @@
       document.getElementById('lb-label').textContent         = t('logBtn');
 
       // Scanner Texts
-      document.getElementById('hint').textContent             = t('hintScan');
-      document.getElementById('info-tap-hint').textContent    = t('tapDetails');
-      document.getElementById('f-hint').textContent           = t('tapFusion');
+      // #hint and #f-hint were removed by later UI redesigns (the scan
+      // hint is gone; the fusion hint text moved into #f-sub). Guard these
+      // legacy lookups rather than deleting the block — info-tap-hint's
+      // correct text is assigned again, safely, by applyLanguageShell() below.
+      const _hintEl = document.getElementById('hint');
+      if (_hintEl) _hintEl.textContent = t('hintScan');
+      const _fHintEl = document.getElementById('f-hint');
+      if (_fHintEl) _fHintEl.textContent = t('tapFusion');
       document.getElementById('dt-new-lbl').textContent       = t('newDiscovery');
       document.getElementById('fusion-prompt-text').textContent = t('scanSecond');
       document.getElementById('fusion-cancel-btn').textContent  = '✕ ' + t('cancel');
@@ -1429,9 +1485,8 @@
       set('nav-lbl-disc','navDiscover'); set('nav-lbl-quiz','navQuiz');
       set('hm-prog-title','homeProgTitle');
       set('sc-title','scanTitle'); set('scan-instruction-text','scanInstruction');
-      set('si-heading','siHeading'); set('si-view','siView'); set('si-again','siAgain');
-      set('info-tap-hint','siHint');
-      set('fr-view','frView'); set('fr-again','frAgain'); set('f-hint','frHint');
+      set('si-view','siView'); set('info-tap-hint','siHint'); set('fr-view','frView');
+      set('lbl-info-number','epAtomicNumber'); set('lbl-info-mass','epAtomicMass');
       set('help-title','helpTitle'); set('settings-title','setTitle');
       set('set-sec-scan','setSecScan'); set('set-sec-learn','setSecLearn');
       set('set-sec-help','setSecHelp'); set('set-sec-about','setSecAbout'); set('set-sec-data','setSecData');
@@ -1988,8 +2043,9 @@
         return;
       }
 
-      statusEl.className = 'found';
-      statusEl.textContent = t('statusFound') + symbol + ' — ' + getElementName(el);
+      // Status pill is redundant once the result card is up — the card
+      // carries this information legibly, so free the space instead.
+      statusEl.style.display = 'none';
       infoEl.classList.add('show');
       document.getElementById('lock-btn').style.display = 'flex';
       document.getElementById('fusion-result').classList.remove('show');
@@ -1997,6 +2053,8 @@
       document.getElementById('info-symbol').textContent = symbol;
       document.getElementById('info-name').textContent   = getElementName(el);
       document.getElementById('info-number').textContent = el.number;
+      document.getElementById('info-mass').textContent   = el.mass;
+      showDetectToast(t('toastElementDetected'), symbol + ' — ' + getElementName(el));
 
       if (arModel && !hasElementModel(symbol)) {
         arModel.innerHTML = '';
@@ -2015,11 +2073,13 @@
 
     function hideElement() {
       statusEl.className = '';
+      statusEl.style.display = 'flex';
       statusEl.textContent = t('statusScanning');
       infoEl.classList.remove('show');
       document.getElementById('lock-btn').style.display = 'none';
       document.getElementById('fusion-result').classList.remove('show');
       document.getElementById('scan-frame').classList.remove('detected');
+      hideDetectToast();
       if (arModel) arModel.innerHTML = '';
       closeExplanation();
     }
@@ -2072,10 +2132,11 @@
       document.getElementById('fusion-result').classList.add('show');
       document.getElementById('f-formula').textContent = compound.formula;
       document.getElementById('f-name').textContent = getCompoundName(compound);
+      document.getElementById('f-sub').textContent = t('compoundCategory');
       document.getElementById('f-equation').textContent = compound.equation;
-      document.getElementById('status').className = 'fused';
-      document.getElementById('status').textContent = '✨ ' + compound.formula + ' — ' + getCompoundName(compound);
+      document.getElementById('status').style.display = 'none';
       document.getElementById('fusion-bar').style.display = 'none';
+      showDetectToast(t('toastCompoundDetected'), compound.formula + ' — ' + getCompoundName(compound));
 
       recordDiscovery(key, compound);
       const rr = getCompoundRarity(key);
@@ -2567,8 +2628,29 @@
       if (f) f.classList.remove('show');
       const sf = document.getElementById('scan-frame');
       if (sf) sf.classList.remove('detected');
+      hideDetectToast();
+      statusEl.style.display = 'flex';
       currentSymbol = null;
       clearVotes();
+    }
+
+    /* ── Detection toast: temporary, auto-dismissing, never blocks the
+       AR viewport (pointer-events: none in CSS). Mirrors the existing
+       showDiscoveryToast() timer pattern. ── */
+    function showDetectToast(line1, line2) {
+      const toast = document.getElementById('detect-toast');
+      if (!toast) return;
+      document.getElementById('dtc-l1').textContent = line1;
+      document.getElementById('dtc-l2').textContent = line2;
+      toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+    function hideDetectToast() {
+      const toast = document.getElementById('detect-toast');
+      if (!toast) return;
+      clearTimeout(toast._timer);
+      toast.classList.remove('show');
     }
 
     /* ── Friendly, non-technical scan guidance ── */
