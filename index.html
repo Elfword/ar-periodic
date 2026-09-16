@@ -1,411 +1,708 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: monospace; }
+    /* ════════════════════════════════════════════════════════════
+       MindAR Design System
+       Light educational theme for app screens; dark for camera/splash.
+       ════════════════════════════════════════════════════════════ */
+    :root {
+      --c-accent:      #0EA5E9;
+      --c-accent-dark: #0284C7;
+      --c-accent-soft: #E0F2FE;
+      --c-accent-tint: #F0F9FF;
+      --c-navy:        #0F172A;
+      --c-body:        #334155;
+      --c-muted:       #64748B;
+      --c-faint:       #94A3B8;
+      --c-line:        #E2E8F0;
+      --c-bg:          #F8FAFC;
+      --c-surface:     #FFFFFF;
+      --c-success:     #16A34A;
+      --c-success-sf:  #DCFCE7;
+      --c-warn:        #D97706;
+      --c-warn-soft:   #FEF3C7;
+      --c-error:       #DC2626;
+      --c-error-soft:  #FEE2E2;
+      --c-purple:      #8B5CF6;
 
-    #camera-feed {
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover; z-index: 0;
+      --r-sm: 10px;  --r-md: 14px;  --r-lg: 16px;  --r-xl: 22px;
+      --sh-1: 0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.05);
+      --sh-2: 0 2px 6px rgba(15,23,42,.06), 0 6px 16px rgba(15,23,42,.07);
+      --sh-3: 0 8px 28px rgba(15,23,42,.14);
+      --sh-accent: 0 4px 14px rgba(14,165,233,.30);
+
+      --nav-h: 62px;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
+      --font: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont,
+              'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
+
+    * { margin: 0; padding: 0; box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--c-bg); color: var(--c-body);
+      font-family: var(--font);
+      font-size: 16px; line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+    button, input { font-family: inherit; }
+    ::-webkit-scrollbar { width: 0; height: 0; }
+
+    /* ── Reusable primitives ─────────────────────────────────── */
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; min-height: 54px; padding: 15px 20px;
+      border: 0; border-radius: var(--r-md);
+      background: var(--c-accent); color: #fff;
+      font-size: 16px; font-weight: 650; letter-spacing: .1px;
+      cursor: pointer; box-shadow: var(--sh-accent);
+      transition: transform .12s ease, background .16s ease, box-shadow .16s ease;
+    }
+    .btn-primary:active { transform: scale(.975); background: var(--c-accent-dark); }
+    .btn-secondary {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; min-height: 50px; padding: 13px 18px;
+      border: 1.5px solid var(--c-line); border-radius: var(--r-md);
+      background: var(--c-surface); color: var(--c-body);
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: transform .12s ease, border-color .16s ease, background .16s ease;
+    }
+    .btn-secondary:active { transform: scale(.975); border-color: var(--c-accent); background: var(--c-accent-tint); }
+    .btn-ghost {
+      background: none; border: 0; color: var(--c-accent);
+      font-size: 15px; font-weight: 600; cursor: pointer; padding: 10px 14px;
+    }
+    .card {
+      background: var(--c-surface); border: 1px solid var(--c-line);
+      border-radius: var(--r-lg); box-shadow: var(--sh-1);
+    }
+    .h1 { font-size: 30px; line-height: 1.22; font-weight: 750; color: var(--c-navy); letter-spacing: -.5px; }
+    .h2 { font-size: 20px; line-height: 1.3;  font-weight: 700; color: var(--c-navy); letter-spacing: -.2px; }
+    .h3 { font-size: 16px; font-weight: 650; color: var(--c-navy); }
+    .body-t { font-size: 15px; color: var(--c-body); }
+    .small-t { font-size: 13px; color: var(--c-muted); }
+
+    .progress-track { width: 100%; height: 8px; border-radius: 99px; background: var(--c-line); overflow: hidden; }
+    .progress-fill  { height: 100%; border-radius: 99px;
+      background: linear-gradient(90deg, var(--c-accent), #38BDF8);
+      transition: width .55s cubic-bezier(.4,0,.2,1); }
+
+    /* Generic scrollable app screen (light) */
+    .app-screen {
+      position: fixed; inset: 0; z-index: 2000; display: none;
+      flex-direction: column; background: var(--c-bg);
+    }
+    .app-screen.show { display: flex; }
+    .screen-head {
+      display: flex; align-items: center; gap: 10px;
+      padding: calc(var(--safe-t) + 12px) 16px 12px;
+      background: var(--c-surface); border-bottom: 1px solid var(--c-line);
+      flex-shrink: 0;
+    }
+    .screen-head .sh-title { font-size: 18px; font-weight: 700; color: var(--c-navy); flex: 1; }
+    .icon-btn {
+      width: 40px; height: 40px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      border: 0; border-radius: 50%; background: transparent;
+      color: var(--c-navy); cursor: pointer; transition: background .16s;
+    }
+    .icon-btn:active { background: var(--c-accent-soft); }
+    .icon-btn svg { width: 22px; height: 22px; }
+    .screen-body {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 18px 16px calc(var(--nav-h) + var(--safe-b) + 28px);
+    }
+    .screen-body.no-nav { padding-bottom: calc(var(--safe-b) + 28px); }
+
+    /* ── Camera layer (unchanged geometry, restyled) ─────────── */
+    #camera-feed { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
     #overlay-canvas { display: none; }
-
-    #ar-scene-wrapper {
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 2; pointer-events: none;
-    }
+    #ar-scene-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
     a-scene { background: transparent !important; }
 
-    #scan-bar-wrapper {
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 3; pointer-events: none; overflow: hidden;
-    }
+    #scan-bar-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: hidden; display: none; }
     #scan-bar {
-      width: 100%; height: 3px;
-      background: linear-gradient(90deg, transparent, #00FF88, #00FFCC, #00FF88, transparent);
-      position: absolute; top: 0;
-      animation: scanDown 2s linear infinite;
-      box-shadow: 0 0 8px #00FF88;
+      width: 100%; height: 2px; position: absolute; top: 0;
+      background: linear-gradient(90deg, transparent, rgba(56,189,248,.95), transparent);
+      animation: scanDown 2.6s ease-in-out infinite;
     }
-    @keyframes scanDown {
-      0%   { top: 0%;   opacity: 1; }
-      90%  { top: 100%; opacity: 1; }
-      100% { top: 100%; opacity: 0; }
-    }
+    @keyframes scanDown { 0%{top:0;opacity:0} 12%{opacity:1} 88%{opacity:1} 100%{top:100%;opacity:0} }
 
+    /* Scanning reticle — geometry preserved (OCR ROI maps to this box) */
     #scan-frame {
-      position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 280px; height: 180px;
-      z-index: 3; pointer-events: none;
+      position: fixed; top: 46%; left: 50%; transform: translate(-50%, -50%);
+      width: 280px; height: 180px; z-index: 3; pointer-events: none;
+      border-radius: var(--r-lg);
+      box-shadow: 0 0 0 100vmax rgba(8,17,32,.55);
     }
-    .corner { position: absolute; width: 24px; height: 24px; border-color: #00FF88; border-style: solid; }
-    .corner.tl { top: 0;    left: 0;   border-width: 3px 0 0 3px; }
-    .corner.tr { top: 0;    right: 0;  border-width: 3px 3px 0 0; }
-    .corner.bl { bottom: 0; left: 0;   border-width: 0 0 3px 3px; }
-    .corner.br { bottom: 0; right: 0;  border-width: 0 3px 3px 0; }
+    #scan-frame::after {
+      content: ''; position: absolute; inset: 0;
+      border-radius: var(--r-lg); border: 2px solid rgba(255,255,255,.28);
+    }
+    .corner { position: absolute; width: 30px; height: 30px; border-color: #38BDF8; border-style: solid; }
+    .corner.tl { top:-1px; left:-1px;  border-width: 4px 0 0 4px; border-radius: var(--r-lg) 0 0 0; }
+    .corner.tr { top:-1px; right:-1px; border-width: 4px 4px 0 0; border-radius: 0 var(--r-lg) 0 0; }
+    .corner.bl { bottom:-1px; left:-1px;  border-width: 0 0 4px 4px; border-radius: 0 0 0 var(--r-lg); }
+    .corner.br { bottom:-1px; right:-1px; border-width: 0 4px 4px 0; border-radius: 0 0 var(--r-lg) 0; }
+    #scan-frame.detected .corner { border-color: #4ADE80; }
+    #scan-frame.detected::after { border-color: rgba(74,222,128,.55); }
+
+    /* Scanner chrome */
+    #scanner-top {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 14; display: none;
+      align-items: center; gap: 8px;
+      padding: calc(var(--safe-t) + 10px) 12px 14px;
+      background: linear-gradient(180deg, rgba(8,17,32,.78), rgba(8,17,32,0));
+      pointer-events: none;
+    }
+    #scanner-top.show { display: flex; }
+    #scanner-top .sc-title { flex: 1; text-align: center; color: #fff; font-size: 16px; font-weight: 650; }
+    #scanner-top .icon-btn { color: #fff; background: rgba(255,255,255,.14); backdrop-filter: blur(6px); pointer-events: auto; }
+    #scanner-top .icon-btn:active { background: rgba(255,255,255,.28); }
+
+    #scan-instruction {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      top: calc(46% + 108px); z-index: 11; display: none;
+      color: #fff; font-size: 14.5px; font-weight: 550; text-align: center;
+      line-height: 1.45; max-width: 80%; text-shadow: 0 1px 6px rgba(0,0,0,.6);
+      pointer-events: none;
+    }
+    #scan-instruction.show { display: block; }
 
     #status {
-      position: fixed; top: 20px; left: 50%;
+      position: fixed; bottom: calc(var(--safe-b) + 34px); left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.65); color: #fff;
-      padding: 6px 18px; border-radius: 20px;
-      font-size: 13px; z-index: 10; white-space: nowrap;
-      border: 1px solid rgba(0,255,136,0.3);
-      max-width: 90%; overflow: hidden; text-overflow: ellipsis;
+      background: rgba(8,17,32,.82); backdrop-filter: blur(10px);
+      color: #fff; padding: 11px 22px; border-radius: 99px;
+      font-size: 14px; font-weight: 550; z-index: 10;
+      display: flex; align-items: center; gap: 9px;
+      border: 1px solid rgba(255,255,255,.16);
+      max-width: 88%; text-align: center;
     }
-    #status.found  { border-color: #00FF88; color: #00FF88; }
-    #status.locked { border-color: #FFD93D; color: #FFD93D; }
-    #status.fused  { border-color: #FF6EC7; color: #FF6EC7; }
+    #status::before {
+      content: ''; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+      background: #38BDF8; animation: pulseDot 1.5s ease-in-out infinite;
+    }
+    @keyframes pulseDot { 0%,100%{opacity:.35;transform:scale(.8)} 50%{opacity:1;transform:scale(1.15)} }
+    #status.found  { border-color: rgba(74,222,128,.6); }
+    #status.found::before  { background: #4ADE80; animation: none; }
+    #status.locked { border-color: rgba(251,191,36,.6); }
+    #status.locked::before { background: #FBBF24; animation: none; }
+    #status.fused  { border-color: rgba(167,139,250,.65); }
+    #status.fused::before  { background: #A78BFA; animation: none; }
+    #status.warn   { border-color: rgba(251,191,36,.5); }
+    #status.warn::before   { background: #FBBF24; animation: none; }
 
-    /* Mini card */
+    /* ── Scan result overlay (Screen 7) ──────────────────────── */
     #element-info {
-      position: fixed; bottom: 170px; left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.75); color: #fff;
-      padding: 14px 28px; border-radius: 14px;
-      z-index: 10; display: none; text-align: center;
-      border: 1px solid rgba(0,255,136,0.4);
-      min-width: 180px; cursor: pointer;
+      position: fixed; inset: 0; z-index: 16; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px; background: rgba(8,17,32,.80); backdrop-filter: blur(3px);
+      animation: fadeIn .22s ease;
     }
-    #element-info .symbol   { font-size: 32px; font-weight: bold; color: #00FF88; line-height: 1; }
-    #element-info .name     { font-size: 14px; color: #ccc; margin-top: 4px; }
-    #element-info .number   { font-size: 11px; color: #888; margin-top: 2px; }
-    #element-info .tap-hint { font-size: 10px; color: rgba(0,255,136,0.5); margin-top: 6px; }
+    #element-info.show { display: flex; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .si-check {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--c-success); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 18px; box-shadow: 0 6px 22px rgba(22,163,74,.45);
+      animation: popIn .34s cubic-bezier(.34,1.56,.64,1);
+    }
+    .si-check svg { width: 38px; height: 38px; }
+    @keyframes popIn { from{transform:scale(.4);opacity:0} to{transform:scale(1);opacity:1} }
+    #element-info .si-heading { color: #fff; font-size: 21px; font-weight: 700; margin-bottom: 18px; }
+    .si-card {
+      background: #fff; border-radius: var(--r-lg); padding: 18px 34px;
+      text-align: center; box-shadow: var(--sh-3); min-width: 172px; margin-bottom: 22px;
+    }
+    #element-info .number { font-size: 13px; color: var(--c-muted); font-weight: 600; }
+    #element-info .symbol { font-size: 46px; font-weight: 750; color: var(--c-accent); line-height: 1.05; }
+    #element-info .name   { font-size: 16px; color: var(--c-navy); font-weight: 600; margin-top: 2px; }
+    .si-actions { width: min(340px, 100%); display: flex; flex-direction: column; gap: 10px; }
+    .si-actions .btn-secondary { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.28); color: #fff; }
+    #element-info .tap-hint { color: rgba(255,255,255,.55); font-size: 12px; margin-top: 14px; text-align: center; }
 
-    /* Fusion bar */
+    /* ── Fusion ──────────────────────────────────────────────── */
     #fusion-bar {
-      position: fixed; top: 64px; left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.8);
-      border: 1px solid #FFD93D;
-      border-radius: 24px;
-      padding: 6px 16px;
-      font-size: 13px; color: #FFD93D;
-      z-index: 10; display: none;
-      white-space: nowrap; align-items: center; gap: 8px;
+      position: fixed; top: calc(var(--safe-t) + 66px); left: 50%; transform: translateX(-50%);
+      background: var(--c-warn-soft); border: 1px solid #FCD34D;
+      border-radius: 99px; padding: 9px 10px 9px 18px;
+      font-size: 13.5px; font-weight: 600; color: #92400E;
+      z-index: 14; display: none; align-items: center; gap: 8px; white-space: nowrap;
+      box-shadow: var(--sh-2);
     }
     #fusion-bar button {
-      background: rgba(255,80,80,0.2);
-      border: 1px solid #FF4444;
-      color: #FF4444; border-radius: 12px;
-      font-size: 11px; padding: 2px 8px;
-      cursor: pointer; font-family: inherit;
-      margin-left: 8px;
+      background: #fff; border: 1px solid #FCD34D; color: #92400E;
+      border-radius: 99px; font-size: 12px; font-weight: 600;
+      padding: 5px 12px; cursor: pointer;
     }
-
-    /* Fusion result card */
     #fusion-result {
-      position: fixed; bottom: 170px; left: 50%;
-      transform: translateX(-50%);
-      background: rgba(20,0,40,0.92); color: #fff;
-      padding: 16px 28px; border-radius: 14px;
-      z-index: 10; display: none; text-align: center;
-      border: 1px solid #FF6EC7;
-      min-width: 200px; cursor: pointer;
+      position: fixed; inset: 0; z-index: 16; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px; background: rgba(8,17,32,.80); backdrop-filter: blur(3px);
+      animation: fadeIn .22s ease;
     }
-    #fusion-result .f-formula  { font-size: 26px; font-weight: bold; color: #FF6EC7; }
-    #fusion-result .f-name     { font-size: 15px; color: #fff; margin-top: 4px; }
-    #fusion-result .f-equation { font-size: 11px; color: #aaa; margin-top: 4px; }
-    #fusion-result .f-hint     { font-size: 10px; color: rgba(255,110,199,0.5); margin-top: 6px; }
+    #fusion-result.show { display: flex; }
+    .fr-card {
+      background: #fff; border-radius: var(--r-xl); padding: 26px 30px;
+      text-align: center; box-shadow: var(--sh-3); width: min(340px, 100%);
+    }
+    #fusion-result .f-formula  { font-size: 34px; font-weight: 750; color: var(--c-purple); }
+    #fusion-result .f-name     { font-size: 17px; color: var(--c-navy); font-weight: 650; margin-top: 4px; }
+    #fusion-result .f-equation { font-size: 13px; color: var(--c-muted); margin-top: 8px; }
+    #fusion-result .f-rarity   { font-size: 12px; font-weight: 700; margin-top: 10px; }
+    #fusion-result .f-hint     { font-size: 12px; color: rgba(255,255,255,.6); margin-top: 16px; }
 
-    /* Explanation bottom sheet */
+    /* ── Element detail bottom sheet ─────────────────────────── */
     #explanation-panel {
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: rgba(10,10,10,0.96);
-      border-top: 1px solid rgba(0,255,136,0.35);
-      border-radius: 18px 18px 0 0;
-      padding: 18px 20px 36px;
-      z-index: 25; display: none;
-      max-height: 60%; overflow-y: auto;
+      background: var(--c-surface);
+      border-radius: var(--r-xl) var(--r-xl) 0 0;
+      padding: 8px 20px calc(var(--safe-b) + 28px);
+      z-index: 25; display: none; max-height: 78%; overflow-y: auto;
+      box-shadow: 0 -8px 34px rgba(15,23,42,.20);
     }
-    #explanation-panel.fusion-mode { border-top-color: rgba(255,110,199,0.5); }
-    .ep-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .ep-left   { display: flex; align-items: baseline; gap: 10px; }
-    .ep-symbol { font-size: 28px; font-weight: bold; color: #00FF88; }
-    .ep-symbol.fusion { color: #FF6EC7; }
-    .ep-name   { font-size: 15px; color: #fff; }
-    .ep-close  { color: #666; font-size: 24px; line-height: 1; background: none; border: none; cursor: pointer; padding: 0 4px; }
-    .ep-row    { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12px; }
-    .ep-label  { color: #777; }
-    .ep-value  { color: #eee; text-align: right; max-width: 60%; }
-    .ep-desc   { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #bbb; line-height: 1.8; }
+    #explanation-panel::before {
+      content: ''; display: block; width: 42px; height: 4px; border-radius: 99px;
+      background: var(--c-line); margin: 6px auto 16px;
+    }
+    .ep-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .ep-left   { display: flex; align-items: center; gap: 14px; }
+    .ep-symbol {
+      font-size: 24px; font-weight: 750; color: var(--c-accent);
+      background: var(--c-accent-soft); border-radius: var(--r-md);
+      min-width: 58px; height: 58px; display: flex; align-items: center; justify-content: center;
+    }
+    .ep-symbol.fusion { color: var(--c-purple); background: #EDE9FE; }
+    .ep-name   { font-size: 19px; font-weight: 700; color: var(--c-navy); }
+    .ep-close  { color: var(--c-faint); font-size: 26px; line-height: 1; background: none; border: none; cursor: pointer; padding: 4px 8px; }
+    .ep-row    { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+                 padding: 13px 0; border-bottom: 1px solid var(--c-line); font-size: 14.5px; }
+    .ep-label  { color: var(--c-muted); }
+    .ep-value  { color: var(--c-navy); font-weight: 600; text-align: right; max-width: 62%; }
+    .ep-desc   { margin-top: 16px; padding: 14px 16px; border-radius: var(--r-md);
+                 background: var(--c-accent-tint); font-size: 14.5px; color: var(--c-body); line-height: 1.65; }
 
-    /* Lock button */
     #lock-btn {
-      position: fixed; bottom: 170px; right: 16px;
-      background: rgba(0,0,0,0.8); color: #FFD93D;
-      border: 1px solid #FFD93D; border-radius: 50%;
-      width: 52px; height: 52px;
-      font-size: 22px; display: none;
-      align-items: center; justify-content: center;
-      z-index: 10; cursor: pointer;
+      position: fixed; bottom: calc(var(--safe-b) + 100px); right: 16px;
+      background: #fff; color: var(--c-warn);
+      border: 1px solid var(--c-line); border-radius: 50%;
+      width: 56px; height: 56px; font-size: 22px; display: none;
+      align-items: center; justify-content: center; z-index: 12; cursor: pointer;
+      box-shadow: var(--sh-2);
     }
+    #hint { display: none !important; }
 
-    #hint {
-      position: fixed; bottom: 180px; left: 50%;
-      transform: translateX(-50%);
-      color: rgba(255,255,255,0.4);
-      font-size: 11px; z-index: 10; text-align: center; pointer-events: none;
-    }
     #debug-panel {
-      position: fixed; bottom: 0; left: 0;
-      width: 100%; max-height: 160px; overflow-y: auto;
-      background: rgba(0,0,0,0.82);
-      font-size: 11px; padding: 6px 8px; z-index: 999; pointer-events: none;
-      border-top: 1px solid rgba(0,255,136,0.2);
+      position: fixed; bottom: 0; left: 0; width: 100%; max-height: 150px; overflow-y: auto;
+      background: rgba(8,17,32,.9); color: #E2E8F0;
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 11px; padding: 8px 10px; z-index: 9999; pointer-events: none;
     }
     #debug-toggle {
-      position: fixed; bottom: 0; right: 0;
-      background: rgba(0,0,0,0.7); color: #00FF88;
-      font-size: 11px; padding: 4px 10px; z-index: 1000;
-      border: none;
-      border-top: 1px solid rgba(0,255,136,0.3);
-      border-left: 1px solid rgba(0,255,136,0.3);
-      cursor: pointer;
+      position: fixed; bottom: 0; right: 0; background: rgba(8,17,32,.75); color: #7DD3FC;
+      font-size: 11px; padding: 5px 11px; z-index: 10000; border: none; cursor: pointer;
     }
 
-    /* Language Switcher Buttons */
     .lang-switcher-btn {
-      background: rgba(0,0,0,0.75); color: #00FF88;
-      border: 1px solid rgba(0,255,136,0.4);
-      border-radius: 20px; padding: 5px 12px;
-      font-size: 11px; font-family: inherit; font-weight: bold;
-      cursor: pointer; display: flex; align-items: center; gap: 4px;
-      transition: all 0.2s;
+      background: var(--c-surface); color: var(--c-navy);
+      border: 1px solid var(--c-line); border-radius: 99px; padding: 7px 14px;
+      font-size: 12.5px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px; box-shadow: var(--sh-1);
     }
-    .lang-switcher-btn:hover { background: rgba(0,255,136,0.15); border-color: #00FF88; }
-    #home-lang-toggle { position: absolute; top: 20px; right: 20px; z-index: 2005; }
-    #top-lang-toggle { position: fixed; top: 20px; left: 100px; z-index: 15; display: none; }
+    #home-lang-toggle { position: static; }
+    #top-lang-toggle  { display: none !important; }
+    #home-return      { display: none !important; }
 
-    /* Home Menu */
-    #home-menu { position: fixed; inset: 0; z-index: 2000; background: linear-gradient(180deg, #06110d 0%, #000 100%); display: flex; align-items: center; justify-content: center; padding: 24px; }
-    .home-box { width: min(430px, 100%); text-align: center; position: relative; }
-    .home-title { color: #00FF88; font-size: 30px; font-weight: bold; letter-spacing: 2px; margin-bottom: 8px; }
-    .home-subtitle { color: #888; font-size: 12px; margin-bottom: 28px; }
-    .home-btn { width: 100%; padding: 17px 18px; margin: 7px 0; border-radius: 14px; border: 1px solid rgba(0,255,136,.35); background: rgba(0,255,136,.07); color: #fff; font: 600 15px monospace; cursor: pointer; text-align: left; }
-    .home-btn:hover { background: rgba(0,255,136,.14); border-color: #00FF88; }
-    .home-btn .hb-icon { display: inline-block; width: 34px; color: #00FF88; font-size: 20px; vertical-align: middle; }
-    .home-btn small { display: block; margin: 4px 0 0 34px; color: #777; font: 11px monospace; }
-    .home-footer { margin-top: 22px; color: #555; font-size: 10px; }
+    /* ── Splash ──────────────────────────────────────────────── */
+    #splash {
+      position: fixed; inset: 0; z-index: 9000;
+      background: radial-gradient(120% 80% at 50% 0%, #14304F 0%, #0B1B30 45%, #060F1C 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 32px; text-align: center; transition: opacity .45s ease;
+    }
+    #splash.fade { opacity: 0; pointer-events: none; }
+    .splash-logo { width: 96px; height: 96px; margin-bottom: 22px; animation: popIn .6s cubic-bezier(.34,1.56,.64,1); }
+    .splash-word { font-size: 34px; font-weight: 750; color: #fff; letter-spacing: -.6px; }
+    .splash-word span { color: #38BDF8; }
+    .splash-tag { color: #94A3B8; font-size: 14.5px; margin-top: 12px; line-height: 1.6; }
+    .splash-bar { width: 148px; height: 4px; border-radius: 99px; background: rgba(255,255,255,.14); margin-top: 42px; overflow: hidden; }
+    .splash-bar i { display: block; height: 100%; width: 40%; border-radius: 99px; background: #38BDF8; animation: splashLoad 1.5s ease-in-out infinite; }
+    @keyframes splashLoad { 0%{transform:translateX(-110%)} 100%{transform:translateX(310%)} }
+
+    /* ── Onboarding ──────────────────────────────────────────── */
+    #onboarding { position: fixed; inset: 0; z-index: 8000; background: var(--c-surface); display: none; flex-direction: column; }
+    #onboarding.show { display: flex; }
+    .ob-skip { position: absolute; top: calc(var(--safe-t) + 12px); right: 12px; z-index: 2; }
+    .ob-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                padding: 70px 26px 12px; text-align: center; overflow-y: auto; }
+    .ob-art {
+      width: min(230px, 62vw); aspect-ratio: 1; margin-bottom: 30px; flex-shrink: 0;
+      border-radius: 50%; background: radial-gradient(circle at 50% 42%, var(--c-accent-tint), #fff 72%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ob-art svg { width: 78%; height: 78%; }
+    .ob-title { font-size: 26px; font-weight: 750; color: var(--c-navy); line-height: 1.24; letter-spacing: -.4px; }
+    .ob-text  { font-size: 15.5px; color: var(--c-muted); margin-top: 12px; line-height: 1.6; max-width: 330px; }
+    .ob-foot  { flex-shrink: 0; padding: 12px 26px calc(var(--safe-b) + 26px); }
+    .ob-dots  { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+    .ob-dots i { width: 8px; height: 8px; border-radius: 99px; background: var(--c-line); transition: all .28s; }
+    .ob-dots i.on { width: 24px; background: var(--c-accent); }
+
+    /* ── Bottom navigation ───────────────────────────────────── */
+    #bottom-nav {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 3000; display: none;
+      background: rgba(255,255,255,.97); backdrop-filter: blur(12px);
+      border-top: 1px solid var(--c-line);
+      padding-bottom: var(--safe-b);
+      box-shadow: 0 -2px 14px rgba(15,23,42,.05);
+    }
+    #bottom-nav.show { display: flex; }
+    .nav-item {
+      flex: 1; min-height: var(--nav-h); border: 0; background: none; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      color: var(--c-faint); font-size: 11px; font-weight: 600; padding: 8px 2px;
+      transition: color .16s;
+    }
+    .nav-item svg { width: 23px; height: 23px; }
+    .nav-item.active { color: var(--c-accent); }
+    .nav-item:active { background: var(--c-accent-tint); }
+
+    /* ── Home ────────────────────────────────────────────────── */
+    #home-menu { position: fixed; inset: 0; z-index: 2000; background: var(--c-bg); display: flex; flex-direction: column; }
     #home-menu.hidden { display: none; }
-    #home-return { position: fixed; top: 20px; left: 16px; z-index: 15; display: none; background: rgba(0,0,0,.75); color: #00FF88; border: 1px solid rgba(0,255,136,.4); border-radius: 20px; padding: 6px 12px; font: 12px monospace; cursor: pointer; }
-    #home-return.show { display: block; }
-
-    .discovery-search {
-      width: 100%; box-sizing: border-box; margin: 8px 0 10px; padding: 11px 12px;
-      border-radius: 10px; border: 1px solid rgba(0,255,136,.18);
-      background: #0b0b0b; color: #fff; font: 12px monospace; outline: none;
+    .home-topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: calc(var(--safe-t) + 14px) 16px 12px; flex-shrink: 0;
     }
-    .discovery-search:focus { border-color: rgba(0,255,136,.55); }
-    .discovery-search::placeholder { color: #666; }
-    .element-progress-card {
-      padding: 12px; margin: 8px 0 12px; border-radius: 11px;
-      background: rgba(0,255,136,.045); border: 1px solid rgba(0,255,136,.14);
+    .home-brand { display: flex; align-items: center; gap: 9px; font-size: 20px; font-weight: 750; color: var(--c-navy); letter-spacing: -.3px; }
+    .home-brand span { color: var(--c-accent); }
+    .home-brand svg { width: 27px; height: 27px; }
+    .home-box {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 6px 16px calc(var(--nav-h) + var(--safe-b) + 26px);
+      width: 100%; max-width: 560px; margin: 0 auto;
     }
-    .element-progress-top { display: flex; justify-content: space-between; align-items: center; }
-    .element-progress-title { color: #fff; font-size: 12px; font-weight: bold; }
-    .element-progress-count { color: #00FF88; font-size: 12px; font-weight: bold; }
-    .element-progress-bg { height: 8px; margin-top: 8px; border-radius: 5px; background: rgba(255,255,255,.08); overflow: hidden; }
-    .element-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg,#00FF88,#00FFCC); border-radius: 5px; transition: width .35s; }
-    .element-progress-sub { margin-top: 5px; color: #777; font-size: 10px; }
-    .dl-element-history { color: #777; font-size: 10px; text-align: right; min-width: 78px; }
+    .home-title { font-size: 31px; line-height: 1.2; font-weight: 750; color: var(--c-navy); letter-spacing: -.7px; }
+    .home-subtitle { font-size: 15px; color: var(--c-muted); margin: 12px 0 22px; line-height: 1.6; }
 
-    .dl-element-item { display: flex; align-items: center; gap: 10px; padding: 12px 10px; margin: 5px 0; background: rgba(255,255,255,.035); border: 1px solid rgba(0,255,136,.12); border-radius: 10px; cursor: pointer; }
-    .dl-element-symbol { width: 42px; font-size: 19px; font-weight: bold; color: #00FF88; }
-    .dl-element-name { flex: 1; color: #fff; }
-    .dl-element-meta { color: #777; font-size: 10px; text-align: right; }
-    .dl-empty { color: #666; text-align: center; padding: 35px 10px; line-height: 1.7; }
-    .quiz-note { color: #888; font-size: 11px; line-height: 1.6; margin: 8px 0 16px; }
-    .quiz-question { color: #fff; font-size: 16px; line-height: 1.5; margin: 18px 0; }
-    .quiz-option { width: 100%; padding: 12px; margin: 5px 0; border-radius: 9px; border: 1px solid #333; background: #111; color: #ddd; text-align: left; font: 12px monospace; cursor: pointer; }
-    .quiz-option:hover { border-color: #00FF88; }
-    .quiz-result { color: #00FF88; font-size: 18px; text-align: center; padding: 20px 0; }
+    .home-btn {
+      display: flex; align-items: center; gap: 14px; width: 100%;
+      padding: 17px 18px; margin-bottom: 12px;
+      border: 1px solid var(--c-line); border-radius: var(--r-lg);
+      background: var(--c-surface); color: var(--c-navy);
+      font-size: 16px; font-weight: 650; cursor: pointer; text-align: left;
+      box-shadow: var(--sh-1); transition: transform .12s ease, box-shadow .16s ease;
+    }
+    .home-btn:active { transform: scale(.985); box-shadow: var(--sh-2); }
+    .home-btn .hb-icon {
+      width: 42px; height: 42px; flex-shrink: 0; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--c-accent-soft); color: var(--c-accent);
+    }
+    .home-btn .hb-icon svg { width: 21px; height: 21px; }
+    .home-btn small { display: block; margin-top: 2px; color: var(--c-muted); font-size: 13px; font-weight: 500; }
+    .home-btn.primary {
+      background: var(--c-accent); color: #fff; border-color: var(--c-accent);
+      box-shadow: var(--sh-accent); min-height: 62px; font-size: 17px;
+    }
+    .home-btn.primary .hb-icon { background: rgba(255,255,255,.2); color: #fff; }
+    .home-btn.primary small { color: rgba(255,255,255,.85); }
+    .home-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .home-duo .home-btn { flex-direction: column; align-items: flex-start; gap: 10px; margin: 0; font-size: 15px; }
+    .home-duo .home-btn small { margin-top: 0; font-size: 12.5px; }
+    .home-btn .hb-text { flex: 1; min-width: 0; }
+    .home-footer { margin-top: 18px; color: var(--c-faint); font-size: 12.5px; text-align: center; }
 
-    /* Discovery Log Panel */
-    #discovery-panel {
-      position: fixed; inset: 0;
-      background: #000 !important;
-      z-index: 10000 !important;
-      display: none; flex-direction: column !important;
-      overflow: hidden !important; width: 100vw; height: 100dvh;
-      box-sizing: border-box; touch-action: none;
+    .element-progress-card { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: 17px 18px; box-shadow: var(--sh-1); }
+    .element-progress-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .element-progress-title { font-size: 15px; font-weight: 700; color: var(--c-navy); }
+    .element-progress-count { font-size: 13.5px; color: var(--c-muted); font-weight: 600; }
+    .element-progress-bg { width: 100%; height: 8px; border-radius: 99px; background: var(--c-line); overflow: hidden; margin: 12px 0 8px; }
+    .element-progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--c-accent), #38BDF8); transition: width .55s cubic-bezier(.4,0,.2,1); }
+    .element-progress-sub { font-size: 12.5px; color: var(--c-faint); }
+
+    /* ── Panels (Discovery / Quiz) ───────────────────────────── */
+    #discovery-panel, #quiz-panel {
+      position: fixed; inset: 0; z-index: 70; display: none; flex-direction: column;
+      background: var(--c-bg) !important;
     }
     .dp-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 20px 10px;
-      border-bottom: 1px solid rgba(0,255,136,0.2);
-      flex: 0 0 auto !important;
+      display: flex; align-items: center; gap: 10px;
+      padding: calc(var(--safe-t) + 12px) 12px 12px 16px;
+      background: var(--c-surface); border-bottom: 1px solid var(--c-line); flex-shrink: 0;
     }
-    .dp-title { font-size: 16px; font-weight: bold; color: #00FF88; }
-    .dp-close { background: none; border: none; color: #666; font-size: 22px; cursor: pointer; }
-    .dp-tabs  { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.08); flex: 0 0 auto !important; min-height: 40px; }
-    .dp-tab   { flex: 1; padding: 10px; font-family: inherit; font-size: 12px; background: none;
-                border: none; color: #666; cursor: pointer; border-bottom: 2px solid transparent; touch-action: manipulation; }
-    .dp-tab.active { color: #00FF88; border-bottom-color: #00FF88; }
-    
-    #discovery-panel > #tab-elements,
-    #discovery-panel > #tab-log,
-    #discovery-panel > #tab-stats,
-    #discovery-panel > #tab-rules {
-      flex: 1 1 0 !important;
-      min-height: 0 !important; height: 0 !important;
-      overflow-y: auto !important; overflow-x: hidden !important;
-      -webkit-overflow-scrolling: touch !important;
-      overscroll-behavior: contain !important;
-      touch-action: pan-y !important;
-      padding: 14px 16px 32px;
-      box-sizing: border-box !important;
+    .dp-title { flex: 1; font-size: 18px; font-weight: 700; color: var(--c-navy); }
+    .dp-close { background: none; border: 0; color: var(--c-faint); font-size: 27px; line-height: 1; cursor: pointer; padding: 4px 10px; }
+    .dp-tabs {
+      display: flex; gap: 6px; padding: 10px 12px; background: var(--c-surface);
+      border-bottom: 1px solid var(--c-line); overflow-x: auto; flex-shrink: 0;
     }
+    .dp-tab {
+      flex: 1; white-space: nowrap; padding: 9px 12px; border: 0; border-radius: 10px;
+      background: transparent; color: var(--c-muted); font-size: 13.5px; font-weight: 600; cursor: pointer;
+      transition: background .16s, color .16s;
+    }
+    .dp-tab.active { background: var(--c-accent-soft); color: var(--c-accent-dark); }
 
-    .dl-progress { margin-bottom: 14px; }
-    .dl-count    { font-size: 13px; color: #fff; margin-bottom: 6px; }
-    .dl-bar-bg   { background: rgba(255,255,255,0.08); border-radius: 4px; height: 8px; overflow: hidden; }
-    .dl-bar-fill { height: 100%; background: linear-gradient(90deg,#00FF88,#00FFCC); border-radius: 4px; transition: width 0.4s; }
-    .dl-pct      { font-size: 11px; color: #888; margin-top: 4px; text-align: right; }
-    .dl-rarity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-    .dl-rarity-cell { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 12px; text-align: center; }
-    .dl-rarity-cell .dlr-count { font-size: 20px; font-weight: bold; }
-    .dl-rarity-cell .dlr-label { font-size: 10px; color: #888; margin-top: 2px; }
-    .dl-list     { display: flex; flex-direction: column; gap: 6px; }
-    .dl-item     { display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-                   background: rgba(255,255,255,0.04); border-radius: 8px; }
-    .dl-formula  { font-size: 14px; font-weight: bold; min-width: 60px; }
-    .dl-iname    { font-size: 12px; color: #ccc; flex: 1; }
-    .dl-rarity   { font-size: 10px; }
+    .discovery-search {
+      width: 100%; margin: 0 0 14px; padding: 13px 14px;
+      border-radius: var(--r-md); border: 1px solid var(--c-line);
+      background: var(--c-surface); color: var(--c-navy); font-size: 15px; outline: none;
+      transition: border-color .16s, box-shadow .16s;
+    }
+    .discovery-search:focus { border-color: var(--c-accent); box-shadow: 0 0 0 3px var(--c-accent-soft); }
+    .discovery-search::placeholder { color: var(--c-faint); }
 
-    /* Stats tab */
-    .stats-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-    .stats-card    { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; text-align: center; }
-    .stats-card .sc-val { font-size: 22px; font-weight: bold; color: #00FF88; }
-    .stats-card .sc-lbl { font-size: 10px; color: #888; margin-top: 2px; }
-    .stats-title   { font-size: 12px; color: #888; margin-bottom: 8px; }
-    #stats-chart   { display: flex; flex-direction: column; gap: 6px; }
-    .stats-row     { display: flex; align-items: center; gap: 8px; }
-    .stats-sym     { font-size: 12px; font-weight: bold; color: #fff; min-width: 28px; }
-    .stats-track   { flex: 1; height: 14px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
-    .stats-fill    { height: 100%; border-radius: 4px; transition: width 0.4s; }
-    .stats-count   { font-size: 11px; color: #888; min-width: 28px; text-align: right; }
+    .dl-progress { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: 17px 18px; margin-bottom: 14px; box-shadow: var(--sh-1); }
+    .dl-count { font-size: 15px; font-weight: 700; color: var(--c-navy); }
+    .dl-bar-bg { width: 100%; height: 8px; border-radius: 99px; background: var(--c-line); overflow: hidden; margin: 12px 0 8px; }
+    .dl-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--c-accent), #38BDF8); transition: width .55s cubic-bezier(.4,0,.2,1); }
+    .dl-pct { font-size: 12.5px; color: var(--c-faint); }
 
-    /* Discovery Toast */
+    .dl-rarity-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 16px; }
+    .dl-rarity-cell { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--r-md); padding: 13px 8px; text-align: center; box-shadow: var(--sh-1); }
+    .dl-rarity-cell .dlr-count { font-size: 19px; font-weight: 750; color: var(--c-navy); }
+    .dl-rarity-cell .dlr-label { font-size: 11px; color: var(--c-muted); margin-top: 3px; font-weight: 600; }
+
+    .dl-list { display: flex; flex-direction: column; gap: 9px; }
+    .dl-item, .dl-element-item {
+      display: flex; align-items: center; gap: 13px;
+      background: var(--c-surface); border: 1px solid var(--c-line);
+      border-radius: var(--r-md); padding: 14px 15px; box-shadow: var(--sh-1);
+      cursor: pointer; transition: transform .12s ease, border-color .16s;
+    }
+    .dl-item:active, .dl-element-item:active { transform: scale(.99); border-color: var(--c-accent); }
+    .dl-formula { font-size: 16px; font-weight: 700; color: var(--c-accent); min-width: 62px; }
+    .dl-iname   { flex: 1; font-size: 14.5px; color: var(--c-navy); font-weight: 550; }
+    .dl-rarity  { font-size: 11.5px; font-weight: 700; }
+    .dl-element-symbol {
+      width: 46px; height: 46px; flex-shrink: 0; border-radius: 12px;
+      background: var(--c-accent-soft); color: var(--c-accent-dark);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; font-weight: 750;
+    }
+    .dl-element-name { flex: 1; font-size: 15px; font-weight: 600; color: var(--c-navy); }
+    .dl-element-history { font-size: 11.5px; color: var(--c-faint); text-align: right; line-height: 1.5; }
+    .dl-empty { text-align: center; color: var(--c-faint); font-size: 14.5px; padding: 46px 20px; line-height: 1.6; }
+
+    /* Periodic table grid */
+    .pt-legend { display: flex; gap: 18px; align-items: center; margin: 14px 0 6px; font-size: 12.5px; color: var(--c-muted); }
+    .pt-legend b { display: inline-block; width: 11px; height: 11px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; }
+    .pt-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
+    .pt-grid { display: grid; grid-template-columns: repeat(18, minmax(21px, 1fr)); gap: 3px; min-width: 430px; }
+    .pt-grid.pt-f { margin-top: 6px; }
+    .pt-cell {
+      aspect-ratio: 1; border-radius: 5px; border: 1px solid var(--c-line);
+      background: var(--c-surface); color: var(--c-faint);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; cursor: default; padding: 0;
+      transition: transform .12s ease;
+    }
+    .pt-cell.found {
+      background: var(--c-accent); border-color: var(--c-accent); color: #fff;
+      cursor: pointer; box-shadow: 0 1px 4px rgba(14,165,233,.35);
+    }
+    .pt-cell.found:active { transform: scale(.9); }
+    .pt-cell.spacer { border: 0; background: none; }
+    .pt-hint { font-size: 12.5px; color: var(--c-faint); text-align: center; margin-top: 12px; }
+
+    .stats-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 18px; }
+    .stats-card { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--r-md); padding: 15px 8px; text-align: center; box-shadow: var(--sh-1); }
+    .stats-card .sc-val { font-size: 21px; font-weight: 750; color: var(--c-accent); }
+    .stats-card .sc-lbl { font-size: 11.5px; color: var(--c-muted); margin-top: 3px; font-weight: 600; }
+    .stats-title { font-size: 15px; font-weight: 700; color: var(--c-navy); margin: 8px 0 12px; }
+    .stats-row { display: flex; align-items: center; gap: 11px; margin-bottom: 11px; }
+    .stats-sym { min-width: 34px; font-size: 13px; font-weight: 700; color: var(--c-navy); }
+    .stats-track { flex: 1; height: 9px; border-radius: 99px; background: var(--c-line); overflow: hidden; }
+    .stats-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--c-accent), #38BDF8); }
+    .stats-count { min-width: 26px; text-align: right; font-size: 12.5px; color: var(--c-muted); font-weight: 600; }
+
+    .dd-section { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: 16px 18px; margin-bottom: 12px; box-shadow: var(--sh-1); }
+    .dd-section h3 { font-size: 15.5px; font-weight: 700; color: var(--c-navy); margin-bottom: 7px; }
+    .dd-section p  { font-size: 14.5px; color: var(--c-body); line-height: 1.65; }
+    .dd-section ul { margin: 8px 0 0 18px; font-size: 14.5px; color: var(--c-body); line-height: 1.8; }
+
+    /* ── Quiz ────────────────────────────────────────────────── */
+    #quiz-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+                    padding: 18px 16px calc(var(--safe-b) + 34px); }
+    .quiz-meta { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--c-muted); font-weight: 600; margin-bottom: 10px; }
+    .quiz-question { font-size: 21px; font-weight: 700; color: var(--c-navy); line-height: 1.35; margin: 18px 0 20px; }
+    .quiz-option {
+      display: flex; align-items: center; gap: 13px; width: 100%;
+      min-height: 60px; padding: 15px 17px; margin-bottom: 11px;
+      border: 1.5px solid var(--c-line); border-radius: var(--r-md);
+      background: var(--c-surface); color: var(--c-navy);
+      font-size: 15.5px; font-weight: 550; text-align: left; cursor: pointer;
+      transition: border-color .16s, background .16s, transform .12s;
+    }
+    .quiz-option:active { transform: scale(.99); }
+    .quiz-option .qo-radio {
+      width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%;
+      border: 2px solid var(--c-line); display: flex; align-items: center; justify-content: center;
+    }
+    .quiz-option.selected { border-color: var(--c-accent); background: var(--c-accent-tint); }
+    .quiz-option.selected .qo-radio { border-color: var(--c-accent); }
+    .quiz-option.selected .qo-radio::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--c-accent); }
+    .quiz-option.correct  { border-color: var(--c-success); background: var(--c-success-sf); }
+    .quiz-option.wrong    { border-color: var(--c-error); background: var(--c-error-soft); }
+    .quiz-option[disabled] { cursor: default; }
+
+    .qfb { text-align: center; padding: 8px 0 4px; }
+    .qfb-icon { width: 76px; height: 76px; border-radius: 50%; margin: 10px auto 16px;
+                display: flex; align-items: center; justify-content: center; color: #fff;
+                animation: popIn .34s cubic-bezier(.34,1.56,.64,1); }
+    .qfb-icon svg { width: 40px; height: 40px; }
+    .qfb-icon.ok { background: var(--c-success); box-shadow: 0 6px 22px rgba(22,163,74,.4); }
+    .qfb-icon.no { background: var(--c-warn);    box-shadow: 0 6px 22px rgba(217,119,6,.35); }
+    .qfb-title { font-size: 25px; font-weight: 750; color: var(--c-navy); }
+    .qfb-text  { font-size: 15px; color: var(--c-muted); margin-top: 10px; line-height: 1.6; }
+    .qfb-card  { display: flex; align-items: center; gap: 14px; text-align: left;
+                 background: var(--c-surface); border: 1px solid var(--c-line);
+                 border-radius: var(--r-lg); padding: 15px 17px; margin: 20px 0; box-shadow: var(--sh-1); }
+    .qfb-sym   { width: 52px; height: 52px; border-radius: 12px; background: var(--c-accent-soft);
+                 color: var(--c-accent-dark); font-size: 20px; font-weight: 750;
+                 display: flex; align-items: center; justify-content: center; }
+    .quiz-result { text-align: center; padding: 14px 0; }
+    .qr-score { font-size: 46px; font-weight: 750; color: var(--c-accent); line-height: 1.1; }
+    .qr-sub   { font-size: 15px; color: var(--c-muted); margin-top: 6px; }
+    .qr-split { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin: 22px 0; }
+    .qr-cell  { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--r-md); padding: 16px 10px; box-shadow: var(--sh-1); }
+    .qr-cell .v { font-size: 25px; font-weight: 750; }
+    .qr-cell .l { font-size: 12.5px; color: var(--c-muted); margin-top: 3px; font-weight: 600; }
+    .qr-actions { display: flex; flex-direction: column; gap: 10px; }
+    .quiz-note { font-size: 13px; color: var(--c-muted); background: var(--c-accent-tint);
+                 border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 14px; line-height: 1.55; }
+
+    /* ── Discovery toast ─────────────────────────────────────── */
     #discovery-toast {
-      position: fixed; top: 110px; left: 50%;
-      transform: translateX(-50%);
-      background: rgba(10,10,10,0.95);
-      border: 1px solid rgba(0,255,136,0.4);
-      border-radius: 14px; padding: 10px 20px;
-      z-index: 30; display: none;
-      flex-direction: column; align-items: center; gap: 2px;
-      min-width: 200px; text-align: center;
-      animation: toastIn 0.4s ease;
+      position: fixed; top: calc(var(--safe-t) + 14px); left: 50%; transform: translateX(-50%) translateY(-24px);
+      background: var(--c-surface); border: 1px solid var(--c-line);
+      border-left: 4px solid var(--c-purple);
+      border-radius: var(--r-md); padding: 13px 20px; z-index: 900;
+      opacity: 0; transition: all .32s cubic-bezier(.4,0,.2,1); pointer-events: none;
+      box-shadow: var(--sh-3); text-align: center; min-width: 180px;
     }
-    #discovery-toast .dt-new     { font-size: 10px; color: #00FF88; letter-spacing: 2px; }
-    #discovery-toast .dt-formula { font-size: 22px; font-weight: bold; color: #fff; }
-    #discovery-toast .dt-name    { font-size: 12px; color: #ccc; }
-    #discovery-toast .dt-rarity  { font-size: 11px; margin-top: 2px; }
-    @keyframes toastIn  { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+    #discovery-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #discovery-toast .dt-new     { font-size: 10.5px; font-weight: 750; color: var(--c-purple); letter-spacing: .6px; }
+    #discovery-toast .dt-formula { font-size: 21px; font-weight: 750; color: var(--c-navy); margin-top: 3px; }
+    #discovery-toast .dt-name    { font-size: 13.5px; color: var(--c-muted); }
+    #discovery-toast .dt-rarity  { font-size: 11.5px; font-weight: 700; margin-top: 4px; }
 
-    /* Log button */
     #log-btn {
-      position: fixed; top: 20px; right: 16px;
-      background: rgba(0,0,0,0.75); color: #00FF88;
-      border: 1px solid rgba(0,255,136,0.4);
-      border-radius: 20px; padding: 5px 12px;
-      font-size: 12px; z-index: 10; cursor: pointer; display: flex;
-      align-items: center; gap: 6px;
+      position: fixed; top: calc(var(--safe-t) + 14px); right: 14px;
+      background: rgba(255,255,255,.16); backdrop-filter: blur(8px);
+      color: #fff; border: 1px solid rgba(255,255,255,.22);
+      border-radius: 99px; padding: 8px 14px; font-size: 12.5px; font-weight: 600;
+      z-index: 13; cursor: pointer; display: none;
     }
-    #log-btn .lb-count { color: #FFD93D; font-weight: bold; }
+    #log-btn .lb-count { font-weight: 750; }
 
-    /* Reset Modal */
+    /* ── Reset modal ─────────────────────────────────────────── */
     #reset-modal {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.85);
-      z-index: 60; display: none;
-      align-items: center; justify-content: center;
+      position: fixed; inset: 0; z-index: 9500; display: none;
+      align-items: center; justify-content: center; padding: 26px;
+      background: rgba(15,23,42,.55); backdrop-filter: blur(3px);
     }
     #reset-modal.show { display: flex; }
-    .rm-box {
-      background: #111; border: 1px solid #FF4444;
-      border-radius: 16px; padding: 28px 24px;
-      max-width: 300px; width: 90%;
-      text-align: center;
-    }
-    .rm-icon  { font-size: 40px; margin-bottom: 10px; }
-    .rm-title { font-size: 16px; font-weight: bold; color: #FF4444; margin-bottom: 8px; }
-    .rm-body  { font-size: 12px; color: #aaa; line-height: 1.7; margin-bottom: 20px; }
-    .rm-body strong { color: #fff; }
-    .rm-btns  { display: flex; gap: 10px; }
-    .rm-cancel { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #444;
-                 background: none; color: #aaa; font-family: inherit; font-size: 13px; cursor: pointer; }
-    .rm-confirm { flex: 1; padding: 10px; border-radius: 8px; border: none;
-                  background: #FF4444; color: #fff; font-family: inherit;
-                  font-size: 13px; font-weight: bold; cursor: pointer; }
-    .rm-cancel:hover  { border-color: #888; color: #fff; }
-    .rm-confirm:hover { background: #cc0000; }
-
+    .rm-box { background: var(--c-surface); border-radius: var(--r-xl); padding: 26px 24px;
+              width: min(360px, 100%); text-align: center; box-shadow: var(--sh-3); }
+    .rm-icon { font-size: 40px; margin-bottom: 12px; }
+    .rm-title { font-size: 19px; font-weight: 700; color: var(--c-navy); }
+    .rm-body { font-size: 14.5px; color: var(--c-muted); margin-top: 10px; line-height: 1.6; }
+    .rm-body strong { color: var(--c-error); }
+    .rm-btns { display: flex; gap: 10px; margin-top: 22px; }
+    .rm-cancel, .rm-confirm { flex: 1; min-height: 48px; border-radius: var(--r-md);
+                              font-size: 15px; font-weight: 650; cursor: pointer; }
+    .rm-cancel  { background: var(--c-surface); border: 1.5px solid var(--c-line); color: var(--c-body); }
+    .rm-confirm { background: var(--c-error); border: 0; color: #fff; }
     #reset-btn {
-      margin: 10px 16px 0; padding: 8px;
-      width: calc(100% - 32px); background: none;
-      border: 1px solid rgba(255,68,68,0.4); border-radius: 8px;
-      color: #FF4444; font-family: inherit; font-size: 12px; cursor: pointer;
-      flex: 0 0 auto;
+      width: 100%; min-height: 50px; border-radius: var(--r-md);
+      border: 1.5px solid var(--c-error-soft); background: var(--c-surface);
+      color: var(--c-error); font-size: 15px; font-weight: 650; cursor: pointer;
     }
-    #reset-btn:hover { background: rgba(255,68,68,0.1); }
 
-    /* Rules & Detailed Screen Components */
-    .dd-section {
-      margin-top: 12px; padding: 14px; border-radius: 11px;
-      background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.07);
-    }
-    .dd-section h3 { font-size: 13px; color: #00FF88; margin-bottom: 6px; }
-    .dd-section p, .dd-section ul { font-size: 12px; line-height: 1.6; color: #ccc; }
-    .dd-section ul { padding-left: 18px; }
-
-    /* Full-screen Discovery Detail Page */
-    #discoveryDetailPage {
-      position: fixed; inset: 0; z-index: 99999; display: none;
-      background: #06110d; color: #fff; overflow-y: auto;
-      padding-bottom: 40px;
-    }
+    /* ── Discovery detail page ───────────────────────────────── */
+    #discoveryDetailPage { position: fixed; inset: 0; z-index: 80; display: none; flex-direction: column; background: var(--c-bg); }
     #discoveryDetailPage .dd-header {
-      position: sticky; top: 0; z-index: 2; padding: 16px 20px;
-      background: rgba(6,17,13,.95); border-bottom: 1px solid rgba(0,255,136,.2);
-      display: flex; align-items: center; gap: 14px;
+      display: flex; align-items: center; gap: 10px;
+      padding: calc(var(--safe-t) + 12px) 12px 12px 8px;
+      background: var(--c-surface); border-bottom: 1px solid var(--c-line); flex-shrink: 0;
     }
-    #discoveryDetailPage .dd-back {
-      border: 1px solid rgba(0,255,136,.4); border-radius: 12px; padding: 8px 14px; cursor: pointer;
-      background: rgba(0,255,136,.1); color: #00FF88; font-family: inherit; font-weight: 700;
-    }
-    #discoveryDetailPage .dd-content { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
+    #discoveryDetailPage .dd-back { background: none; border: 0; color: var(--c-navy);
+      font-size: 15px; font-weight: 600; cursor: pointer; padding: 8px 10px;
+      display: flex; align-items: center; gap: 5px; }
+    #discoveryDetailPage .dd-content { flex: 1; overflow-y: auto; padding: 18px 16px calc(var(--safe-b) + 34px); }
     #discoveryDetailPage .dd-hero {
-      display: grid; grid-template-columns: 130px 1fr; gap: 20px; align-items: center;
-      padding: 20px; border-radius: 16px; background: rgba(255,255,255,.03);
-      border: 1px solid rgba(0,255,136,.2);
+      background: linear-gradient(160deg, #0F2942, #0B1B30); border-radius: var(--r-xl);
+      padding: 30px 20px; text-align: center; margin-bottom: 16px;
     }
-    #discoveryDetailPage .dd-symbol {
-      width: 130px; height: 130px; border-radius: 16px; display: grid; place-items: center;
-      font-size: 48px; font-weight: 900; background: rgba(0,255,136,.05); border: 1px solid rgba(0,255,136,.3);
-      color: #00FF88;
-    }
-    #discoveryDetailPage .dd-name { font-size: 28px; font-weight: bold; margin-bottom: 4px; }
-    #discoveryDetailPage .dd-meta { color: #888; font-size: 13px; margin-bottom: 12px; }
-    #discoveryDetailPage .dd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
-    #discoveryDetailPage .dd-card { padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); }
-    #discoveryDetailPage .dd-label { font-size: 10px; text-transform: uppercase; color: #666; }
-    #discoveryDetailPage .dd-value { font-size: 13px; font-weight: bold; margin-top: 4px; word-break: break-word; color: #eee; }
+    #discoveryDetailPage .dd-symbol { font-size: 54px; font-weight: 750; color: #38BDF8; line-height: 1.05; }
+    #discoveryDetailPage .dd-name { font-size: 20px; font-weight: 650; color: #fff; margin-top: 4px; }
+    #discoveryDetailPage .dd-meta { font-size: 13px; color: #94A3B8; margin-top: 6px; }
+    #discoveryDetailPage .dd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    #discoveryDetailPage .dd-card { background: var(--c-surface); border: 1px solid var(--c-line);
+      border-radius: var(--r-md); padding: 14px 15px; box-shadow: var(--sh-1); }
+    #discoveryDetailPage .dd-label { font-size: 12px; color: var(--c-muted); font-weight: 600; }
+    #discoveryDetailPage .dd-value { font-size: 16px; font-weight: 700; color: var(--c-navy); margin-top: 3px; }
 
-    @media (max-width: 600px) {
-      #discoveryDetailPage .dd-hero { grid-template-columns: 1fr; text-align: center; }
-      #discoveryDetailPage .dd-symbol { margin: 0 auto; }
+    /* ── Help / Settings rows ────────────────────────────────── */
+    .step-row { display: flex; gap: 14px; background: var(--c-surface); border: 1px solid var(--c-line);
+                border-radius: var(--r-lg); padding: 16px 17px; margin-bottom: 11px; box-shadow: var(--sh-1); }
+    .step-num { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px;
+                background: var(--c-accent-soft); color: var(--c-accent-dark);
+                display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: 15px; }
+    .step-row h4 { font-size: 15px; font-weight: 650; color: var(--c-navy); margin-bottom: 4px; }
+    .step-row p  { font-size: 13.5px; color: var(--c-muted); line-height: 1.6; }
+    .tip-box { display: flex; gap: 12px; background: var(--c-accent-tint); border: 1px solid var(--c-accent-soft);
+               border-radius: var(--r-lg); padding: 15px 16px; font-size: 14px; color: var(--c-body); line-height: 1.6; }
+    .set-row { display: flex; align-items: center; gap: 14px; width: 100%;
+               background: var(--c-surface); border: 1px solid var(--c-line);
+               border-radius: var(--r-lg); padding: 15px 16px; margin-bottom: 11px;
+               box-shadow: var(--sh-1); cursor: pointer; text-align: left; }
+    .set-row:active { border-color: var(--c-accent); }
+    .set-icon { width: 40px; height: 40px; flex-shrink: 0; border-radius: 11px;
+                background: var(--c-accent-soft); color: var(--c-accent);
+                display: flex; align-items: center; justify-content: center; }
+    .set-icon svg { width: 20px; height: 20px; }
+    .set-row .st { flex: 1; min-width: 0; }
+    .set-row .st b { display: block; font-size: 15px; font-weight: 650; color: var(--c-navy); }
+    .set-row .st small { font-size: 13px; color: var(--c-muted); }
+    .set-row .chev { color: var(--c-faint); flex-shrink: 0; }
+    .sec-label { font-size: 12.5px; font-weight: 700; color: var(--c-faint);
+                 letter-spacing: .5px; text-transform: uppercase; margin: 20px 0 10px; }
+    .sec-label:first-child { margin-top: 4px; }
+
+    /* Panel tab bodies scroll independently; header + tabs stay fixed. */
+    #tab-elements, #tab-log, #tab-stats, #tab-rules {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 16px 16px calc(var(--safe-b) + 34px);
     }
-  </style>
+    #discovery-panel > div[id^="tab-"] { min-height: 0; }
+
+    /* ── Short-viewport adaptation ───────────────────────────── */
+    @media (max-height: 680px) {
+      .home-title { font-size: 26px; }
+      .home-subtitle { margin-bottom: 16px; }
+      .ob-art { width: min(160px, 44vw); margin-bottom: 20px; }
+      .ob-title { font-size: 23px; }
+      #scan-frame { width: 240px; height: 155px; }
+      #scan-instruction { top: calc(46% + 96px); font-size: 13.5px; }
+    }
+    @media (max-width: 340px) {
+      .home-duo { grid-template-columns: 1fr; }
+      .home-title { font-size: 26px; }
+    }
+</style>
 </head>
 <body>
 
@@ -423,14 +720,40 @@
 
   <!-- Home Menu -->
   <div id="home-menu">
-    <button class="lang-switcher-btn" id="home-lang-toggle" onclick="toggleLanguage()">🌐 EN | ID</button>
+    <div class="home-topbar">
+      <div class="home-brand"><svg viewBox="0 0 48 48" fill="none"><path d="M24 3.5 41.5 13.5v21L24 44.5 6.5 34.5v-21z" stroke="#0EA5E9" stroke-width="2.8" stroke-linejoin="round"/><circle cx="24" cy="24" r="5.4" stroke="#0EA5E9" stroke-width="2.8"/><circle cx="24" cy="13" r="2.4" fill="#0EA5E9"/><circle cx="33.5" cy="29.5" r="2.4" fill="#0EA5E9"/><circle cx="14.5" cy="29.5" r="2.4" fill="#0EA5E9"/></svg> Mind<span>AR</span></div>
+      <button class="icon-btn" onclick="openSettings()" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 0 1-4 0v-.12A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 0 1 0-4h.12A1.7 1.7 0 0 0 4.7 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9.1a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 0 1 4 0v.12a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.04a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 0 1 0 4h-.12a1.7 1.7 0 0 0-1.56 1.03z"/></svg></button>
+    </div>
     <div class="home-box">
-      <div class="home-title" id="hm-title">PERIODIC TABLE AR</div>
-      <div class="home-subtitle" id="hm-subtitle">Explore elements, review discoveries, and test your knowledge.</div>
-      <button class="home-btn" onclick="startFromHome()"><span class="hb-icon">⌖</span><span id="hm-btn-scan">Start Scanning</span><small id="hm-sub-scan">Scan an element and explore its 3D model.</small></button>
-      <button class="home-btn" onclick="openDiscoveryLog()"><span class="hb-icon">▣</span><span id="hm-btn-log">Discovery Log</span><small id="hm-sub-log">Review scanned elements, compounds, and progress.</small></button>
-      <button class="home-btn" onclick="openQuiz()"><span class="hb-icon">?</span><span id="hm-btn-quiz">Quiz</span><small id="hm-sub-quiz">Answer questions adapted to your activity.</small></button>
-      <div class="home-footer" id="hm-footer">Progress is automatically saved to local storage.</div>
+      <div class="home-title" id="hm-title">Explore Chemistry Through Augmented Reality</div>
+      <div class="home-subtitle" id="hm-subtitle">Scan element symbols, learn about the elements, and discover the world of chemistry!</div>
+
+      <button class="home-btn primary" onclick="startFromHome()">
+        <span class="hb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16"/><circle cx="12" cy="12" r="3.2"/></svg></span>
+        <span class="hb-text"><span id="hm-btn-scan">Start Scanning</span><small id="hm-sub-scan">Point your camera at an element</small></span>
+      </button>
+
+      <div class="home-duo">
+        <button class="home-btn" onclick="openDiscoveryLog()">
+          <span class="hb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg></span>
+          <span class="hb-text"><span id="hm-btn-log">Discovery Log</span><small id="hm-sub-log">See your discoveries</small></span>
+        </button>
+        <button class="home-btn" onclick="openQuiz()">
+          <span class="hb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 4"/><circle cx="12" cy="17.2" r=".9" fill="currentColor" stroke="none"/></svg></span>
+          <span class="hb-text"><span id="hm-btn-quiz">Quiz</span><small id="hm-sub-quiz">Test your knowledge</small></span>
+        </button>
+      </div>
+
+      <div class="element-progress-card">
+        <div class="element-progress-top">
+          <div class="element-progress-title" id="hm-prog-title">Your Progress</div>
+          <div class="element-progress-count" id="home-prog-count">0 / 118</div>
+        </div>
+        <div class="element-progress-bg"><div class="element-progress-fill" id="home-prog-fill" style="width:0%"></div></div>
+        <div class="element-progress-sub" id="home-prog-sub">0% discovered</div>
+      </div>
+
+      <div class="home-footer" id="hm-footer">Progress is automatically saved on this device.</div>
     </div>
   </div>
 
@@ -438,6 +761,13 @@
   <button class="lang-switcher-btn" id="top-lang-toggle" onclick="toggleLanguage()">🌐 EN | ID</button>
   
   <video id="camera-feed" autoplay playsinline muted></video>
+
+  <div id="scanner-top">
+    <button class="icon-btn" onclick="goHome()" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <span class="sc-title" id="sc-title">Scan Element</span>
+    <button class="icon-btn" onclick="openHelp()" aria-label="Help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 4"/><circle cx="12" cy="17.2" r=".9" fill="currentColor" stroke="none"/></svg></button>
+  </div>
+  <div id="scan-instruction"><span id="scan-instruction-text">Place the element symbol inside the box</span></div>
   <canvas id="overlay-canvas"></canvas>
 
   <div id="scan-bar-wrapper"><div id="scan-bar"></div></div>
@@ -457,23 +787,37 @@
   </div>
 
   <!-- Element Mini Card -->
-  <div id="element-info" onclick="openExplanation()">
-    <div class="symbol" id="info-symbol">H</div>
-    <div class="name" id="info-name">Hydrogen</div>
-    <div class="number" id="info-number">Atomic No. 1</div>
-    <div class="tap-hint" id="info-tap-hint">Tap for details • 🔒 Lock to mix</div>
+  <div id="element-info">
+    <div class="si-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+    <div class="si-heading" id="si-heading">Element Detected!</div>
+    <div class="si-card">
+      <div class="number" id="info-number">1</div>
+      <div class="symbol" id="info-symbol">H</div>
+      <div class="name" id="info-name">Hydrogen</div>
+    </div>
+    <div class="si-actions">
+      <button class="btn-primary" onclick="openExplanation()"><span id="si-view">View Element</span> →</button>
+      <button class="btn-secondary" onclick="dismissScanResult()"><span id="si-again">Scan Again</span></button>
+    </div>
+    <div class="tap-hint" id="info-tap-hint">Lock this element to mix it with another</div>
   </div>
 
   <!-- Lock Button -->
   <div id="lock-btn" onclick="lockElement()">🔒</div>
 
   <!-- Fusion Result Card -->
-  <div id="fusion-result" onclick="openFusionExplanation()">
-    <div class="f-formula" id="f-formula">H₂O</div>
-    <div class="f-name" id="f-name">Water</div>
-    <div class="f-equation" id="f-equation">2H + O → H₂O</div>
-    <div class="f-rarity" id="f-rarity" style="font-size:11px;margin-top:3px">⬜ Common</div>
-    <div class="f-hint" id="f-hint">Tap for details • 🔄 Scan again to mix more</div>
+  <div id="fusion-result">
+    <div class="fr-card">
+      <div class="f-formula" id="f-formula">H₂O</div>
+      <div class="f-name" id="f-name">Water</div>
+      <div class="f-equation" id="f-equation">2H + O → H₂O</div>
+      <div class="f-rarity" id="f-rarity">⬜ Common</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
+        <button class="btn-primary" onclick="openFusionExplanation()"><span id="fr-view">View Compound</span> →</button>
+        <button class="btn-secondary" onclick="dismissScanResult()"><span id="fr-again">Scan Again</span></button>
+      </div>
+    </div>
+    <div class="f-hint" id="f-hint">Scan another element to keep mixing</div>
   </div>
 
   <!-- Bottom Sheet Explanation -->
@@ -519,12 +863,11 @@
       <span class="dp-title" id="dp-main-title">📖 Discovery Log</span>
       <button class="dp-close" onclick="closeDiscoveryLog()">×</button>
     </div>
-    <button id="reset-btn" onclick="openResetModal()">🗑️ Reset All Progress</button>
     <div class="dp-tabs">
-      <button class="dp-tab active" id="dptab-elements" onclick="switchTab('elements')">⚛ Elements</button>
-      <button class="dp-tab" id="dptab-log" onclick="switchTab('log')">🧪 Compounds</button>
-      <button class="dp-tab" id="dptab-stats" onclick="switchTab('stats')">📊 Progress</button>
-      <button class="dp-tab" id="dptab-rules" onclick="switchTab('rules')">📚 Chemistry Rules</button>
+      <button class="dp-tab active" id="dptab-elements" onclick="switchTab('elements')">Elements</button>
+      <button class="dp-tab" id="dptab-log" onclick="switchTab('log')">Compounds</button>
+      <button class="dp-tab" id="dptab-stats" onclick="switchTab('stats')">Progress</button>
+      <button class="dp-tab" id="dptab-rules" onclick="switchTab('rules')">Rules</button>
     </div>
 
     <!-- Tab: Scanned Elements -->
@@ -537,6 +880,12 @@
         <div class="element-progress-bg"><div class="element-progress-fill" id="element-progress-fill"></div></div>
         <div class="element-progress-sub" id="element-progress-sub">Discover elements by scanning them.</div>
       </div>
+      <div class="pt-legend">
+        <span><b style="background:var(--c-accent)"></b><span id="pt-lgd-found">Discovered</span></span>
+        <span><b style="background:var(--c-surface);border:1px solid var(--c-line)"></b><span id="pt-lgd-not">Not discovered</span></span>
+      </div>
+      <div class="pt-wrap"><div class="pt-grid" id="pt-main"></div><div class="pt-grid pt-f" id="pt-f"></div></div>
+      <div class="pt-hint" id="pt-hint">Tap a discovered element to view details</div>
       <input id="element-search" class="discovery-search" type="search" placeholder="🔍 Search element or symbol..." oninput="filterElementLog(this.value)" autocomplete="off">
       <div class="dl-count" id="el-count">0 elements scanned</div>
       <div class="quiz-note" id="el-quiz-note">Tap an element to review its detailed parameters.</div>
@@ -609,6 +958,86 @@
   <div id="hint">Point camera at an element cell</div>
   <div id="debug-panel"></div>
   <button id="debug-toggle" onclick="toggleDebug()">LOG</button>
+
+
+  <!-- ── Bottom navigation ── -->
+  <nav id="bottom-nav">
+    <button class="nav-item active" id="nav-home" onclick="navTo('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.6V21h14V9.6"/></svg><span id="nav-lbl-home">Home</span></button>
+    <button class="nav-item" id="nav-scan" onclick="navTo('scan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16"/><circle cx="12" cy="12" r="3.2"/></svg><span id="nav-lbl-scan">Scan</span></button>
+    <button class="nav-item" id="nav-disc" onclick="navTo('discover')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg><span id="nav-lbl-disc">Discover</span></button>
+    <button class="nav-item" id="nav-quiz" onclick="navTo('quiz')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 4"/><circle cx="12" cy="17.2" r=".9" fill="currentColor" stroke="none"/></svg><span id="nav-lbl-quiz">Quiz</span></button>
+  </nav>
+
+  <!-- ── Help / How it works ── -->
+  <div class="app-screen" id="help-screen">
+    <div class="screen-head">
+      <button class="icon-btn" onclick="closeHelp()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="sh-title" id="help-title">How to Scan</span>
+    </div>
+    <div class="screen-body no-nav" id="help-body"></div>
+  </div>
+
+  <!-- ── Settings ── -->
+  <div class="app-screen" id="settings-screen">
+    <div class="screen-head">
+      <button class="icon-btn" onclick="closeSettings()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="sh-title" id="settings-title">Settings</span>
+    </div>
+    <div class="screen-body no-nav">
+      <div class="sec-label" id="set-sec-scan">Scanning</div>
+      <button class="set-row" onclick="closeSettings();openHelp()">
+        <span class="set-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16"/><circle cx="12" cy="12" r="3.2"/></svg></span>
+        <span class="st"><b id="set-guide-t">Scan guidance</b><small id="set-guide-d">How to scan an element symbol</small></span>
+        <span class="chev"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <div class="sec-label" id="set-sec-learn">Learning</div>
+      <button class="set-row" onclick="closeSettings();openDiscoveryLog();switchTab('rules')">
+        <span class="set-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z"/><path d="M8 3v14"/></svg></span>
+        <span class="st"><b id="set-rules-t">Chemistry rules</b><small id="set-rules-d">Periodic table study guide</small></span>
+        <span class="chev"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <button class="set-row" onclick="toggleLanguage()">
+        <span class="set-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg></span>
+        <span class="st"><b id="set-lang-t">Language</b><small id="set-lang-d">English / Bahasa Indonesia</small></span>
+        <span class="chev" id="set-lang-cur">EN</span>
+      </button>
+      <div class="sec-label" id="set-sec-help">Help</div>
+      <button class="set-row" onclick="closeSettings();openHelp()">
+        <span class="set-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 4"/><circle cx="12" cy="17.2" r=".9" fill="currentColor" stroke="none"/></svg></span>
+        <span class="st"><b id="set-how-t">How to use MindAR</b><small id="set-how-d">Step-by-step guide</small></span>
+        <span class="chev"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <div class="sec-label" id="set-sec-about">About</div>
+      <div class="set-row" style="cursor:default">
+        <span class="set-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="8" r=".9" fill="currentColor" stroke="none"/></svg></span>
+        <span class="st"><b id="set-about-t">About MindAR</b><small id="set-about-d">Augmented reality periodic table. Progress is stored on this device.</small></span>
+      </div>
+      <div class="sec-label" id="set-sec-data">Data</div>
+      <button id="reset-btn" onclick="openResetModal()"><span id="reset-btn-lbl">Reset All Progress</span></button>
+    </div>
+  </div>
+
+  <!-- ── Onboarding ── -->
+  <div id="onboarding">
+    <button class="btn-ghost ob-skip" id="ob-skip" onclick="finishOnboarding()">Skip</button>
+    <div class="ob-stage">
+      <div class="ob-art" id="ob-art"></div>
+      <div class="ob-title" id="ob-title"></div>
+      <div class="ob-text" id="ob-text"></div>
+    </div>
+    <div class="ob-foot">
+      <div class="ob-dots"><i class="on"></i><i></i><i></i></div>
+      <button class="btn-primary" id="ob-next" onclick="obNext()">Next</button>
+    </div>
+  </div>
+
+  <!-- ── Splash ── -->
+  <div id="splash">
+    <div class="splash-logo"><svg viewBox="0 0 48 48" fill="none"><path d="M24 3.5 41.5 13.5v21L24 44.5 6.5 34.5v-21z" stroke="#38BDF8" stroke-width="2.6" stroke-linejoin="round"/><circle cx="24" cy="24" r="5.4" stroke="#38BDF8" stroke-width="2.6"/><circle cx="24" cy="24" r="11" stroke="#38BDF8" stroke-width="1.5" opacity=".55"/><circle cx="24" cy="13" r="2.3" fill="#38BDF8"/><circle cx="33.5" cy="29.5" r="2.3" fill="#38BDF8"/><circle cx="14.5" cy="29.5" r="2.3" fill="#38BDF8"/></svg></div>
+    <div class="splash-word">Mind<span>AR</span></div>
+    <div class="splash-tag" id="splash-tag">Explore Chemistry<br>Through Augmented Reality</div>
+    <div class="splash-bar"><i></i></div>
+  </div>
 
   <script>
     // ── Internationalization (i18n) Engine ──
@@ -707,6 +1136,53 @@
         iosPermDesc: 'To use AR on iPhone/iPad, the app requires camera and motion sensor access.',
         iosPermBtn: 'Allow Camera & Motion',
         notInLibrary: ' recognized — 3D model not in library yet',
+        navHome:'Home', navScan:'Scan', navDiscover:'Discover', navQuiz:'Quiz',
+        homeTitle:'Explore Chemistry Through Augmented Reality',
+        homeSubtitle:'Scan element symbols, learn about the elements, and discover the world of chemistry!',
+        btnScan:'Start Scanning', subScan:'Point your camera at an element',
+        btnLog:'Discovery Log',   subLog:'See your discoveries',
+        btnQuiz:'Quiz',           subQuiz:'Test your knowledge',
+        tabElements:'Elements', tabCompounds:'Compounds', tabProgress:'Progress', tabRules:'Rules',
+        resetAllBtn:'Reset All Progress',
+        homeProgTitle:'Your Progress', homeProgSub:'{p}% discovered',
+        homeFooter:'Progress is automatically saved on this device.',
+        scanTitle:'Scan Element',
+        scanInstruction:'Place the element symbol inside the box',
+        siHeading:'Element Detected!', siView:'View Element', siAgain:'Scan Again',
+        siHint:'Lock this element to mix it with another',
+        frView:'View Compound', frAgain:'Scan Again',
+        frHint:'Scan another element to keep mixing',
+        ocrNoMatch:"Couldn't recognize the symbol",
+        ocrCloser:'Move closer or improve lighting.',
+        ocrInside:'Try keeping the symbol inside the box.',
+        ocrRecognizing:'Recognizing\u2026',
+        splashTag:'Explore Chemistry<br>Through Augmented Reality',
+        obSkip:'Skip', obNext:'Next', obStart:'Start Exploring',
+        ob1t:'Explore the Periodic Table', ob1d:'Discover elements using your camera.',
+        ob2t:'Scan an Element',            ob2d:'Point your camera at an element symbol.',
+        ob3t:'Learn & Discover',           ob3d:'Explore element information, track your discoveries, and test your knowledge.',
+        helpTitle:'How to Scan',
+        help1t:'Open Start Scanning', help1d:'Tap the Scan button on the home screen.',
+        help2t:'Point your camera',   help2d:'Point your camera at an element symbol (e.g. Na).',
+        help3t:'Keep the symbol inside the box', help3d:'Make sure the camera is steady.',
+        help4t:'Wait for the result', help4d:"You'll see the element name and information.",
+        helpTip:'Good lighting and a steady hand help the camera recognize symbols faster.',
+        setTitle:'Settings', setSecScan:'Scanning', setSecLearn:'Learning',
+        setSecHelp:'Help', setSecAbout:'About', setSecData:'Data',
+        setGuideT:'Scan guidance', setGuideD:'How to scan an element symbol',
+        setRulesT:'Chemistry rules', setRulesD:'Periodic table study guide',
+        setLangT:'Language', setLangD:'English / Bahasa Indonesia',
+        setHowT:'How to use MindAR', setHowD:'Step-by-step guide',
+        setAboutT:'About MindAR', setAboutD:'Augmented reality periodic table. Progress is stored on this device.',
+        resetBtnLbl:'Reset All Progress',
+        ptFound:'Discovered', ptNot:'Not discovered', ptHint:'Tap a discovered element to view details',
+        quizQOf:'{i} / {n}', quizNext:'Next', quizNextQ:'Next Question',
+        quizCorrectT:'Correct!', quizWrongT:'Not quite',
+        quizWrongD:'The correct answer is {a}.',
+        quizCompleteT:'Quiz Complete!', quizLblCorrect:'Correct', quizLblWrong:'Incorrect',
+        quizTryAgain:'Try Again', quizBackHome:'Back Home', quizSelectFirst:'Select an answer',
+        quizScoreSub:'You answered {c} of {n} correctly.',
+        learnMore:'Learn More', tataNama:'Compound Naming',
         statusHoldStill: 'Hold steady…',
         statusWarmup: 'Preparing scanner…'
       },
@@ -802,6 +1278,53 @@
         iosPermDesc: 'Untuk menggunakan AR di iPhone/iPad, aplikasi memerlukan izin kamera dan sensor gerak.',
         iosPermBtn: 'Izinkan Kamera & Sensor',
         notInLibrary: ' dikenali — model 3D belum tersedia',
+        navHome:'Beranda', navScan:'Pindai', navDiscover:'Koleksi', navQuiz:'Kuis',
+        homeTitle:'Jelajahi Kimia Lewat Augmented Reality',
+        homeSubtitle:'Pindai simbol unsur, pelajari unsurnya, dan temukan dunia kimia!',
+        btnScan:'Mulai Memindai', subScan:'Arahkan kamera ke sebuah unsur',
+        btnLog:'Koleksi',         subLog:'Lihat penemuanmu',
+        btnQuiz:'Kuis',           subQuiz:'Uji pengetahuanmu',
+        tabElements:'Unsur', tabCompounds:'Senyawa', tabProgress:'Progres', tabRules:'Aturan',
+        resetAllBtn:'Atur Ulang Semua Progres',
+        homeProgTitle:'Progres Kamu', homeProgSub:'{p}% ditemukan',
+        homeFooter:'Progres tersimpan otomatis di perangkat ini.',
+        scanTitle:'Pindai Unsur',
+        scanInstruction:'Letakkan simbol unsur di dalam kotak',
+        siHeading:'Unsur Terdeteksi!', siView:'Lihat Unsur', siAgain:'Pindai Lagi',
+        siHint:'Kunci unsur ini untuk dicampur dengan unsur lain',
+        frView:'Lihat Senyawa', frAgain:'Pindai Lagi',
+        frHint:'Pindai unsur lain untuk terus mencampur',
+        ocrNoMatch:'Simbol belum dikenali',
+        ocrCloser:'Dekatkan kamera atau perbaiki pencahayaan.',
+        ocrInside:'Pastikan simbol berada di dalam kotak.',
+        ocrRecognizing:'Mengenali\u2026',
+        splashTag:'Jelajahi Kimia<br>Lewat Augmented Reality',
+        obSkip:'Lewati', obNext:'Lanjut', obStart:'Mulai Jelajah',
+        ob1t:'Jelajahi Tabel Periodik', ob1d:'Temukan unsur menggunakan kamera kamu.',
+        ob2t:'Pindai Unsur',            ob2d:'Arahkan kamera ke simbol unsur.',
+        ob3t:'Pelajari & Temukan',      ob3d:'Jelajahi informasi unsur, catat penemuanmu, dan uji pengetahuanmu.',
+        helpTitle:'Cara Memindai',
+        help1t:'Buka Mulai Memindai', help1d:'Ketuk tombol Pindai di layar beranda.',
+        help2t:'Arahkan kamera',       help2d:'Arahkan kamera ke simbol unsur (misalnya Na).',
+        help3t:'Jaga simbol di dalam kotak', help3d:'Pastikan kamera stabil dan tidak goyang.',
+        help4t:'Tunggu hasilnya',      help4d:'Nama unsur dan informasinya akan muncul.',
+        helpTip:'Pencahayaan yang baik dan tangan yang stabil membantu kamera mengenali simbol lebih cepat.',
+        setTitle:'Pengaturan', setSecScan:'Pemindaian', setSecLearn:'Pembelajaran',
+        setSecHelp:'Bantuan', setSecAbout:'Tentang', setSecData:'Data',
+        setGuideT:'Panduan pemindaian', setGuideD:'Cara memindai simbol unsur',
+        setRulesT:'Aturan kimia', setRulesD:'Panduan belajar tabel periodik',
+        setLangT:'Bahasa', setLangD:'English / Bahasa Indonesia',
+        setHowT:'Cara memakai MindAR', setHowD:'Panduan langkah demi langkah',
+        setAboutT:'Tentang MindAR', setAboutD:'Tabel periodik augmented reality. Progres disimpan di perangkat ini.',
+        resetBtnLbl:'Atur Ulang Semua Progres',
+        ptFound:'Ditemukan', ptNot:'Belum ditemukan', ptHint:'Ketuk unsur yang sudah ditemukan untuk melihat detail',
+        quizQOf:'{i} / {n}', quizNext:'Lanjut', quizNextQ:'Soal Berikutnya',
+        quizCorrectT:'Benar!', quizWrongT:'Belum tepat',
+        quizWrongD:'Jawaban yang benar adalah {a}.',
+        quizCompleteT:'Kuis Selesai!', quizLblCorrect:'Benar', quizLblWrong:'Belum Benar',
+        quizTryAgain:'Coba Lagi', quizBackHome:'Ke Beranda', quizSelectFirst:'Pilih satu jawaban',
+        quizScoreSub:'Kamu menjawab {c} dari {n} soal dengan benar.',
+        learnMore:'Pelajari Lebih Lanjut', tataNama:'Tata Nama Senyawa',
         statusHoldStill: 'Tahan kamera…',
         statusWarmup: 'Menyiapkan pemindai…'
       }
@@ -819,8 +1342,12 @@
 
     function applyLanguage() {
       // Buttons & Header
-      document.getElementById('home-lang-toggle').textContent = t('langBtn');
-      document.getElementById('top-lang-toggle').textContent  = t('langBtn');
+      // The Home language button moved into Settings in the redesign, so these
+      // two legacy toggles may no longer be in the DOM. Guard the lookups.
+      const _lt1 = document.getElementById('home-lang-toggle');
+      if (_lt1) _lt1.textContent = t('langBtn');
+      const _lt2 = document.getElementById('top-lang-toggle');
+      if (_lt2) _lt2.textContent = t('langBtn');
       document.getElementById('hm-title').textContent         = t('homeTitle');
       document.getElementById('hm-subtitle').textContent      = t('homeSubtitle');
       document.getElementById('hm-btn-scan').textContent      = t('btnScan');
@@ -889,8 +1416,41 @@
         buildElementLog(document.getElementById('element-search').value);
         buildStatsChart();
       }
+      applyLanguageShell();
       if (currentSymbol) showElement(currentSymbol);
       if (currentCompound) showFusionResult(currentCompound, [lockedElement, currentSymbol].sort().join('+'));
+    }
+
+    /* Labels introduced by the redesigned shell. Kept separate so the
+       original applyLanguage() wiring stays readable and untouched. */
+    function applyLanguageShell() {
+      const set = (id, key) => { const e = document.getElementById(id); if (e) e.textContent = t(key); };
+      set('nav-lbl-home','navHome'); set('nav-lbl-scan','navScan');
+      set('nav-lbl-disc','navDiscover'); set('nav-lbl-quiz','navQuiz');
+      set('hm-prog-title','homeProgTitle');
+      set('sc-title','scanTitle'); set('scan-instruction-text','scanInstruction');
+      set('si-heading','siHeading'); set('si-view','siView'); set('si-again','siAgain');
+      set('info-tap-hint','siHint');
+      set('fr-view','frView'); set('fr-again','frAgain'); set('f-hint','frHint');
+      set('help-title','helpTitle'); set('settings-title','setTitle');
+      set('set-sec-scan','setSecScan'); set('set-sec-learn','setSecLearn');
+      set('set-sec-help','setSecHelp'); set('set-sec-about','setSecAbout'); set('set-sec-data','setSecData');
+      set('set-guide-t','setGuideT'); set('set-guide-d','setGuideD');
+      set('set-rules-t','setRulesT'); set('set-rules-d','setRulesD');
+      set('set-lang-t','setLangT');   set('set-lang-d','setLangD');
+      set('set-how-t','setHowT');     set('set-how-d','setHowD');
+      set('set-about-t','setAboutT'); set('set-about-d','setAboutD');
+      set('pt-lgd-found','ptFound');  set('pt-lgd-not','ptNot'); set('pt-hint','ptHint');
+      set('ob-skip','obSkip');
+      const lc = document.getElementById('set-lang-cur');
+      if (lc) lc.textContent = currentLang.toUpperCase();
+      const st = document.getElementById('splash-tag');
+      if (st) st.innerHTML = t('splashTag');
+      const rb = document.getElementById('reset-btn'); if (rb) rb.textContent = t('resetAllBtn');
+      if (document.getElementById('onboarding').classList.contains('show')) renderOnboarding();
+      if (document.getElementById('help-screen').classList.contains('show')) renderHelp();
+      if (document.getElementById('discovery-panel').style.display === 'flex') buildPeriodicGrid();
+      updateHomeProgress();
     }
 
     // ── Debug Logger ──
@@ -1278,12 +1838,20 @@
     let arModel = null;
 
     function setScanningUIVisible(visible) {
-      const ids = ['camera-feed','ar-scene-host','scan-bar-wrapper','scan-frame','hint','log-btn','status','element-info','debug-panel','debug-toggle','top-lang-toggle'];
+      const ids = ['camera-feed','ar-scene-host','scan-bar-wrapper','scan-frame','log-btn','status','debug-panel','debug-toggle'];
       ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.visibility = visible ? 'visible' : 'hidden';
       });
-      document.getElementById('top-lang-toggle').style.display = visible ? 'flex' : 'none';
+      // Scanner chrome + reticle only while the camera is live.
+      document.getElementById('scanner-top').classList.toggle('show', !!visible);
+      document.getElementById('scan-instruction').classList.toggle('show', !!visible);
+      document.getElementById('scan-bar-wrapper').style.display = visible ? 'block' : 'none';
+      document.getElementById('log-btn').style.display = visible ? 'block' : 'none';
+      document.getElementById('status').style.display = visible ? 'flex' : 'none';
+      // Camera gets the whole viewport: bottom nav is hidden while scanning.
+      setBottomNav(visible ? null : activeNav);
+      if (!visible) { dismissScanResult(); }
     }
 
     function stopCameraForPage() {
@@ -1354,13 +1922,15 @@
 
     function launchScanner() {
       document.getElementById('home-menu').classList.add('hidden');
-      document.getElementById('home-return').classList.add('show');
+      activeNav = 'scan';
       setScanningUIVisible(true);
       startCamera();
     }
 
     function goHome() {
       stopCameraForPage();
+      setBottomNav('home');
+      closeHelp(); closeSettings();
       document.getElementById('home-menu').classList.remove('hidden');
       document.getElementById('home-return').classList.remove('show');
       document.getElementById('discovery-panel').style.display = 'none';
@@ -1420,13 +1990,13 @@
 
       statusEl.className = 'found';
       statusEl.textContent = t('statusFound') + symbol + ' — ' + getElementName(el);
-      infoEl.style.display = 'block';
+      infoEl.classList.add('show');
       document.getElementById('lock-btn').style.display = 'flex';
-      document.getElementById('fusion-result').style.display = 'none';
-      hintEl.style.display = 'none';
+      document.getElementById('fusion-result').classList.remove('show');
+      document.getElementById('scan-frame').classList.add('detected');
       document.getElementById('info-symbol').textContent = symbol;
       document.getElementById('info-name').textContent   = getElementName(el);
-      document.getElementById('info-number').textContent = t('atomicNoPrefix') + el.number;
+      document.getElementById('info-number').textContent = el.number;
 
       if (arModel && !hasElementModel(symbol)) {
         arModel.innerHTML = '';
@@ -1446,10 +2016,10 @@
     function hideElement() {
       statusEl.className = '';
       statusEl.textContent = t('statusScanning');
-      infoEl.style.display = 'none';
+      infoEl.classList.remove('show');
       document.getElementById('lock-btn').style.display = 'none';
-      document.getElementById('fusion-result').style.display = 'none';
-      hintEl.style.display = 'block';
+      document.getElementById('fusion-result').classList.remove('show');
+      document.getElementById('scan-frame').classList.remove('detected');
       if (arModel) arModel.innerHTML = '';
       closeExplanation();
     }
@@ -1498,8 +2068,8 @@
     }
 
     function showFusionResult(compound, key) {
-      document.getElementById('element-info').style.display = 'none';
-      document.getElementById('fusion-result').style.display = 'block';
+      document.getElementById('element-info').classList.remove('show');
+      document.getElementById('fusion-result').classList.add('show');
       document.getElementById('f-formula').textContent = compound.formula;
       document.getElementById('f-name').textContent = getCompoundName(compound);
       document.getElementById('f-equation').textContent = compound.equation;
@@ -1547,6 +2117,7 @@
       document.getElementById('ep-period').textContent = t('epPeriod') + ' ' + el.period + ' / ' + t('epGroup') + ' ' + (el.group || '-');
       document.getElementById('ep-config').textContent = el.config;
       document.getElementById('ep-desc').textContent = getElementDesc(el);
+      renderElementSheetActions(sym);
     }
 
     function openFusionExplanation() {
@@ -1614,7 +2185,9 @@
           </div>
         </div>
       `;
-      document.getElementById('discoveryDetailPage').style.display = 'block';
+      // 'flex' (not 'block'): the redesigned page uses a flex column so the
+      // header stays fixed and .dd-content scrolls independently.
+      document.getElementById('discoveryDetailPage').style.display = 'flex';
     }
 
     function closeDiscoveryDetail() {
@@ -1704,8 +2277,8 @@
     // ── Discovery Log View ──
     function openDiscoveryLog() {
       document.getElementById('home-menu').classList.add('hidden');
-      document.getElementById('home-return').classList.add('show');
       stopCameraForPage();
+      setBottomNav('discover');
 
       buildDiscoveryList();
       buildElementLog();
@@ -1713,13 +2286,15 @@
       renderRulesTab();
 
       document.getElementById('discovery-panel').style.display = 'flex';
+      buildPeriodicGrid();
       switchTab('elements');
     }
 
     function closeDiscoveryLog() {
       document.getElementById('discovery-panel').style.display = 'none';
       document.getElementById('home-menu').classList.remove('hidden');
-      document.getElementById('home-return').classList.remove('show');
+      setBottomNav('home');
+      updateHomeProgress();
     }
 
     function switchTab(tab) {
@@ -1833,7 +2408,7 @@
     }
 
     // ── Adaptive Quiz System (Bilingual) ──
-    let quizQuestions = [], quizIndex = 0, quizScore = 0;
+    let quizQuestions = [], quizIndex = 0, quizScore = 0, quizCurrent = null;
 
     function getQuizDifficulty(sym) {
       const scans = elementScanCount[sym] || 0;
@@ -1856,7 +2431,8 @@
 
     function openQuiz() {
       document.getElementById('home-menu').classList.add('hidden');
-      document.getElementById('home-return').classList.remove('show');
+      stopCameraForPage();
+      setBottomNav('quiz');
       document.getElementById('quiz-panel-title').textContent = t('quizTitle');
       const scanned = Object.keys(elementScanCount).filter(s => elementScanCount[s] > 0 && ELEMENTS[s]);
       if (!scanned.length) {
@@ -1871,7 +2447,8 @@
       renderQuizQuestion();
     }
 
-    function renderQuizQuestion() {
+    function renderQuizQuestion() { renderQuizQuestionUI(); }
+    function renderQuizQuestionLegacy() {
       if (quizIndex >= quizQuestions.length) {
         document.getElementById('quiz-content').innerHTML = `
           <div class="quiz-result">
@@ -1913,6 +2490,8 @@
     function closeQuiz() {
       document.getElementById('quiz-panel').style.display = 'none';
       document.getElementById('home-menu').classList.remove('hidden');
+      setBottomNav('home');
+      updateHomeProgress();
     }
 
     // ── Data Reset Workflow ──
@@ -1938,6 +2517,288 @@
       buildElementLog();
       buildStatsChart();
       log('All user activity has been reset', '#FF4444');
+    }
+
+
+    /* ══════════════════════════════════════════════════════════
+       UI SHELL: navigation, splash, onboarding, help, settings,
+       periodic grid, quiz flow. No scanning/OCR/AR logic here.
+       ══════════════════════════════════════════════════════════ */
+
+    let activeNav = 'home';
+
+    function setBottomNav(section) {
+      const nav = document.getElementById('bottom-nav');
+      if (!nav) return;
+      if (!section) { nav.classList.remove('show'); return; }   // scanning: hide
+      activeNav = section;
+      nav.classList.add('show');
+      const map = { home:'nav-home', scan:'nav-scan', discover:'nav-disc', quiz:'nav-quiz' };
+      Object.entries(map).forEach(([k, id]) => {
+        const b = document.getElementById(id);
+        if (b) b.classList.toggle('active', k === section);
+      });
+    }
+
+    function navTo(section) {
+      if (section === 'scan')     { startFromHome(); return; }
+      if (section === 'discover') { closeQuiz(); openDiscoveryLog(); return; }
+      if (section === 'quiz')     { closeDiscoveryLog(); openQuiz(); return; }
+      closeDiscoveryLog(); closeQuiz(); goHome();
+    }
+
+    /* ── Home progress card ── */
+    function updateHomeProgress() {
+      const found = Object.keys(elementScanCount).filter(s => elementScanCount[s] > 0 && ELEMENTS[s]).length;
+      const pct = Math.round(found / 118 * 100);
+      const c = document.getElementById('home-prog-count');
+      const f = document.getElementById('home-prog-fill');
+      const b = document.getElementById('home-prog-sub');
+      if (c) c.textContent = found + ' / 118';
+      if (f) f.style.width = pct + '%';
+      if (b) b.textContent = t('homeProgSub').replace('{p}', pct);
+    }
+
+    /* ── Scan result dismissal ── */
+    function dismissScanResult() {
+      const i = document.getElementById('element-info');
+      const f = document.getElementById('fusion-result');
+      if (i) i.classList.remove('show');
+      if (f) f.classList.remove('show');
+      const sf = document.getElementById('scan-frame');
+      if (sf) sf.classList.remove('detected');
+      currentSymbol = null;
+      clearVotes();
+    }
+
+    /* ── Friendly, non-technical scan guidance ── */
+    let noMatchStreak = 0;
+    function reportScanTrouble() {
+      noMatchStreak++;
+      if (noMatchStreak < 4 || currentSymbol) return;
+      const tips = [t('ocrNoMatch'), t('ocrCloser'), t('ocrInside')];
+      statusEl.className = 'warn';
+      statusEl.textContent = tips[Math.min(2, Math.floor(noMatchStreak / 4) - 1)];
+    }
+    function clearScanTrouble() { noMatchStreak = 0; }
+
+    /* ── Help ── */
+    function openHelp() {
+      renderHelp();
+      document.getElementById('help-screen').classList.add('show');
+    }
+    function closeHelp() { document.getElementById('help-screen').classList.remove('show'); }
+    function renderHelp() {
+      const body = document.getElementById('help-body');
+      if (!body) return;
+      let html = '';
+      for (let i = 1; i <= 4; i++) {
+        html += '<div class="step-row"><div class="step-num">' + i + '</div>' +
+                '<div><h4>' + t('help' + i + 't') + '</h4><p>' + t('help' + i + 'd') + '</p></div></div>';
+      }
+      html += '<div class="tip-box"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.5.4.8 1 .9 1.7h5.4c.1-.7.4-1.3.9-1.7A6 6 0 0 0 12 3z"/></svg><div>' + t('helpTip') + '</div></div>';
+      body.innerHTML = html;
+    }
+
+    /* ── Settings ── */
+    function openSettings()  { document.getElementById('settings-screen').classList.add('show'); }
+    function closeSettings() { document.getElementById('settings-screen').classList.remove('show'); }
+
+    /* ── Periodic table grid (Discovery Log) ── */
+    // Column/row placement for the standard 18-column layout.
+    const PT_LAYOUT = {};
+    (function () {
+      const rows = [
+        [['H',1],['HE',18]],
+        [['LI',1],['BE',2],['B',13],['C',14],['N',15],['O',16],['F',17],['NE',18]],
+        [['NA',1],['MG',2],['AL',13],['SI',14],['P',15],['S',16],['CL',17],['AR',18]],
+        [['K',1],['CA',2],['SC',3],['TI',4],['V',5],['CR',6],['MN',7],['FE',8],['CO',9],['NI',10],['CU',11],['ZN',12],['GA',13],['GE',14],['AS',15],['SE',16],['BR',17],['KR',18]],
+        [['RB',1],['SR',2],['Y',3],['ZR',4],['NB',5],['MO',6],['TC',7],['RU',8],['RH',9],['PD',10],['AG',11],['CD',12],['IN',13],['SN',14],['SB',15],['TE',16],['I',17],['XE',18]],
+        [['CS',1],['BA',2],['LA',3],['HF',4],['TA',5],['W',6],['RE',7],['OS',8],['IR',9],['PT',10],['AU',11],['HG',12],['TL',13],['PB',14],['BI',15],['PO',16],['AT',17],['RN',18]],
+        [['FR',1],['RA',2],['AC',3],['RF',4],['DB',5],['SG',6],['BH',7],['HS',8],['MT',9],['DS',10],['RG',11],['CN',12],['NH',13],['FL',14],['MC',15],['LV',16],['TS',17],['OG',18]]
+      ];
+      PT_LAYOUT.main = rows;
+      PT_LAYOUT.f = [
+        ['CE','PR','ND','PM','SM','EU','GD','TB','DY','HO','ER','TM','YB','LU'],
+        ['TH','PA','U','NP','PU','AM','CM','BK','CF','ES','FM','MD','NO','LR']
+      ];
+    })();
+
+    function buildPeriodicGrid() {
+      const main = document.getElementById('pt-main');
+      const fblk = document.getElementById('pt-f');
+      if (!main || !fblk) return;
+      const isFound = sym => (elementScanCount[sym] || 0) > 0;
+
+      let html = '';
+      PT_LAYOUT.main.forEach(row => {
+        const bySlot = {};
+        row.forEach(([sym, col]) => { bySlot[col] = sym; });
+        for (let c = 1; c <= 18; c++) {
+          const sym = bySlot[c];
+          if (!sym) { html += '<div class="pt-cell spacer"></div>'; continue; }
+          html += ptCell(sym, isFound(sym));
+        }
+      });
+      main.innerHTML = html;
+
+      let fh = '';
+      PT_LAYOUT.f.forEach(row => {
+        fh += '<div class="pt-cell spacer"></div><div class="pt-cell spacer"></div><div class="pt-cell spacer"></div>';
+        row.forEach(sym => { fh += ptCell(sym, isFound(sym)); });
+        fh += '<div class="pt-cell spacer"></div>';
+      });
+      fblk.innerHTML = fh;
+    }
+    function ptCell(sym, found) {
+      const el = ELEMENTS[sym];
+      const label = el ? (SYMBOL_BY_UPPER[sym] || sym) : sym;
+      const title = el ? getElementName(el) : sym;
+      return '<button class="pt-cell' + (found ? ' found' : '') + '" title="' + title + '"' +
+             (found ? ' onclick="openDiscoveryDetail(\'' + sym + '\')"' : ' disabled') +
+             '>' + label + '</button>';
+    }
+
+    /* ── Element sheet: Learn More / compound naming ── */
+    function renderElementSheetActions(sym) {
+      const host = document.getElementById('ep-desc');
+      if (!host) return;
+      let bar = document.getElementById('ep-actions');
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'ep-actions';
+        bar.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-top:18px';
+        host.parentNode.appendChild(bar);
+      }
+      // Compounds this element can actually form, from the real COMPOUNDS table.
+      const related = Object.keys(COMPOUNDS).filter(k => k.split('+').indexOf(sym) !== -1);
+      bar.innerHTML =
+        '<button class="btn-secondary" onclick="closeExplanation();openDiscoveryLog();switchTab(\'log\')">' +
+        t('tataNama') + ' \u2192</button>' +
+        (related.length ? '<div class="small-t" style="text-align:center">' +
+          related.slice(0, 3).map(k => COMPOUNDS[k].formula).join(' \u00b7 ') +
+          (related.length > 3 ? ' \u00b7 +' + (related.length - 3) : '') + '</div>' : '');
+    }
+
+    /* ── Splash + onboarding ── */
+    let obStep = 0;
+    const OB_ART = ['<svg viewBox="0 0 200 200" fill="none"><rect x="56" y="48" width="88" height="104" rx="14" fill="#fff" stroke="#0EA5E9" stroke-width="3"/><text x="100" y="86" text-anchor="middle" font-family="Inter,sans-serif" font-size="17" font-weight="700" fill="#64748B">1</text><text x="100" y="124" text-anchor="middle" font-family="Inter,sans-serif" font-size="42" font-weight="800" fill="#0EA5E9">H</text><text x="100" y="143" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="600" fill="#64748B">Hydrogen</text><circle cx="100" cy="100" r="76" stroke="#BAE6FD" stroke-width="2" stroke-dasharray="5 7"/><circle cx="100" cy="24" r="7" fill="#38BDF8"/><circle cx="166" cy="138" r="7" fill="#7DD3FC"/><circle cx="34" cy="138" r="7" fill="#7DD3FC"/></svg>', '<svg viewBox="0 0 200 200" fill="none"><rect x="58" y="28" width="84" height="144" rx="16" fill="#0F2942" stroke="#0EA5E9" stroke-width="3"/><rect x="70" y="72" width="60" height="56" rx="8" fill="#0B1B30" stroke="#38BDF8" stroke-width="2.5"/><path d="M70 86V78a6 6 0 0 1 6-6h8M116 72h8a6 6 0 0 1 6 6v8M130 114v8a6 6 0 0 1-6 6h-8M84 128h-8a6 6 0 0 1-6-6v-8" stroke="#38BDF8" stroke-width="4" stroke-linecap="round"/><text x="100" y="110" text-anchor="middle" font-family="Inter,sans-serif" font-size="27" font-weight="800" fill="#fff">Na</text><circle cx="100" cy="158" r="6" fill="#38BDF8"/></svg>', '<svg viewBox="0 0 200 200" fill="none"><circle cx="100" cy="92" r="46" fill="#0EA5E9" opacity=".12"/><circle cx="100" cy="92" r="32" fill="#0EA5E9"/><circle cx="90" cy="82" r="10" fill="#7DD3FC" opacity=".8"/><text x="100" y="99" text-anchor="middle" font-family="Inter,sans-serif" font-size="21" font-weight="800" fill="#fff">Na</text><ellipse cx="100" cy="92" rx="72" ry="28" stroke="#38BDF8" stroke-width="2.5" opacity=".55" transform="rotate(-22 100 92)"/><ellipse cx="100" cy="92" rx="72" ry="28" stroke="#7DD3FC" stroke-width="2.5" opacity=".45" transform="rotate(26 100 92)"/><rect x="52" y="146" width="44" height="34" rx="9" fill="#fff" stroke="#CBD5E1" stroke-width="2"/><rect x="104" y="146" width="44" height="34" rx="9" fill="#fff" stroke="#CBD5E1" stroke-width="2"/><text x="74" y="168" text-anchor="middle" font-family="Inter,sans-serif" font-size="14" font-weight="700" fill="#0EA5E9">11</text><text x="126" y="168" text-anchor="middle" font-family="Inter,sans-serif" font-size="14" font-weight="700" fill="#0EA5E9">Na</text></svg>'];
+
+    function renderOnboarding() {
+      document.getElementById('ob-art').innerHTML = OB_ART[obStep];
+      document.getElementById('ob-title').textContent = t('ob' + (obStep + 1) + 't');
+      document.getElementById('ob-text').textContent  = t('ob' + (obStep + 1) + 'd');
+      document.getElementById('ob-next').textContent  = obStep === 2 ? t('obStart') : t('obNext');
+      document.getElementById('ob-skip').style.visibility = obStep === 2 ? 'hidden' : 'visible';
+      document.querySelectorAll('.ob-dots i').forEach((d, i) => d.classList.toggle('on', i === obStep));
+    }
+    function obNext() {
+      if (obStep >= 2) { finishOnboarding(); return; }
+      obStep++; renderOnboarding();
+    }
+    function finishOnboarding() {
+      try { localStorage.setItem('mindarOnboarded', '1'); } catch (e) {}
+      document.getElementById('onboarding').classList.remove('show');
+      setBottomNav('home');
+      updateHomeProgress();
+    }
+
+    function bootSplash() {
+      const splash = document.getElementById('splash');
+      let seen = false;
+      try { seen = localStorage.getItem('mindarOnboarded') === '1'; } catch (e) {}
+      setTimeout(() => {
+        splash.classList.add('fade');
+        setTimeout(() => {
+          splash.style.display = 'none';
+          if (seen) { setBottomNav('home'); updateHomeProgress(); }
+          else { obStep = 0; renderOnboarding(); document.getElementById('onboarding').classList.add('show'); }
+        }, 450);
+      }, 1500);
+    }
+
+    /* ══ Quiz: select \u2192 confirm \u2192 feedback \u2192 next ══
+       Scoring, adaptive difficulty and persistence are unchanged; this
+       only adds the selection + feedback steps the design calls for. */
+    let quizSelected = null, quizWrongCount = 0;
+
+    function renderQuizQuestionUI() {
+      if (quizIndex >= quizQuestions.length) { renderQuizSummary(); return; }
+      const item = quizQuestions[quizIndex];
+      const q = makeQuestion(item.sym, item.diff);
+      quizCurrent = q; quizSelected = null;
+      const all = Object.keys(ELEMENTS);
+      let opts = [q.a];
+      let guard = 0;
+      while (opts.length < 4 && guard++ < 400) {
+        const k = all[Math.floor(Math.random() * all.length)];
+        const x = ELEMENTS[k];
+        const v = q.field === 'number' ? String(x.number)
+                : q.field === 'symbol' ? k
+                : q.field === 'category' ? getElementCategory(x) : String(x.period);
+        if (opts.indexOf(v) === -1) opts.push(v);
+      }
+      opts.sort(() => Math.random() - 0.5);
+      const pct = Math.round(quizIndex / quizQuestions.length * 100);
+      const letters = ['A', 'B', 'C', 'D'];
+      document.getElementById('quiz-content').innerHTML =
+        '<div class="quiz-meta"><span>' + t('quizQOf').replace('{i}', quizIndex + 1).replace('{n}', quizQuestions.length) +
+        '</span><span>' + t('diffLevel') + item.diff + '</span></div>' +
+        '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+        '<div class="quiz-question">' + q.q + '</div>' +
+        opts.map((v, i) => '<button class="quiz-option" data-v="' + encodeURIComponent(v) + '" onclick="selectQuizOption(this)">' +
+          '<span class="qo-radio"></span><span>' + letters[i] + '. ' + v + '</span></button>').join('') +
+        '<button class="btn-primary" id="quiz-next-btn" style="margin-top:16px;opacity:.5" onclick="confirmQuizAnswer()">' +
+        t('quizNext') + '</button>';
+    }
+
+    function selectQuizOption(btn) {
+      document.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      quizSelected = decodeURIComponent(btn.dataset.v);
+      const nb = document.getElementById('quiz-next-btn');
+      if (nb) nb.style.opacity = '1';
+    }
+
+    function confirmQuizAnswer() {
+      if (quizSelected === null) return;
+      const q = quizCurrent, sym = quizQuestions[quizIndex].sym;
+      const ok = quizSelected === q.a;
+      if (!ok) quizWrongCount++;
+      answerQuiz(quizSelected, q.a, sym);   // existing scoring + persistence
+      renderQuizFeedback(ok, q, sym);
+    }
+
+    function renderQuizFeedback(ok, q, sym) {
+      const el = ELEMENTS[sym];
+      document.getElementById('quiz-content').innerHTML =
+        '<div class="qfb">' +
+        '<div class="qfb-icon ' + (ok ? 'ok' : 'no') + '">' + (ok ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 7v7"/><circle cx="12" cy="17.5" r="1.2" fill="currentColor" stroke="none"/></svg>') + '</div>' +
+        '<div class="qfb-title">' + (ok ? t('quizCorrectT') : t('quizWrongT')) + '</div>' +
+        '<div class="qfb-text">' + t('quizWrongD').replace('{a}', q.a) + '</div>' +
+        '<div class="qfb-card"><div class="qfb-sym">' + (SYMBOL_BY_UPPER[sym] || sym) + '</div>' +
+        '<div><b style="color:var(--c-navy)">' + getElementName(el) + '</b>' +
+        '<div class="small-t">' + t('epNumber') + ' ' + el.number + ' \u00b7 ' + getElementCategory(el) + '</div></div></div>' +
+        '<button class="btn-primary" onclick="advanceQuiz()">' + t('quizNextQ') + '</button>' +
+        '</div>';
+    }
+
+    function advanceQuiz() { renderQuizQuestionUI(); }
+
+    function renderQuizSummary() {
+      const n = quizQuestions.length;
+      document.getElementById('quiz-content').innerHTML =
+        '<div class="quiz-result">' +
+        '<div class="h2">' + t('quizCompleteT') + '</div>' +
+        '<div class="qr-score">' + quizScore + ' / ' + n + '</div>' +
+        '<div class="qr-sub">' + t('quizScoreSub').replace('{c}', quizScore).replace('{n}', n) + '</div>' +
+        '<div class="qr-split">' +
+        '<div class="qr-cell"><div class="v" style="color:var(--c-success)">' + quizScore + '</div><div class="l">' + t('quizLblCorrect') + '</div></div>' +
+        '<div class="qr-cell"><div class="v" style="color:var(--c-warn)">' + (n - quizScore) + '</div><div class="l">' + t('quizLblWrong') + '</div></div>' +
+        '</div><div class="qr-actions">' +
+        '<button class="btn-primary" onclick="openQuiz()">' + t('quizTryAgain') + '</button>' +
+        '<button class="btn-secondary" onclick="closeQuiz()">' + t('quizBackHome') + '</button>' +
+        '</div></div>';
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -2504,6 +3365,7 @@
             OCR_METRICS.push({ phase: 'reject', symbol: m.symbol, conf: Math.round(m.conf), bare: !!m.bare });
           } else if (castVote(m.symbol)) {
             notFoundCount = 0;
+            clearScanTrouble();
             if (m.symbol !== currentSymbol) {
               currentSymbol = m.symbol;
               showElement(m.symbol);
@@ -2520,6 +3382,7 @@
           }
         } else {
           notFoundCount++;
+          reportScanTrouble();
           if (notFoundCount >= 3 && currentSymbol && !fusionActive) {
             statusEl.className = '';
             statusEl.textContent = t('statusReady');
@@ -2679,6 +3542,7 @@
       };
       if (c) c.onclick = () => { document.getElementById('ios-permission').style.display = 'none'; };
       document.getElementById('home-menu').classList.remove('hidden');
+      bootSplash();
     });
   </script>
 </body>
