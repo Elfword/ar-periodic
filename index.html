@@ -705,7 +705,10 @@
         qPeriod: 'In which period is {name} located?',
         iosPermTitle: 'Motion Access Required',
         iosPermDesc: 'To use AR on iPhone/iPad, the app requires camera and motion sensor access.',
-        iosPermBtn: 'Allow Camera & Motion'
+        iosPermBtn: 'Allow Camera & Motion',
+        notInLibrary: ' recognized — 3D model not in library yet',
+        statusHoldStill: 'Hold steady…',
+        statusWarmup: 'Preparing scanner…'
       },
       id: {
         langBtn: '🌐 ID | EN',
@@ -797,7 +800,10 @@
         qPeriod: 'Pada periode berapakah unsur {name} terletak?',
         iosPermTitle: 'Akses Sensor Diperlukan',
         iosPermDesc: 'Untuk menggunakan AR di iPhone/iPad, aplikasi memerlukan izin kamera dan sensor gerak.',
-        iosPermBtn: 'Izinkan Kamera & Sensor'
+        iosPermBtn: 'Izinkan Kamera & Sensor',
+        notInLibrary: ' dikenali — model 3D belum tersedia',
+        statusHoldStill: 'Tahan kamera…',
+        statusWarmup: 'Menyiapkan pemindai…'
       }
     };
 
@@ -1108,6 +1114,7 @@
     }
 
     function stopCameraForPage() {
+      stopScanning();
       if (video && video.srcObject) {
         video.srcObject.getTracks().forEach(track => track.stop());
         video.srcObject = null;
@@ -1752,28 +1759,638 @@
       log('All user activity has been reset', '#FF4444');
     }
 
-    // ── Continuous OCR Frame Loop ──
-    let isProcessing = false;
-    let notFoundCount = 0;
+    // ════════════════════════════════════════════════════════════════════
+    //  OCR PIPELINE (optimized)
+    //  Replaces the previous Continuous OCR Frame Loop.
+    //  Legacy path is preserved verbatim below as scanFrameLegacy() and is
+    //  reachable at runtime via OCR_CONFIG.legacyMode = true (for A/B testing).
+    // ════════════════════════════════════════════════════════════════════
 
-    async function scanFrame() {
-      if (isProcessing || !video || video.readyState < 2) return;
+    // ── Tunable configuration (all A/B testable at runtime from the console) ──
+    const OCR_CONFIG = {
+      // Master switch: true restores the original pre-optimization pipeline.
+      legacyMode:        false,
+
+      // -- Region of Interest --
+      roiPadPct:         0.06,   // padding around the on-screen #scan-frame
+      targetShortSide:   190,    // resample ROI so its short side is ~this many px
+      maxLongSide:       560,    // hard ceiling on ROI long side
+
+      // -- Tesseract parameters --
+      psm:               '6',    // 6 = single uniform block. See notes in README.
+      whitelist:         'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+
+      // -- Preprocessing --
+      preprocess:        'stretch', // 'none' | 'gray' | 'stretch' | 'otsu'
+      autoInvert:        true,      // handle light-text-on-dark tables
+      stretchLowPct:     0.05,
+      stretchHighPct:    0.95,
+
+      // -- Scheduling --
+      minIdleMs:         220,
+      maxIdleMs:         1600,
+      targetDutyCycle:   0.65,   // fraction of wall time spent inside OCR
+      idlePollMs:        600,    // poll cadence while camera is off
+
+      // -- Frame gating --
+      gateOnStillness:   true,
+      motionThreshold:   26,     // above this mean-abs-diff => moving/blurred, skip
+      sameFrameThresh:   2.0,    // below this vs last OCR'd frame => no new info
+      focusGate:         true,
+      minFocusScore:     3.0,    // mean gradient magnitude; below => too blurry
+
+      // -- Result validation & stability --
+      minConfidence:     55,     // Tesseract word confidence floor
+      bareSymbolConf:    75,     // higher bar when only the symbol was read
+      requiredVotes:     2,      // consistent detections needed before confirming
+      voteWindowMs:      4000,   // votes older than this expire
+      unsupportedConf:   70,     // higher bar for "valid symbol, no 3D model"
+
+      // -- Device adaptation --
+      slowDeviceMs:      900,    // EMA OCR time above this => shrink the ROI
+      minShortSide:      120,
+
+      debugMetrics:      true
+    };
+
+    // ── 1. Validation table: all 118 IUPAC element symbols ──────────────
+    const SYMBOLS_118 = [
+      'H','He','Li','Be','B','C','N','O','F','Ne',
+      'Na','Mg','Al','Si','P','S','Cl','Ar',
+      'K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br','Kr',
+      'Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe',
+      'Cs','Ba','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu',
+      'Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po','At','Rn',
+      'Fr','Ra','Ac','Th','Pa','U','Np','Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr',
+      'Rf','Db','Sg','Bh','Hs','Mt','Ds','Rg','Cn','Nh','Fl','Mc','Lv','Ts','Og'
+    ];
+
+    // UPPERCASE -> canonical mixed case.  'NA' -> 'Na', 'CL' -> 'Cl'.
+    const SYMBOL_BY_UPPER = {};
+    SYMBOLS_118.forEach(sym => { SYMBOL_BY_UPPER[sym.toUpperCase()] = sym; });
+
+    // Character pairs Tesseract genuinely confuses on short uppercase tokens.
+    const OCR_CONFUSIONS = {
+      '0': ['O'], 'O': ['0'],
+      '1': ['I', 'L'], 'I': ['1', 'L'], 'L': ['I', '1'],
+      '5': ['S'], 'S': ['5'],
+      '8': ['B'], 'B': ['8'],
+      '2': ['Z'], 'Z': ['2'],
+      '6': ['G'], 'G': ['6'], '9': ['G']
+    };
+
+    /**
+     * Normalize an OCR token into a canonical element symbol, or null.
+     * Conservative by design: a repair is accepted only when EXACTLY ONE
+     * single-character substitution yields a valid symbol. Ambiguity => null.
+     */
+    function canonicalSymbol(token) {
+      if (!token) return null;
+      const up = token.toUpperCase();
+      if (up.length < 1 || up.length > 2) return null;
+      if (SYMBOL_BY_UPPER[up]) return SYMBOL_BY_UPPER[up];   // exact, no guessing
+
+      // One-substitution repair, only if unambiguous.
+      const candidates = new Set();
+      for (let i = 0; i < up.length; i++) {
+        const reps = OCR_CONFUSIONS[up[i]];
+        if (!reps) continue;
+        for (const rep of reps) {
+          const variant = up.slice(0, i) + rep + up.slice(i + 1);
+          if (SYMBOL_BY_UPPER[variant]) candidates.add(SYMBOL_BY_UPPER[variant]);
+        }
+      }
+      if (candidates.size === 1) return [...candidates][0];
+      return null;  // zero matches, or ambiguous => refuse to guess
+    }
+
+    /** True if the canonical symbol has full data + a 3D model in this build. */
+    function isSupportedSymbol(canon) {
+      return !!(canon && ELEMENTS[canon.toUpperCase()]);
+    }
+
+    // ── 2. Metrics instrumentation ──────────────────────────────────────
+    const OCR_METRICS = (function () {
+      const MAX = 400;
+      let records = [];
+      let trial = null;
+
+      function push(rec) {
+        rec.t = Date.now();
+        records.push(rec);
+        if (records.length > MAX) records.shift();
+        if (trial && rec.phase === 'confirm') {
+          if (rec.symbol === trial.expected) {
+            if (trial.firstCorrectMs === null) trial.firstCorrectMs = rec.t - trial.start;
+            trial.correct++;
+          } else {
+            trial.falsePositives.push(rec.symbol);
+          }
+        }
+      }
+      function pct(arr, p) {
+        if (!arr.length) return 0;
+        const a = arr.slice().sort((x, y) => x - y);
+        return Math.round(a[Math.max(0, Math.min(a.length - 1, Math.ceil(a.length * p) - 1))]);
+      }
+      function report() {
+        const cycles = records.filter(r => r.phase === 'cycle');
+        const ocrMs  = cycles.filter(r => !r.gated).map(r => r.ocrMs);
+        const preMs  = cycles.filter(r => !r.gated).map(r => r.preMs);
+        const gated  = cycles.filter(r => r.gated).length;
+        const span   = records.length ? (records[records.length - 1].t - records[0].t) / 1000 : 0;
+        const out = {
+          mode:              OCR_CONFIG.legacyMode ? 'LEGACY' : 'OPTIMIZED',
+          windowSeconds:     Math.round(span),
+          cyclesTotal:       cycles.length,
+          ocrCallsMade:      ocrMs.length,
+          gatedSkipped:      gated,
+          gateRatePct:       cycles.length ? Math.round(gated / cycles.length * 100) : 0,
+          ocrCallsPerMinute: span ? +(ocrMs.length / span * 60).toFixed(1) : 0,
+          ocrMs_p50:         pct(ocrMs, 0.50),
+          ocrMs_p95:         pct(ocrMs, 0.95),
+          preprocessMs_p50:  pct(preMs, 0.50),
+          confirmations:     records.filter(r => r.phase === 'confirm').length,
+          rejectedLowConf:   records.filter(r => r.phase === 'reject').length,
+          roiPixels:         lastRoiPixels,
+          emaOcrMs:          Math.round(emaOcrMs)
+        };
+        console.table(out);
+        return out;
+      }
+      function startTrial(expectedSymbol) {
+        trial = { expected: expectedSymbol, start: Date.now(),
+                  firstCorrectMs: null, correct: 0, falsePositives: [] };
+        records = [];
+        console.log('[OCR trial] expecting "' + expectedSymbol + '" — aim now.');
+      }
+      function endTrial() {
+        if (!trial) { console.warn('No trial running.'); return null; }
+        const r = {
+          expected:            trial.expected,
+          timeToFirstCorrectMs: trial.firstCorrectMs,
+          correctConfirms:     trial.correct,
+          falsePositiveCount:  trial.falsePositives.length,
+          falsePositiveSymbols: trial.falsePositives.join(',') || '(none)',
+          durationMs:          Date.now() - trial.start
+        };
+        trial = null;
+        console.table(r);
+        return r;
+      }
+      function exportCSV() {
+        const cols = ['t','phase','gated','gateReason','preMs','ocrMs','conf','raw','symbol'];
+        const rows = [cols.join(',')].concat(records.map(r =>
+          cols.map(c => JSON.stringify(r[c] === undefined ? '' : r[c])).join(',')));
+        const csv = rows.join('\n');
+        console.log(csv);
+        return csv;
+      }
+      function reset() { records = []; }
+      return { push, report, startTrial, endTrial, exportCSV, reset,
+               get raw() { return records; } };
+    })();
+    window.OCR_METRICS = OCR_METRICS;
+    window.OCR_CONFIG  = OCR_CONFIG;
+
+    // ── 3. Persistent Tesseract worker ──────────────────────────────────
+    let ocrWorker = null;
+    let ocrWorkerPromise = null;
+    let appliedPsm = null, appliedWhitelist = null;
+
+    async function getOcrWorker() {
+      if (ocrWorker) return ocrWorker;
+      if (ocrWorkerPromise) return ocrWorkerPromise;
+      ocrWorkerPromise = (async () => {
+        const t0 = performance.now();
+        // NOTE: parameters are applied via setParameters(), NOT via createWorker's
+        // 4th "config" argument. v5 serializes that object by stripping commas and
+        // colons, which silently corrupts values containing those characters.
+        const w = await Tesseract.createWorker('eng', 1);
+        await w.setParameters({
+          tessedit_pageseg_mode:  OCR_CONFIG.psm,
+          tessedit_char_whitelist: OCR_CONFIG.whitelist
+        });
+        appliedPsm = OCR_CONFIG.psm;
+        appliedWhitelist = OCR_CONFIG.whitelist;
+        ocrWorker = w;
+        log('OCR worker ready in ' + Math.round(performance.now() - t0) + 'ms (PSM ' + OCR_CONFIG.psm + ')', '#00FF88');
+        return w;
+      })();
+      return ocrWorkerPromise;
+    }
+
+    /** Re-applies PSM/whitelist if they were changed at runtime. */
+    async function syncOcrParams(w) {
+      if (appliedPsm === OCR_CONFIG.psm && appliedWhitelist === OCR_CONFIG.whitelist) return;
+      await w.setParameters({
+        tessedit_pageseg_mode:  OCR_CONFIG.psm,
+        tessedit_char_whitelist: OCR_CONFIG.whitelist
+      });
+      appliedPsm = OCR_CONFIG.psm;
+      appliedWhitelist = OCR_CONFIG.whitelist;
+      log('OCR params updated: PSM ' + OCR_CONFIG.psm, '#FFD93D');
+    }
+
+    // ── 4. Geometry-correct Region of Interest ──────────────────────────
+    // #camera-feed uses object-fit: cover, so the video is scaled by
+    // max(dispW/vidW, dispH/vidH) and centre-cropped. The on-screen reticle
+    // must be mapped back through that transform to find the real video pixels.
+    function getRoiRect() {
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return null;
+      const dispW = video.clientWidth  || window.innerWidth;
+      const dispH = video.clientHeight || window.innerHeight;
+      const frame = document.getElementById('scan-frame');
+      if (!frame) return null;
+      const r = frame.getBoundingClientRect();
+
+      const cover = Math.max(dispW / vw, dispH / vh);
+      // Offset of the rendered video's top-left corner in CSS pixels.
+      const offX = (dispW - vw * cover) / 2;
+      const offY = (dispH - vh * cover) / 2;
+
+      const padX = r.width  * OCR_CONFIG.roiPadPct;
+      const padY = r.height * OCR_CONFIG.roiPadPct;
+
+      let sx = (r.left   - padX - offX) / cover;
+      let sy = (r.top    - padY - offY) / cover;
+      let sw = (r.width  + padX * 2) / cover;
+      let sh = (r.height + padY * 2) / cover;
+
+      // Clamp inside the video frame.
+      sx = Math.max(0, Math.min(vw - 1, sx));
+      sy = Math.max(0, Math.min(vh - 1, sy));
+      sw = Math.max(16, Math.min(vw - sx, sw));
+      sh = Math.max(16, Math.min(vh - sy, sh));
+      return { sx: Math.floor(sx), sy: Math.floor(sy),
+               sw: Math.floor(sw), sh: Math.floor(sh) };
+    }
+
+    // ── 5. Capture + preprocessing ──────────────────────────────────────
+    const roiCanvas = document.createElement('canvas');
+    const roiCtx    = roiCanvas.getContext('2d', { willReadFrequently: true });
+    const thumbCanvas = document.createElement('canvas');
+    thumbCanvas.width = 32; thumbCanvas.height = 20;
+    const thumbCtx  = thumbCanvas.getContext('2d', { willReadFrequently: true });
+
+    let adaptiveShortSide = OCR_CONFIG.targetShortSide;
+    let lastRoiPixels = 0;
+
+    /** Draws the ROI into roiCanvas at an appropriate working resolution. */
+    function captureRoi(roi) {
+      const shortSrc = Math.min(roi.sw, roi.sh);
+      let scale = adaptiveShortSide / shortSrc;
+      // Cap the long side so we never hand Tesseract an oversized bitmap.
+      const longSrc = Math.max(roi.sw, roi.sh);
+      if (longSrc * scale > OCR_CONFIG.maxLongSide) scale = OCR_CONFIG.maxLongSide / longSrc;
+
+      const dw = Math.max(32, Math.round(roi.sw * scale));
+      const dh = Math.max(32, Math.round(roi.sh * scale));
+      if (roiCanvas.width !== dw || roiCanvas.height !== dh) {
+        roiCanvas.width = dw; roiCanvas.height = dh;
+      }
+      roiCtx.imageSmoothingEnabled = true;
+      roiCtx.imageSmoothingQuality = 'high';
+      roiCtx.drawImage(video, roi.sx, roi.sy, roi.sw, roi.sh, 0, 0, dw, dh);
+      lastRoiPixels = dw * dh;
+      return { dw, dh };
+    }
+
+    /**
+     * Grayscale, optional percentile contrast stretch, optional Otsu,
+     * plus automatic polarity correction (Tesseract expects dark-on-light).
+     * Returns a focus score (mean gradient magnitude) as a free by-product.
+     */
+    function preprocessRoi(dw, dh) {
+      if (OCR_CONFIG.preprocess === 'none') return { focus: 999, inverted: false };
+      const img = roiCtx.getImageData(0, 0, dw, dh);
+      const d = img.data;
+      const n = dw * dh;
+      const gray = new Uint8ClampedArray(n);
+      const hist = new Uint32Array(256);
+      let sum = 0;
+
+      for (let i = 0, p = 0; i < n; i++, p += 4) {
+        // Rec. 601 luma, integer-approximated.
+        const g = (d[p] * 77 + d[p + 1] * 150 + d[p + 2] * 29) >> 8;
+        gray[i] = g; hist[g]++; sum += g;
+      }
+      const mean = sum / n;
+
+      // Focus score: mean |horizontal gradient|, sampled on every 2nd row.
+      let gsum = 0, gcount = 0;
+      for (let y = 0; y < dh; y += 2) {
+        const row = y * dw;
+        for (let x = 1; x < dw; x++) { gsum += Math.abs(gray[row + x] - gray[row + x - 1]); gcount++; }
+      }
+      const focus = gcount ? gsum / gcount : 0;
+
+      let lo = 0, hi = 255;
+      if (OCR_CONFIG.preprocess === 'stretch' || OCR_CONFIG.preprocess === 'otsu') {
+        const loTarget = n * OCR_CONFIG.stretchLowPct;
+        const hiTarget = n * OCR_CONFIG.stretchHighPct;
+        let acc = 0;
+        for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= loTarget) { lo = v; break; } }
+        acc = 0;
+        for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= hiTarget) { hi = v; break; } }
+        if (hi - lo < 16) { lo = 0; hi = 255; }   // degenerate: skip the stretch
+      }
+
+      let thr = -1;
+      if (OCR_CONFIG.preprocess === 'otsu') thr = otsuThreshold(hist, n);
+
+      // Light text on a dark cell => invert so Tesseract sees dark-on-light.
+      const inverted = OCR_CONFIG.autoInvert && mean < 110;
+      const range = Math.max(1, hi - lo);
+
+      for (let i = 0, p = 0; i < n; i++, p += 4) {
+        let v = gray[i];
+        if (lo !== 0 || hi !== 255) v = Math.max(0, Math.min(255, ((v - lo) * 255) / range));
+        if (thr >= 0) v = v > thr ? 255 : 0;
+        if (inverted) v = 255 - v;
+        d[p] = d[p + 1] = d[p + 2] = v; d[p + 3] = 255;
+      }
+      roiCtx.putImageData(img, 0, 0);
+      return { focus, inverted };
+    }
+
+    function otsuThreshold(hist, total) {
+      let sum = 0;
+      for (let i = 0; i < 256; i++) sum += i * hist[i];
+      let sumB = 0, wB = 0, max = 0, thr = 127;
+      for (let i = 0; i < 256; i++) {
+        wB += hist[i]; if (!wB) continue;
+        const wF = total - wB; if (!wF) break;
+        sumB += i * hist[i];
+        const mB = sumB / wB, mF = (sum - sumB) / wF;
+        const between = wB * wF * (mB - mF) * (mB - mF);
+        if (between > max) { max = between; thr = i; }
+      }
+      return thr;
+    }
+
+    // ── 6. Frame gating (avoids OCR on blurred or redundant frames) ─────
+    let prevFrameThumb = null;   // previous polled frame — detects motion
+    let lastOcrThumb   = null;   // last frame we actually OCR'd — detects redundancy
+
+    function grabThumb(roi) {
+      thumbCtx.drawImage(video, roi.sx, roi.sy, roi.sw, roi.sh, 0, 0, 32, 20);
+      const d = thumbCtx.getImageData(0, 0, 32, 20).data;
+      const out = new Uint8ClampedArray(640);
+      for (let i = 0, p = 0; i < 640; i++, p += 4) {
+        out[i] = (d[p] * 77 + d[p + 1] * 150 + d[p + 2] * 29) >> 8;
+      }
+      return out;
+    }
+    function thumbDiff(a, b) {
+      if (!a || !b) return 999;
+      let s = 0;
+      for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]);
+      return s / a.length;
+    }
+
+    // ── 7. Temporal vote buffer (stability) ─────────────────────────────
+    let voteBuffer = [];   // [{ symbol, t }]
+
+    function castVote(symbol) {
+      const now = Date.now();
+      voteBuffer = voteBuffer.filter(v => now - v.t <= OCR_CONFIG.voteWindowMs);
+      voteBuffer.push({ symbol, t: now });
+      const agreeing = voteBuffer.filter(v => v.symbol === symbol).length;
+      if (agreeing >= OCR_CONFIG.requiredVotes) { voteBuffer = []; return true; }
+      return false;
+    }
+    function clearVotes() { voteBuffer = []; }
+
+    // ── 8. Validated matching ───────────────────────────────────────────
+    /**
+     * Same scoring scheme as the original matchElement(), with one addition:
+     * symbol evidence must survive validation against the 118-symbol table.
+     * Returns { symbol, score, conf, unsupported }.
+     */
+    function matchElementValidated(text, words) {
+      const upper  = text.toUpperCase().replace(/[^A-Z0-9]/g, ' ');
+      const tokens = upper.split(/\s+/).filter(w => w.length > 0);
+      const lower  = text.toLowerCase();
+
+      // Confidence lookup, keyed by uppercased word text.
+      const confByToken = {};
+      (words || []).forEach(w => {
+        const k = (w.text || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (k) confByToken[k] = Math.max(confByToken[k] || 0, w.confidence || 0);
+      });
+
+      // Validate every token that could be a symbol.
+      const validated = {};   // canonical -> confidence
+      tokens.forEach(tok => {
+        const canon = canonicalSymbol(tok);
+        if (canon) validated[canon] = Math.max(validated[canon] || 0, confByToken[tok] || 0);
+      });
+
+      let bestSymbol = null, bestScore = 0, bestConf = 0;
+      for (const [key, el] of Object.entries(ELEMENTS)) {
+        const canon = SYMBOL_BY_UPPER[key] || key;
+        let score = 0, conf = 0;
+        if (validated[canon] !== undefined) { score += 2; conf = validated[canon]; }
+        const nEn = (el.name.en || '').toLowerCase();
+        const nId = (el.name.id || '').toLowerCase();
+        if (lower.includes(nEn) || lower.includes(nId)) {
+          score += 3;
+          conf = Math.max(conf, confByToken[nEn.toUpperCase()] || confByToken[nId.toUpperCase()] || 0);
+        }
+        if (tokens.includes(String(el.number))) {
+          score += 2;
+          conf = Math.max(conf, confByToken[String(el.number)] || 0);
+        }
+        if (score >= 3 && score > bestScore) { bestScore = score; bestSymbol = key; bestConf = conf; }
+      }
+      if (bestSymbol) return { symbol: bestSymbol, score: bestScore, conf: bestConf, unsupported: null, bare: false };
+
+      // Nothing cleared the score>=3 bar. Fall back to a SINGLE unambiguous,
+      // 118-validated symbol with no supporting number/name evidence. The
+      // original code rejected this case outright, which lost every read where
+      // the large symbol was legible but the small atomic number was not.
+      // It is safe to accept here only because the token has already passed
+      // 118-table validation, and it still faces a higher confidence bar
+      // (bareSymbolConf) plus the multi-frame vote before anything is shown.
+      const all = Object.keys(validated);
+      if (all.length === 1) {
+        const c = all[0];
+        if (isSupportedSymbol(c)) {
+          return { symbol: c.toUpperCase(), score: 2, conf: validated[c], unsupported: null, bare: true };
+        }
+        return { symbol: null, score: 0, conf: validated[c], unsupported: c, bare: false };
+      }
+      return { symbol: null, score: 0, conf: 0, unsupported: null, bare: false };
+    }
+
+    /** Flattens words out of a v5 result, tolerating both shapes. */
+    function extractWords(data) {
+      if (!data) return [];
+      if (Array.isArray(data.words) && data.words.length) return data.words;
+      const out = [];
+      (data.blocks || []).forEach(b => {
+        if (Array.isArray(b.words)) { out.push(...b.words); return; }
+        (b.paragraphs || []).forEach(p =>
+          (p.lines || []).forEach(l => out.push(...(l.words || []))));
+      });
+      return out;
+    }
+
+    // ── 9. Main scan cycle ──────────────────────────────────────────────
+    let isProcessing   = false;     // preserved from the original implementation
+    let notFoundCount  = 0;         // preserved from the original implementation
+    let emaOcrMs       = 0;
+    let loopActive     = false;
+    let loopTimer      = null;
+    let lastUnsupportedShown = 0;
+
+    async function runOcrCycle() {
+      if (isProcessing) return OCR_CONFIG.idlePollMs;
+      if (!video || !video.srcObject || video.readyState < 2) return OCR_CONFIG.idlePollMs;
+
+      const roi = getRoiRect();
+      if (!roi) return OCR_CONFIG.idlePollMs;
+
+      // --- Gate 1: motion / redundancy, on a 640-pixel thumbnail (~1ms) ---
+      let gateReason = null;
+      if (OCR_CONFIG.gateOnStillness) {
+        const thumb = grabThumb(roi);
+        const motion = thumbDiff(thumb, prevFrameThumb);
+        prevFrameThumb = thumb;
+        if (prevFrameThumb && motion > OCR_CONFIG.motionThreshold) {
+          gateReason = 'motion';
+        } else if (currentSymbol && thumbDiff(thumb, lastOcrThumb) < OCR_CONFIG.sameFrameThresh) {
+          gateReason = 'unchanged';
+        }
+        if (gateReason) {
+          if (gateReason === 'motion' && !currentSymbol) {
+            statusEl.className = '';
+            statusEl.textContent = t('statusHoldStill');
+          }
+          if (OCR_CONFIG.debugMetrics) OCR_METRICS.push({ phase: 'cycle', gated: true, gateReason });
+          return OCR_CONFIG.minIdleMs;
+        }
+      }
+
       isProcessing = true;
+      let nextDelay = OCR_CONFIG.minIdleMs;
+      try {
+        const w = await getOcrWorker();
+        await syncOcrParams(w);
+
+        const tPre0 = performance.now();
+        const { dw, dh } = captureRoi(roi);
+        const { focus } = preprocessRoi(dw, dh);
+        const preMs = performance.now() - tPre0;
+
+        // --- Gate 2: focus, using the score computed during preprocessing ---
+        if (OCR_CONFIG.focusGate && focus < OCR_CONFIG.minFocusScore) {
+          if (!currentSymbol) { statusEl.className = ''; statusEl.textContent = t('statusHoldStill'); }
+          if (OCR_CONFIG.debugMetrics)
+            OCR_METRICS.push({ phase: 'cycle', gated: true, gateReason: 'blurry', preMs: Math.round(preMs) });
+          isProcessing = false;
+          return OCR_CONFIG.minIdleMs;
+        }
+
+        const tOcr0 = performance.now();
+        // hocr/tsv are generated and serialized by default and we discard both.
+        const { data } = await w.recognize(roiCanvas, {},
+          { blocks: true, text: true, hocr: false, tsv: false });
+        const ocrMs = performance.now() - tOcr0;
+        emaOcrMs = emaOcrMs ? emaOcrMs * 0.7 + ocrMs * 0.3 : ocrMs;
+        lastOcrThumb = prevFrameThumb;
+
+        const text  = data.text || '';
+        const words = extractWords(data);
+        const m = matchElementValidated(text, words);
+
+        if (OCR_CONFIG.debugMetrics) {
+          OCR_METRICS.push({ phase: 'cycle', gated: false,
+                             preMs: Math.round(preMs), ocrMs: Math.round(ocrMs),
+                             conf: Math.round(m.conf),
+                             raw: text.replace(/\s+/g, ' ').trim().slice(0, 48),
+                             symbol: m.symbol || m.unsupported || '' });
+        }
+
+        if (m.symbol) {
+          const confFloor = m.bare ? OCR_CONFIG.bareSymbolConf : OCR_CONFIG.minConfidence;
+          if (m.conf && m.conf < confFloor) {
+            // Plausible but weakly recognized — do not let it vote.
+            OCR_METRICS.push({ phase: 'reject', symbol: m.symbol, conf: Math.round(m.conf), bare: !!m.bare });
+          } else if (castVote(m.symbol)) {
+            notFoundCount = 0;
+            if (m.symbol !== currentSymbol) {
+              currentSymbol = m.symbol;
+              showElement(m.symbol);
+              OCR_METRICS.push({ phase: 'confirm', symbol: m.symbol, conf: Math.round(m.conf) });
+            }
+          }
+        } else if (m.unsupported && m.conf >= OCR_CONFIG.unsupportedConf) {
+          // A real element symbol with no 3D model in this build. Tell the user
+          // rather than silently ignoring a correct read. No scan is recorded.
+          if (castVote('~' + m.unsupported) && Date.now() - lastUnsupportedShown > 2500) {
+            lastUnsupportedShown = Date.now();
+            statusEl.className = '';
+            statusEl.textContent = m.unsupported + t('notInLibrary');
+          }
+        } else {
+          notFoundCount++;
+          if (notFoundCount >= 3 && currentSymbol && !fusionActive) {
+            statusEl.className = '';
+            statusEl.textContent = t('statusReady');
+            clearVotes();
+          }
+        }
+
+        // --- Device adaptation: shrink the ROI on phones that can't keep up ---
+        if (emaOcrMs > OCR_CONFIG.slowDeviceMs && adaptiveShortSide > OCR_CONFIG.minShortSide) {
+          adaptiveShortSide = Math.max(OCR_CONFIG.minShortSide, Math.round(adaptiveShortSide * 0.85));
+          log('Slow device (' + Math.round(emaOcrMs) + 'ms) — ROI short side -> ' + adaptiveShortSide, '#FFD93D');
+        } else if (emaOcrMs < OCR_CONFIG.slowDeviceMs * 0.45 && adaptiveShortSide < OCR_CONFIG.targetShortSide) {
+          adaptiveShortSide = Math.min(OCR_CONFIG.targetShortSide, Math.round(adaptiveShortSide * 1.1));
+        }
+
+        // --- Adaptive pacing: hold the OCR duty cycle near the target ---
+        nextDelay = Math.round(emaOcrMs * (1 / OCR_CONFIG.targetDutyCycle - 1));
+        nextDelay = Math.max(OCR_CONFIG.minIdleMs, Math.min(OCR_CONFIG.maxIdleMs, nextDelay));
+      } catch (err) {
+        log('OCR Err: ' + err.message, '#FF4444');
+        nextDelay = OCR_CONFIG.maxIdleMs;
+      }
+      isProcessing = false;
+      return nextDelay;
+    }
+
+    // ── 10. Legacy pipeline, preserved verbatim for A/B comparison ──────
+    async function scanFrameLegacy() {
+      if (isProcessing || !video || video.readyState < 2) return 2000;
+      isProcessing = true;
+      const tAll0 = performance.now();
       const sw = Math.floor(video.videoWidth * 0.5), sh = Math.floor(video.videoHeight * 0.5);
       const sx = Math.floor(video.videoWidth * 0.25), sy = Math.floor(video.videoHeight * 0.25);
       canvas.width = sw; canvas.height = sh;
       ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+      lastRoiPixels = sw * sh;
       try {
         const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
           tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
           tessedit_pageseg_mode: '6',
         });
+        const ocrMs = performance.now() - tAll0;
+        emaOcrMs = emaOcrMs ? emaOcrMs * 0.7 + ocrMs * 0.3 : ocrMs;
+        if (OCR_CONFIG.debugMetrics)
+          OCR_METRICS.push({ phase: 'cycle', gated: false, preMs: 0, ocrMs: Math.round(ocrMs),
+                             conf: 0, raw: text.replace(/\s+/g, ' ').trim().slice(0, 48),
+                             symbol: '' });
         const found = matchElement(text);
         if (found) {
           notFoundCount = 0;
           if (found !== currentSymbol) {
             currentSymbol = found;
             showElement(found);
+            OCR_METRICS.push({ phase: 'confirm', symbol: found, conf: 0 });
           }
         } else {
           notFoundCount++;
@@ -1786,14 +2403,44 @@
         log('OCR Err: ' + err.message, '#FF4444');
       }
       isProcessing = false;
+      return 2000;
     }
 
-    let scanningStarted = false;
-    function startScanning() {
-      if (scanningStarted) return;
-      scanningStarted = true;
-      setInterval(scanFrame, 2000);
+    // ── 11. Self-scheduling loop ────────────────────────────────────────
+    async function ocrTick() {
+      if (!loopActive) return;
+      let delay;
+      try {
+        delay = OCR_CONFIG.legacyMode ? await scanFrameLegacy() : await runOcrCycle();
+      } catch (e) {
+        log('Loop err: ' + e.message, '#FF4444');
+        delay = OCR_CONFIG.maxIdleMs;
+      }
+      if (loopActive) loopTimer = setTimeout(ocrTick, delay);
     }
+
+    function startScanning() {
+      if (loopActive) return;
+      loopActive = true;
+      statusEl.textContent = t('statusWarmup');
+      // Warm the worker up front so the first real frame isn't charged for it.
+      getOcrWorker().then(() => { statusEl.textContent = t('statusScanning'); })
+                    .catch(e => log('Worker init failed: ' + e.message, '#FF4444'));
+      ocrTick();
+    }
+
+    function stopScanning() {
+      loopActive = false;
+      if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
+      clearVotes();
+      prevFrameThumb = null; lastOcrThumb = null;
+    }
+
+    // Pause OCR whenever the tab is hidden — saves battery on every device.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; } }
+      else if (loopActive && !loopTimer) { ocrTick(); }
+    });
 
     // ── Touch / Orbit Interaction ──
     let initialDistance = null, initialScale = 1, currentScale = 1;
