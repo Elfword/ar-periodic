@@ -43,6 +43,26 @@
               'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
 
+    /* User-selectable theme. Keep the camera/AR scene visually dark, while all web UI surfaces follow the selected theme. */
+    html[data-theme="dark"] {
+      --c-navy: #F8FAFC; --c-body: #CBD5E1; --c-muted: #94A3B8; --c-faint: #64748B;
+      --c-line: #334155; --c-bg: #0B1220; --c-surface: #111827;
+      --c-accent-soft: #082F49; --c-accent-tint: #0C2438;
+      --c-success-sf: #052E16; --c-warn-soft: #422006; --c-error-soft: #450A0A;
+      --sh-1: 0 1px 2px rgba(0,0,0,.22), 0 1px 3px rgba(0,0,0,.18);
+      --sh-2: 0 2px 8px rgba(0,0,0,.28), 0 8px 20px rgba(0,0,0,.22);
+      --sh-3: 0 10px 32px rgba(0,0,0,.38);
+    }
+    html[data-theme="system"] { color-scheme: light; }
+    @media (prefers-color-scheme: dark) {
+      html[data-theme="system"] {
+        --c-navy: #F8FAFC; --c-body: #CBD5E1; --c-muted: #94A3B8; --c-faint: #64748B;
+        --c-line: #334155; --c-bg: #0B1220; --c-surface: #111827;
+        --c-accent-soft: #082F49; --c-accent-tint: #0C2438;
+        --c-success-sf: #052E16; --c-warn-soft: #422006; --c-error-soft: #450A0A;
+      }
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box;
         -webkit-tap-highlight-color: transparent; }
     html, body {
@@ -233,7 +253,7 @@
       position: fixed; left: 50%; bottom: calc(var(--safe-b) + 14px);
       transform: translateX(-50%) translateY(16px);
       width: min(340px, calc(100% - 28px));
-      background: #fff; border-radius: var(--r-lg); box-shadow: var(--sh-3);
+      background: var(--c-surface); border-radius: var(--r-lg); box-shadow: var(--sh-3);
       padding: 16px 18px calc(16px + var(--safe-b) * 0);
       z-index: 12; display: none; opacity: 0;
       transition: opacity .24s ease, transform .24s cubic-bezier(.4,0,.2,1);
@@ -265,7 +285,7 @@
     #fusion-result .dc-learn { background: #F3EEFF; color: var(--c-purple); }
     #fusion-result .f-equation { font-size: 12px; color: var(--c-muted); margin-top: 6px; }
 
-    /* ── Fusion ──────────────────────────────────────────────── */
+    /* ── Fusion result: compact, non-blocking AR card ─────────── */
     #fusion-bar {
       position: fixed; top: calc(var(--safe-t) + 66px); left: 50%; transform: translateX(-50%);
       background: var(--c-warn-soft); border: 1px solid #FCD34D;
@@ -274,27 +294,26 @@
       z-index: 14; display: none; align-items: center; gap: 8px; white-space: nowrap;
       box-shadow: var(--sh-2);
     }
-    #fusion-bar button {
-      background: #fff; border: 1px solid #FCD34D; color: #92400E;
-      border-radius: 99px; font-size: 12px; font-weight: 600;
-      padding: 5px 12px; cursor: pointer;
-    }
+    #fusion-bar button { background: var(--c-surface); border: 1px solid #FCD34D; color: #92400E;
+      border-radius: 99px; font-size: 12px; font-weight: 600; padding: 5px 12px; cursor: pointer; }
     #fusion-result {
-      position: fixed; inset: 0; z-index: 16; display: none;
-      flex-direction: column; align-items: center; justify-content: center;
-      padding: 24px; background: rgba(8,17,32,.80); backdrop-filter: blur(3px);
-      animation: fadeIn .22s ease;
+      position: fixed; left: 50%; bottom: calc(var(--safe-b) + 14px);
+      transform: translateX(-50%) translateY(16px);
+      width: min(340px, calc(100% - 28px));
+      background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--r-lg);
+      box-shadow: var(--sh-3); padding: 16px 18px; z-index: 16;
+      display: none; opacity: 0; transition: opacity .24s ease, transform .24s cubic-bezier(.4,0,.2,1);
+      pointer-events: auto;
     }
-    #fusion-result.show { display: flex; }
-    .fr-card {
-      background: #fff; border-radius: var(--r-xl); padding: 26px 30px;
-      text-align: center; box-shadow: var(--sh-3); width: min(340px, 100%);
-    }
-    #fusion-result .f-formula  { font-size: 34px; font-weight: 750; color: var(--c-purple); }
-    #fusion-result .f-name     { font-size: 17px; color: var(--c-navy); font-weight: 650; margin-top: 4px; }
-    #fusion-result .f-equation { font-size: 13px; color: var(--c-muted); margin-top: 8px; }
-    #fusion-result .f-rarity   { font-size: 12px; font-weight: 700; margin-top: 10px; }
-    #fusion-result .f-hint     { font-size: 12px; color: rgba(255,255,255,.6); margin-top: 16px; }
+    #fusion-result.show { display: block; opacity: 1; transform: translateX(-50%) translateY(0); }
+    #fusion-result .f-formula { font-size: 27px; font-weight: 800; color: var(--c-purple); }
+    #fusion-result .f-name { font-size: 16.5px; color: var(--c-navy); font-weight: 700; margin-top: 2px; }
+    #fusion-result .f-equation { font-size: 12.5px; color: var(--c-muted); margin-top: 7px; }
+    #fusion-result .f-rarity { font-size: 11.5px; font-weight: 700; margin-top: 8px; }
+    #fusion-result .f-hint { font-size: 12px; color: var(--c-muted); margin-top: 12px; }
+    #fusion-result .dc-learn { background: #F3EEFF; color: var(--c-purple); }
+    html[data-theme="dark"] #fusion-result .dc-learn { background: #2E1065; }
+    @media (prefers-color-scheme: dark) { html[data-theme="system"] #fusion-result .dc-learn { background: #2E1065; } }
 
     /* ── Element detail bottom sheet ─────────────────────────── */
     #explanation-panel {
@@ -331,7 +350,7 @@
          it, so the two never overlap regardless of card width on narrow
          phones. */
       position: fixed; bottom: calc(var(--safe-b) + 220px); right: 16px;
-      background: #fff; color: var(--c-warn);
+      background: var(--c-surface); color: var(--c-warn);
       border: 1px solid var(--c-line); border-radius: 50%;
       width: 56px; height: 56px; font-size: 22px; display: none;
       align-items: center; justify-content: center; z-index: 12; cursor: pointer;
@@ -620,20 +639,38 @@
     .quiz-note { font-size: 13px; color: var(--c-muted); background: var(--c-accent-tint);
                  border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 14px; line-height: 1.55; }
 
-    /* ── Discovery toast ─────────────────────────────────────── */
+    /* ── Discovery celebration toast ───────────────────────────── */
     #discovery-toast {
-      position: fixed; top: calc(var(--safe-t) + 14px); left: 50%; transform: translateX(-50%) translateY(-24px);
-      background: var(--c-surface); border: 1px solid var(--c-line);
-      border-left: 4px solid var(--c-purple);
-      border-radius: var(--r-md); padding: 13px 20px; z-index: 900;
-      opacity: 0; transition: all .32s cubic-bezier(.4,0,.2,1); pointer-events: none;
-      box-shadow: var(--sh-3); text-align: center; min-width: 180px;
+      position: fixed; top: calc(var(--safe-t) + 72px); left: 50%;
+      transform: translateX(-50%) translateY(-18px) scale(.96);
+      background: rgba(255,255,255,.96); color: var(--c-navy);
+      border: 1px solid var(--c-line); border-radius: 18px;
+      padding: 13px 18px 14px; z-index: 900; opacity: 0;
+      pointer-events: none; box-shadow: var(--sh-3); text-align: center;
+      min-width: 210px; max-width: min(330px, calc(100% - 28px));
+      transition: opacity .28s ease, transform .34s cubic-bezier(.2,.8,.2,1);
+      overflow: hidden;
     }
-    #discovery-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    #discovery-toast .dt-new     { font-size: 10.5px; font-weight: 750; color: var(--c-purple); letter-spacing: .6px; }
-    #discovery-toast .dt-formula { font-size: 21px; font-weight: 750; color: var(--c-navy); margin-top: 3px; }
-    #discovery-toast .dt-name    { font-size: 13.5px; color: var(--c-muted); }
-    #discovery-toast .dt-rarity  { font-size: 11.5px; font-weight: 700; margin-top: 4px; }
+    html[data-theme="dark"] #discovery-toast { background: rgba(17,24,39,.96); }
+    @media (prefers-color-scheme: dark) { html[data-theme="system"] #discovery-toast { background: rgba(17,24,39,.96); } }
+    #discovery-toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    #discovery-toast .dt-icon {
+      width: 34px; height: 34px; margin: 0 auto 6px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--c-accent-soft); color: var(--c-accent); font-size: 18px;
+      animation: discoveryPop .45s cubic-bezier(.2,.8,.2,1);
+    }
+    #discovery-toast.compound .dt-icon { background: #F3EEFF; color: var(--c-purple); }
+    html[data-theme="dark"] #discovery-toast.compound .dt-icon { background: #2E1065; }
+    @keyframes discoveryPop { 0%{transform:scale(.5);opacity:0} 65%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
+    #discovery-toast .dt-new { font-size: 10.5px; font-weight: 800; color: var(--c-accent-dark); letter-spacing: .65px; text-transform: uppercase; }
+    #discovery-toast.compound .dt-new { color: var(--c-purple); }
+    #discovery-toast .dt-formula { font-size: 27px; font-weight: 800; color: var(--c-navy); margin-top: 2px; line-height: 1.1; }
+    #discovery-toast .dt-name { font-size: 13.5px; color: var(--c-muted); margin-top: 2px; }
+    #discovery-toast .dt-rarity { font-size: 11.5px; font-weight: 700; margin-top: 5px; }
+    #discovery-toast .spark { position:absolute; width:4px; height:4px; border-radius:50%; background:var(--c-accent); opacity:0; animation:sparkle .9s ease-out forwards; }
+    #discovery-toast .spark.s1{left:14%;top:18%;animation-delay:.08s}.spark.s2{right:15%;top:24%;animation-delay:.18s}.spark.s3{left:22%;bottom:18%;animation-delay:.28s}.spark.s4{right:23%;bottom:20%;animation-delay:.38s}
+    @keyframes sparkle { 0%{transform:scale(.2);opacity:0} 25%{opacity:1} 100%{transform:scale(1.8) translateY(-8px);opacity:0} }
 
     #log-btn {
       position: fixed; top: calc(var(--safe-t) + 14px); right: 14px;
@@ -725,6 +762,32 @@
       padding: 16px 16px calc(var(--safe-b) + 34px);
     }
     #discovery-panel > div[id^="tab-"] { min-height: 0; }
+
+    /* ── Theme + access-code controls ─────────────────────────── */
+    .theme-picker { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+    .theme-choice { border:1px solid var(--c-line); background:var(--c-surface); color:var(--c-body); border-radius:12px;
+      min-height:44px; font-size:13px; font-weight:650; cursor:pointer; }
+    .theme-choice.active { border-color:var(--c-accent); background:var(--c-accent-tint); color:var(--c-accent-dark); box-shadow:0 0 0 2px rgba(14,165,233,.10); }
+    .access-modal { position:fixed; inset:0; z-index:3100; display:none; align-items:flex-end; justify-content:center; padding:18px; background:rgba(2,8,23,.58); backdrop-filter:blur(4px); }
+    .access-modal.show { display:flex; }
+    .access-card { width:min(390px,100%); background:var(--c-surface); border:1px solid var(--c-line); border-radius:22px; padding:22px 18px calc(18px + var(--safe-b)); box-shadow:var(--sh-3); }
+    .access-title { font-size:20px; font-weight:750; color:var(--c-navy); }
+    .access-sub { margin-top:5px; color:var(--c-muted); font-size:13.5px; line-height:1.5; }
+    .access-input { width:100%; margin:16px 0 10px; min-height:50px; padding:0 14px; border:1.5px solid var(--c-line); border-radius:12px; background:var(--c-bg); color:var(--c-navy); outline:none; font-size:16px; font-weight:650; letter-spacing:1.5px; text-transform:uppercase; }
+    .access-input:focus { border-color:var(--c-accent); box-shadow:0 0 0 3px rgba(14,165,233,.12); }
+    .access-error { min-height:20px; color:var(--c-error); font-size:12.5px; margin:2px 2px 8px; }
+    .access-actions { display:flex; gap:9px; }
+    .access-actions button { flex:1; }
+    html[data-theme="dark"] .set-row, html[data-theme="dark"] .card, html[data-theme="dark"] .btn-secondary, html[data-theme="dark"] .theme-choice { color-scheme:dark; }
+    html[data-theme="dark"] .dc-stat { background:#0B1220; }
+    html[data-theme="dark"] #fusion-result .dc-symbol { background:#2E1065; color:#C4B5FD; }
+    html[data-theme="dark"] .ep-symbol.fusion { background:#2E1065; color:#C4B5FD; }
+    html[data-theme="dark"] .dc-learn { background:#0C2438; color:#38BDF8; }
+    html[data-theme="dark"] .pt-cell { color:var(--c-body); }
+    @media (prefers-color-scheme: dark) {
+      html[data-theme="system"] .dc-stat { background:#0B1220; }
+      html[data-theme="system"] .dc-learn { background:#0C2438; color:#38BDF8; }
+    }
 
     /* ── Short-viewport adaptation ───────────────────────────── */
     @media (max-height: 680px) {
@@ -898,6 +961,8 @@
 
   <!-- Discovery Toast Notification -->
   <div id="discovery-toast">
+    <span class="dt-icon" id="dt-icon">✦</span>
+    <span class="spark s1"></span><span class="spark s2"></span><span class="spark s3"></span><span class="spark s4"></span>
     <div class="dt-new" id="dt-new-lbl">✨ NEW DISCOVERY</div>
     <div class="dt-formula" id="toast-formula">H₂O</div>
     <div class="dt-name" id="toast-name">Water</div>
@@ -1065,8 +1130,33 @@
         <span class="set-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="8" r=".9" fill="currentColor" stroke="none"/></svg></span>
         <span class="st"><b id="set-about-t">About MindAR</b><small id="set-about-d">Augmented reality periodic table. Progress is stored on this device.</small></span>
       </div>
+      <div class="sec-label" id="set-sec-appearance">Appearance</div>
+      <div class="theme-picker" role="group" aria-label="Theme">
+        <button class="theme-choice" id="theme-light" onclick="setTheme('light')">☀ Light</button>
+        <button class="theme-choice" id="theme-dark" onclick="setTheme('dark')">◐ Dark</button>
+        <button class="theme-choice" id="theme-system" onclick="setTheme('system')">◌ System</button>
+      </div>
+      <button class="set-row" onclick="openAccessCode()">
+        <span class="set-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M7 7V5a5 5 0 0 1 10 0v2"/><circle cx="12" cy="13.5" r="1.5"/></svg></span>
+        <span class="st"><b id="set-access-t">Unlock Content</b><small id="set-access-d">Enter an access code to unlock all content</small></span>
+        <span class="chev">›</span>
+      </button>
       <div class="sec-label" id="set-sec-data">Data</div>
       <button id="reset-btn" onclick="openResetModal()"><span id="reset-btn-lbl">Reset All Progress</span></button>
+    </div>
+  </div>
+
+  <!-- ── Access Code ── -->
+  <div class="access-modal" id="access-modal" onclick="if(event.target===this)closeAccessCode()">
+    <div class="access-card">
+      <div class="access-title" id="access-title">Unlock Content</div>
+      <div class="access-sub" id="access-sub">Enter the access code to unlock all elements and compounds.</div>
+      <input id="access-code-input" class="access-input" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" maxlength="20" placeholder="Enter code" onkeydown="if(event.key==='Enter')submitAccessCode()">
+      <div class="access-error" id="access-error"></div>
+      <div class="access-actions">
+        <button class="btn-secondary" onclick="closeAccessCode()" id="access-cancel">Cancel</button>
+        <button class="btn-primary" onclick="submitAccessCode()" id="access-unlock">Unlock</button>
+      </div>
     </div>
   </div>
 
@@ -1226,6 +1316,12 @@
         setLangT:'Language', setLangD:'English / Bahasa Indonesia',
         setHowT:'How to use MindAR', setHowD:'Step-by-step guide',
         setAboutT:'About MindAR', setAboutD:'Augmented reality periodic table. Progress is stored on this device.',
+        setAppearance:'Appearance', setAccessT:'Unlock Content', setAccessD:'Enter an access code to unlock all content',
+        themeLight:'Light', themeDark:'Dark', themeSystem:'System',
+        accessTitle:'Unlock Content', accessSub:'Enter the access code to unlock all elements and compounds.',
+        accessPlaceholder:'Enter code', accessCancel:'Cancel', accessUnlock:'Unlock', accessWrong:'Invalid access code.',
+        unlockSuccessT:'Everything Unlocked!', unlockSuccessD:'All elements and compounds are now available.',
+        newElementDiscovery:'✨ NEW ELEMENT DISCOVERED', newCompoundDiscovery:'🧪 NEW COMPOUND DISCOVERED',
         resetBtnLbl:'Reset All Progress',
         ptFound:'Discovered', ptNot:'Not discovered', ptHint:'Tap a discovered element to view details',
         quizQOf:'{i} / {n}', quizNext:'Next', quizNextQ:'Next Question',
@@ -1367,6 +1463,12 @@
         setLangT:'Bahasa', setLangD:'English / Bahasa Indonesia',
         setHowT:'Cara memakai MindAR', setHowD:'Panduan langkah demi langkah',
         setAboutT:'Tentang MindAR', setAboutD:'Tabel periodik augmented reality. Progres disimpan di perangkat ini.',
+        setAppearance:'Tampilan', setAccessT:'Buka Semua Konten', setAccessD:'Masukkan kode akses untuk membuka semua konten',
+        themeLight:'Terang', themeDark:'Gelap', themeSystem:'Sistem',
+        accessTitle:'Buka Semua Konten', accessSub:'Masukkan kode akses untuk membuka semua unsur dan senyawa.',
+        accessPlaceholder:'Masukkan kode', accessCancel:'Batal', accessUnlock:'Buka', accessWrong:'Kode akses tidak valid.',
+        unlockSuccessT:'Semua Konten Terbuka!', unlockSuccessD:'Semua unsur dan senyawa sekarang dapat diakses.',
+        newElementDiscovery:'✨ UNSUR BARU DITEMUKAN', newCompoundDiscovery:'🧪 SENYAWA BARU DITEMUKAN',
         resetBtnLbl:'Atur Ulang Semua Progres',
         ptFound:'Ditemukan', ptNot:'Belum ditemukan', ptHint:'Ketuk unsur yang sudah ditemukan untuk melihat detail',
         quizQOf:'{i} / {n}', quizNext:'Lanjut', quizNextQ:'Soal Berikutnya',
@@ -1495,6 +1597,10 @@
       set('set-lang-t','setLangT');   set('set-lang-d','setLangD');
       set('set-how-t','setHowT');     set('set-how-d','setHowD');
       set('set-about-t','setAboutT'); set('set-about-d','setAboutD');
+      set('set-sec-appearance','setAppearance'); set('set-access-t','setAccessT'); set('set-access-d','setAccessD');
+      set('theme-light','themeLight'); set('theme-dark','themeDark'); set('theme-system','themeSystem');
+      set('access-title','accessTitle'); set('access-sub','accessSub'); set('access-cancel','accessCancel'); set('access-unlock','accessUnlock');
+      const aci = document.getElementById('access-code-input'); if (aci) aci.placeholder = t('accessPlaceholder');
       set('pt-lgd-found','ptFound');  set('pt-lgd-not','ptNot'); set('pt-hint','ptHint');
       set('ob-skip','obSkip');
       const lc = document.getElementById('set-lang-cur');
@@ -1821,6 +1927,11 @@
     let elementLastScanned  = {};
     let totalScans          = 0;
     let quizStats           = {};
+    let allContentUnlocked  = false;
+
+    function isAllContentUnlocked() { return allContentUnlocked === true; }
+    function isElementDiscovered(symbol) { return isAllContentUnlocked() || (elementScanCount[symbol] || 0) > 0; }
+    function isCompoundDiscovered(key) { return isAllContentUnlocked() || !!discoveredCompounds[key]; }
 
     function loadSavedData() {
       try {
@@ -1834,7 +1945,8 @@
         if (savedT) totalScans = parseInt(savedT, 10) || 0;
         const savedQ = localStorage.getItem('quizStats');
         if (savedQ) quizStats = JSON.parse(savedQ);
-        document.getElementById('lb-count').textContent = Object.keys(discoveredCompounds).length;
+        allContentUnlocked = localStorage.getItem('mindarUnlockAll') === '1';
+        document.getElementById('lb-count').textContent = isAllContentUnlocked() ? Object.keys(COMPOUNDS).length : Object.keys(discoveredCompounds).length;
         log('Progress data loaded successfully', '#00FF88');
       } catch (e) {
         log('No previous local data found', '#aaa');
@@ -1850,29 +1962,48 @@
         localStorage.setItem('elementLastScanned', JSON.stringify(elementLastScanned));
         localStorage.setItem('totalScans', String(totalScans));
       } catch(e) {}
-      document.getElementById('lb-count').textContent = Object.keys(discoveredCompounds).length;
+      document.getElementById('lb-count').textContent = isAllContentUnlocked() ? Object.keys(COMPOUNDS).length : Object.keys(discoveredCompounds).length;
     }
 
     function recordDiscovery(key, compound) {
-      const isNew = !discoveredCompounds[key];
+      const isNew = !discoveredCompounds[key] && !isAllContentUnlocked();
       discoveredCompounds[key] = true;
       try {
         localStorage.setItem('discoveredCompounds', JSON.stringify(discoveredCompounds));
       } catch(e) {}
-      document.getElementById('lb-count').textContent = Object.keys(discoveredCompounds).length;
-      if (isNew) showDiscoveryToast(compound, key);
+      document.getElementById('lb-count').textContent = isAllContentUnlocked() ? Object.keys(COMPOUNDS).length : Object.keys(discoveredCompounds).length;
+      if (isNew) showDiscoveryToast(compound, key, true);
+    }
+
+    function showElementDiscoveryToast(el, symbol) {
+      const toast = document.getElementById('discovery-toast');
+      if (!toast) return;
+      toast.classList.remove('compound');
+      document.getElementById('dt-icon').textContent = '✦';
+      document.getElementById('dt-new-lbl').textContent = t('newElementDiscovery');
+      document.getElementById('toast-formula').textContent = symbol;
+      document.getElementById('toast-name').textContent = getElementName(el);
+      document.getElementById('toast-rarity').textContent = '';
+      document.getElementById('toast-rarity').style.color = '';
+      toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
     }
 
     function showDiscoveryToast(compound, key) {
       const rarity = getCompoundRarity(key);
-      const toast  = document.getElementById('discovery-toast');
+      const toast = document.getElementById('discovery-toast');
+      if (!toast) return;
+      toast.classList.add('compound');
+      document.getElementById('dt-icon').textContent = '🧪';
+      document.getElementById('dt-new-lbl').textContent = t('newCompoundDiscovery');
       document.getElementById('toast-formula').textContent = compound.formula;
-      document.getElementById('toast-name').textContent    = getCompoundName(compound);
-      document.getElementById('toast-rarity').textContent  = rarity.label;
-      document.getElementById('toast-rarity').style.color  = rarity.color;
-      toast.style.display = 'flex';
+      document.getElementById('toast-name').textContent = getCompoundName(compound);
+      document.getElementById('toast-rarity').textContent = rarity.label;
+      document.getElementById('toast-rarity').style.color = rarity.color;
+      toast.classList.add('show');
       clearTimeout(toast._timer);
-      toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 3200);
+      toast._timer = setTimeout(() => toast.classList.remove('show'), 2800);
     }
 
     function formatLastScanned(symbol) {
@@ -2035,6 +2166,7 @@
     function showElement(symbol) {
       const el = ELEMENTS[symbol];
       if (!el) return;
+      const isNewElement = !isElementDiscovered(symbol);
       recordScan(symbol);
       currentCompound = null;
 
@@ -2054,7 +2186,8 @@
       document.getElementById('info-name').textContent   = getElementName(el);
       document.getElementById('info-number').textContent = el.number;
       document.getElementById('info-mass').textContent   = el.mass;
-      showDetectToast(t('toastElementDetected'), symbol + ' — ' + getElementName(el));
+      if (isNewElement) showElementDiscoveryToast(el, symbol);
+      else showDetectToast(t('toastElementDetected'), symbol + ' — ' + getElementName(el));
 
       if (arModel && !hasElementModel(symbol)) {
         arModel.innerHTML = '';
@@ -2080,6 +2213,7 @@
       document.getElementById('fusion-result').classList.remove('show');
       document.getElementById('scan-frame').classList.remove('detected');
       hideDetectToast();
+      const dt = document.getElementById('discovery-toast'); if (dt) dt.classList.remove('show');
       if (arModel) arModel.innerHTML = '';
       closeExplanation();
     }
@@ -2136,7 +2270,8 @@
       document.getElementById('f-equation').textContent = compound.equation;
       document.getElementById('status').style.display = 'none';
       document.getElementById('fusion-bar').style.display = 'none';
-      showDetectToast(t('toastCompoundDetected'), compound.formula + ' — ' + getCompoundName(compound));
+      const isNewCompound = !isCompoundDiscovered(key);
+      if (!isNewCompound) showDetectToast(t('toastCompoundDetected'), compound.formula + ' — ' + getCompoundName(compound));
 
       recordDiscovery(key, compound);
       const rr = getCompoundRarity(key);
@@ -2375,8 +2510,9 @@
 
     function buildElementLog(filter = '') {
       const list = document.getElementById('el-list');
-      const entries = Object.entries(elementScanCount)
-        .filter(([sym, c]) => c > 0 && ELEMENTS[sym])
+      const entries = Object.keys(ELEMENTS)
+        .filter(sym => isElementDiscovered(sym))
+        .map(sym => [sym, elementScanCount[sym] || (isAllContentUnlocked() ? 1 : 0)])
         .sort((a, b) => b[1] - a[1]);
 
       const unique = entries.length;
@@ -2418,8 +2554,8 @@
 
     function buildDiscoveryList() {
       const total = Object.keys(COMPOUNDS).length;
-      const found = Object.keys(discoveredCompounds).length;
-      const pct = Math.round((found / total) * 100);
+      const found = isAllContentUnlocked() ? Object.keys(COMPOUNDS).length : Object.keys(discoveredCompounds).length;
+      const pct = total ? Math.round((found / total) * 100) : 0;
       document.getElementById('dl-count').textContent = found + ' / ' + total + t('compoundsDiscovered');
       document.getElementById('dl-bar-fill').style.width = pct + '%';
       document.getElementById('dl-pct').textContent = pct + '%';
@@ -2437,7 +2573,7 @@
       const list = document.getElementById('dl-list');
       list.innerHTML = '';
       Object.keys(COMPOUNDS).forEach(key => {
-        const c = COMPOUNDS[key], isFound = !!discoveredCompounds[key], r = getCompoundRarity(key);
+        const c = COMPOUNDS[key], isFound = isCompoundDiscovered(key), r = getCompoundRarity(key);
         const el = document.createElement('div');
         el.className = 'dl-item';
         el.style.opacity = isFound ? '1' : '0.3';
@@ -2452,7 +2588,7 @@
       const entries = Object.entries(elementScanCount).sort((a, b) => b[1] - a[1]);
       document.getElementById('stats-total').textContent  = totalScans;
       document.getElementById('stats-unique').textContent = Object.keys(elementScanCount).length;
-      document.getElementById('stats-found').textContent  = Object.keys(discoveredCompounds).length;
+      document.getElementById('stats-found').textContent  = isAllContentUnlocked() ? Object.keys(COMPOUNDS).length : Object.keys(discoveredCompounds).length;
 
       const chart = document.getElementById('stats-chart');
       chart.innerHTML = '';
@@ -2565,8 +2701,10 @@
       elementLastScanned  = {};
       quizStats           = {};
       totalScans          = 0;
+      allContentUnlocked  = false;
       try {
         localStorage.removeItem('discoveredCompounds');
+        localStorage.removeItem('mindarUnlockAll');
         localStorage.removeItem('elementScanCount');
         localStorage.removeItem('elementLastScanned');
         localStorage.removeItem('totalScans');
@@ -2610,7 +2748,7 @@
 
     /* ── Home progress card ── */
     function updateHomeProgress() {
-      const found = Object.keys(elementScanCount).filter(s => elementScanCount[s] > 0 && ELEMENTS[s]).length;
+      const found = isAllContentUnlocked() ? 118 : Object.keys(elementScanCount).filter(s => elementScanCount[s] > 0 && ELEMENTS[s]).length;
       const pct = Math.round(found / 118 * 100);
       const c = document.getElementById('home-prog-count');
       const f = document.getElementById('home-prog-fill');
@@ -2682,9 +2820,93 @@
       body.innerHTML = html;
     }
 
-    /* ── Settings ── */
-    function openSettings()  { document.getElementById('settings-screen').classList.add('show'); }
+    /* ── Theme + Settings ── */
+    let currentTheme = localStorage.getItem('mindarTheme') || 'light';
+
+    function applyTheme() {
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      ['light','dark','system'].forEach(k => {
+        const b = document.getElementById('theme-' + k);
+        if (b) b.classList.toggle('active', currentTheme === k);
+      });
+    }
+
+    function setTheme(theme) {
+      if (!['light','dark','system'].includes(theme)) return;
+      currentTheme = theme;
+      try { localStorage.setItem('mindarTheme', theme); } catch(e) {}
+      applyTheme();
+    }
+
+    function openSettings() {
+      document.getElementById('settings-screen').classList.add('show');
+      applyTheme();
+    }
     function closeSettings() { document.getElementById('settings-screen').classList.remove('show'); }
+
+    function openAccessCode() {
+      const modal = document.getElementById('access-modal');
+      const input = document.getElementById('access-code-input');
+      const err = document.getElementById('access-error');
+      if (!modal) return;
+      err.textContent = '';
+      input.value = '';
+      modal.classList.add('show');
+      setTimeout(() => input.focus(), 60);
+    }
+
+    function closeAccessCode() {
+      const modal = document.getElementById('access-modal');
+      if (modal) modal.classList.remove('show');
+    }
+
+    function showUnlockNotification() {
+      const toast = document.getElementById('discovery-toast');
+      if (!toast) return;
+      toast.classList.remove('compound');
+      document.getElementById('dt-icon').textContent = '✓';
+      document.getElementById('dt-new-lbl').textContent = t('unlockSuccessT');
+      document.getElementById('toast-formula').textContent = '';
+      document.getElementById('toast-name').textContent = t('unlockSuccessD');
+      document.getElementById('toast-rarity').textContent = '';
+      toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function unlockAllContent() {
+      allContentUnlocked = true;
+      Object.keys(ELEMENTS).forEach(sym => {
+        if (!elementScanCount[sym]) elementScanCount[sym] = 1;
+      });
+      Object.keys(COMPOUNDS).forEach(key => { discoveredCompounds[key] = true; });
+      try {
+        localStorage.setItem('mindarUnlockAll', '1');
+        localStorage.setItem('elementScanCount', JSON.stringify(elementScanCount));
+        localStorage.setItem('discoveredCompounds', JSON.stringify(discoveredCompounds));
+      } catch(e) {}
+      document.getElementById('lb-count').textContent = Object.keys(COMPOUNDS).length;
+      buildPeriodicGrid();
+      buildElementLog();
+      buildDiscoveryList();
+      buildStatsChart();
+      updateHomeProgress();
+    }
+
+    function submitAccessCode() {
+      const input = document.getElementById('access-code-input');
+      const err = document.getElementById('access-error');
+      const code = (input.value || '').trim().toUpperCase();
+      if (code !== 'UVERS') {
+        err.textContent = t('accessWrong');
+        input.select();
+        return;
+      }
+      unlockAllContent();
+      closeAccessCode();
+      showUnlockNotification();
+    }
+
 
     /* ── Periodic table grid (Discovery Log) ── */
     // Column/row placement for the standard 18-column layout.
@@ -2710,7 +2932,7 @@
       const main = document.getElementById('pt-main');
       const fblk = document.getElementById('pt-f');
       if (!main || !fblk) return;
-      const isFound = sym => (elementScanCount[sym] || 0) > 0;
+      const isFound = sym => isElementDiscovered(sym);
 
       let html = '';
       PT_LAYOUT.main.forEach(row => {
@@ -2755,7 +2977,7 @@
       // Compounds this element can actually form, from the real COMPOUNDS table.
       const related = Object.keys(COMPOUNDS).filter(k => k.split('+').indexOf(sym) !== -1);
       bar.innerHTML =
-        '<button class="btn-secondary" onclick="closeExplanation();openDiscoveryLog();switchTab(\'log\')">' +
+        '<button class="btn-secondary" onclick="closeExplanation();openDiscoveryLog();switchTab(\'elements\')">' +
         t('tataNama') + ' \u2192</button>' +
         (related.length ? '<div class="small-t" style="text-align:center">' +
           related.slice(0, 3).map(k => COMPOUNDS[k].formula).join(' \u00b7 ') +
@@ -3608,6 +3830,7 @@
 
     // ── App Initialization ──
     document.addEventListener('DOMContentLoaded', () => {
+      applyTheme();
       loadSavedData();
       applyLanguage();
       const b = document.getElementById('ios-permission-btn');
