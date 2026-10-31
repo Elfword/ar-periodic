@@ -4,6 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.4.0/dist/model-viewer.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     /* ════════════════════════════════════════════════════════════
@@ -951,6 +952,7 @@
     <div class="ep-row"><span class="ep-label" id="lbl-ep-state">State at RT</span> <span class="ep-value" id="ep-state">Gas</span></div>
     <div class="ep-row"><span class="ep-label" id="lbl-ep-period">Period / Group</span> <span class="ep-value" id="ep-period">Period 1 / Group 1</span></div>
     <div class="ep-row"><span class="ep-label" id="lbl-ep-config">Electron Config</span> <span class="ep-value" id="ep-config">1s¹</span></div>
+    <div id="ep-model"></div>
     <div class="ep-desc" id="ep-desc"></div>
   </div>
 
@@ -2182,7 +2184,7 @@
       document.getElementById('lock-btn').style.display = 'flex';
       document.getElementById('fusion-result').classList.remove('show');
       document.getElementById('scan-frame').classList.add('detected');
-      document.getElementById('info-symbol').textContent = symbol;
+      document.getElementById('info-symbol').textContent = SYMBOL_BY_UPPER[symbol] || symbol;
       document.getElementById('info-name').textContent   = getElementName(el);
       document.getElementById('info-number').textContent = el.number;
       document.getElementById('info-mass').textContent   = el.mass;
@@ -2296,14 +2298,25 @@
     }
 
     // ── Bottom Sheet Explanations ──
+    // 3D model viewer: rotate/zoom without a camera. Returns '' when no model exists.
+    function viewerSection(sym, compact) {
+      const el = ELEMENTS[sym];
+      if (!el || !hasElementModel(sym)) return '';
+      const h = compact ? '200px' : '260px';
+      const title = currentLang === 'id' ? 'Model 3D' : '3D Model';
+      return '<div class="dd-section" style="margin-top:12px"><h3>' + title + '</h3>' +
+        '<model-viewer src="' + el.model + '" camera-controls auto-rotate shadow-intensity="0.6" ' +
+        'alt="3D model ' + getElementName(el) + '" style="width:100%;height:' + h + ';background:transparent;"></model-viewer></div>';
+    }
+
     function openExplanation() {
-      const sym = document.getElementById('info-symbol').textContent;
+      const sym = document.getElementById('info-symbol').textContent.toUpperCase();
       const el = ELEMENTS[sym];
       if (!el) return;
       const ep = document.getElementById('explanation-panel');
       ep.style.display = 'block';
       ep.classList.remove('fusion-mode');
-      document.getElementById('ep-symbol').textContent = sym;
+      document.getElementById('ep-symbol').textContent = SYMBOL_BY_UPPER[sym] || sym;
       document.getElementById('ep-symbol').classList.remove('fusion');
       document.getElementById('ep-name').textContent = getElementName(el);
       document.getElementById('ep-number').textContent = el.number;
@@ -2313,6 +2326,7 @@
       document.getElementById('ep-period').textContent = t('epPeriod') + ' ' + el.period + ' / ' + t('epGroup') + ' ' + (el.group || '-');
       document.getElementById('ep-config').textContent = el.config;
       document.getElementById('ep-desc').textContent = getElementDesc(el);
+      document.getElementById('ep-model').innerHTML = viewerSection(sym, true);
       renderElementSheetActions(sym);
     }
 
@@ -2332,6 +2346,7 @@
       document.getElementById('ep-period').textContent = currentCompound.equation;
       document.getElementById('ep-config').textContent = '—';
       document.getElementById('ep-desc').textContent = getCompoundDesc(currentCompound);
+      document.getElementById('ep-model').innerHTML = '';
     }
 
     function closeExplanation() {
@@ -2353,7 +2368,7 @@
 
       document.getElementById('discoveryDetailContent').innerHTML = `
         <div class="dd-hero">
-          <div class="dd-symbol">${symbol}</div>
+          <div class="dd-symbol">${SYMBOL_BY_UPPER[symbol] || symbol}</div>
           <div>
             <div class="dd-name">${getElementName(el)}</div>
             <div class="dd-meta">${getElementCategory(el)}</div>
@@ -2366,6 +2381,7 @@
           </div>
         </div>
 
+        ${viewerSection(symbol)}
         <div class="dd-section">
           <h3>${t('aboutPrefix')}${getElementName(el)}</h3>
           <p>${getElementDesc(el)}</p>
