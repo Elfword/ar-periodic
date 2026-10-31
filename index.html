@@ -971,6 +971,7 @@
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;pointer-events:auto;">
       <button class="ar-btn" onclick="arScaleBy(0.8)">−</button>
       <button class="ar-btn" onclick="arScaleBy(1.25)">+</button>
+      <button class="ar-btn" onclick="arRotateBy(45)">⟲</button>
     </div>
   </div>
   <style>.ar-btn{background:rgba(255,255,255,.95);color:#0F172A;border:0;border-radius:12px;padding:9px 12px;font-weight:700;font-size:13px;}</style>
@@ -2314,7 +2315,9 @@
     }
 
     // Called by A-Frame when an AR session ends (exit-vr). Restores the scanner.
+    let arRestartTimer = null;
     function onArSessionEnded() {
+      if (!arSessionActive && !(document.querySelector('#ar-overlay') && document.getElementById('ar-overlay').style.display === 'flex')) return;
       arSessionActive = false;
       const sc = document.querySelector('#ar-scene-wrapper a-scene');
       const target = document.getElementById('ar-target');
@@ -2324,7 +2327,13 @@
       clearTimeout(arHitTimer);
       resetArTarget();
       const scannerOpen = document.getElementById('home-menu').classList.contains('hidden');
-      if (scannerOpen) startCamera();
+      clearTimeout(arRestartTimer);
+      if (scannerOpen) {
+        // Wait for the AR session to fully release the camera before asking for it again.
+        arRestartTimer = setTimeout(() => {
+          if (!arSessionActive && !(video && video.srcObject)) startCamera();
+        }, 700);
+      }
     }
 
     // Must run directly from the button tap (WebXR needs a user gesture).
