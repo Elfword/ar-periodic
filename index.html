@@ -966,8 +966,17 @@
     <div style="background:rgba(0,0,0,.7);color:#fff;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45;">
       <div id="ar-status" style="font-weight:700;">Membuka kamera AR…</div>
       <div id="ar-hint" style="margin-top:4px;opacity:.9;font-size:12.5px;"></div>
+      <div id="ar-debug" style="margin-top:6px;opacity:.7;font-size:11px;font-family:monospace;"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;pointer-events:auto;">
+      <button class="ar-btn" onclick="arScaleBy(0.8)">− Kecil</button>
+      <button class="ar-btn" onclick="arScaleBy(1.25)">+ Besar</button>
+      <button class="ar-btn" onclick="arRotateBy(45)">⟲ Putar</button>
+      <button class="ar-btn" onclick="arRequestMove()">Pindah</button>
+      <button class="ar-btn" onclick="arResetModel()">Reset</button>
     </div>
   </div>
+  <style>.ar-btn{background:rgba(255,255,255,.95);color:#0F172A;border:0;border-radius:12px;padding:9px 12px;font-weight:700;font-size:13px;}</style>
 
   <!-- Log Trigger Button -->
   <button id="log-btn" onclick="openDiscoveryLog()">
@@ -2102,7 +2111,7 @@
           setArStatus(currentLang === 'id' ? 'Permukaan ditemukan' : 'Surface found',
             currentLang === 'id' ? 'Ketuk layar untuk menaruh model di lingkaran.' : 'Tap the screen to place the model inside the ring.');
         });
-        sc.addEventListener('ar-hit-test-select', () => {
+        sc.addEventListener('ar-hit-test-select', () => { arUpdateDebug(); 
           setArStatus(currentLang === 'id' ? 'Model diletakkan' : 'Model placed',
             currentLang === 'id' ? 'Ketuk lagi untuk memindahkan. Tutup AR untuk kembali ke scanner.' : 'Tap again to move it. Close AR to return to the scanner.');
         });
@@ -2199,12 +2208,48 @@
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
       mesh.position.set(-center.x, -box.min.y, -center.z);
       target.object3D.scale.setScalar(0.2 / maxDim);
+      if (typeof arUpdateDebug === 'function') arUpdateDebug();
     }
     let arHitTimer = null;
 
     function setArStatus(title, hint) {
       const a = document.getElementById('ar-status'); if (a) a.textContent = title;
       const h = document.getElementById('ar-hint'); if (h) h.textContent = hint || '';
+    }
+
+    // Scale/rotate by buttons: immersive AR does not deliver reliable pinch/drag to the page.
+    function arTarget() { return document.getElementById('ar-target'); }
+    function arScaleBy(f) {
+      const t = arTarget(); if (!t) return;
+      const cur = t.object3D.scale.x;
+      const next = Math.min(Math.max(cur * f, 0.02), 1.5);
+      t.object3D.scale.setScalar(next);
+      arUpdateDebug();
+    }
+    function arRotateBy(deg) {
+      const t = arTarget(); if (!t) return;
+      t.object3D.rotation.y += deg * Math.PI / 180;
+      arUpdateDebug();
+    }
+    function arRequestMove() {
+      const id = currentLang === 'id';
+      setArStatus(id ? 'Ketuk permukaan untuk memindahkan' : 'Tap a surface to move it',
+        id ? 'Arahkan ke lingkaran lalu ketuk layar.' : 'Aim at the ring, then tap the screen.');
+      const sc = document.querySelector('#ar-scene-wrapper a-scene');
+      if (sc) sc.setAttribute('ar-hit-test', 'enabled', true);
+    }
+    function arResetModel() {
+      const t = arTarget(); if (!t) return;
+      t.object3D.rotation.set(0, 0, 0);
+      fitTargetModel(t);
+      arUpdateDebug();
+    }
+    function arUpdateDebug() {
+      const t = arTarget(); const d = document.getElementById('ar-debug');
+      if (!t || !d) return;
+      const p = t.object3D.position, s = t.object3D.scale.x;
+      d.textContent = 'pos ' + p.x.toFixed(2) + ', ' + p.y.toFixed(2) + ', ' + p.z.toFixed(2) +
+                      ' · skala ' + s.toFixed(3) + ' · visible ' + t.object3D.visible;
     }
 
     function exitARSession() {
