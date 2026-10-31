@@ -918,6 +918,7 @@
       <div class="dc-stat"><div class="l" id="lbl-info-mass">Atomic Mass</div><div class="v" id="info-mass">1.008</div></div>
     </div>
     <button class="dc-learn" onclick="event.stopPropagation();openExplanation()"><span id="si-view">Learn More</span> →</button>
+    <button id="place-btn" class="dc-learn" style="display:none;margin-top:8px" onclick="event.stopPropagation();startMarkerlessPlacement()">📍 Place on surface</button>
   </div>
 
   <!-- Lock Button -->
@@ -954,6 +955,18 @@
     <div class="ep-row"><span class="ep-label" id="lbl-ep-config">Electron Config</span> <span class="ep-value" id="ep-config">1s¹</span></div>
     <div id="ep-model"></div>
     <div class="ep-desc" id="ep-desc"></div>
+  </div>
+
+  <!-- AR session overlay: status + instructions shown inside the camera view -->
+  <div id="ar-overlay" style="display:none;position:fixed;inset:0;z-index:200;pointer-events:none;flex-direction:column;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 12px) 14px calc(env(safe-area-inset-bottom,0px) + 16px);font-family:Inter,system-ui,sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;pointer-events:auto;">
+      <div style="background:rgba(0,0,0,.6);color:#fff;border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700;" id="ar-title">AR · Markerless</div>
+      <button id="ar-close" onclick="exitARSession()" style="background:#fff;color:#0F172A;border:0;border-radius:12px;padding:9px 14px;font-weight:700;font-size:13px;">Tutup AR</button>
+    </div>
+    <div style="background:rgba(0,0,0,.7);color:#fff;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45;">
+      <div id="ar-status" style="font-weight:700;">Membuka kamera AR…</div>
+      <div id="ar-hint" style="margin-top:4px;opacity:.9;font-size:12.5px;"></div>
+    </div>
   </div>
 
   <!-- Log Trigger Button -->
@@ -1109,6 +1122,11 @@
         <span class="set-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16"/><circle cx="12" cy="12" r="3.2"/></svg></span>
         <span class="st"><b id="set-guide-t">Scan guidance</b><small id="set-guide-d">How to scan an element symbol</small></span>
         <span class="chev"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <button class="set-row" onclick="toggleArMode()">
+        <span class="set-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg></span>
+        <span class="st"><b id="set-arm-t">AR mode</b><small id="set-arm-d">Screen overlay or markerless (surface)</small></span>
+        <span class="chev" id="set-arm-cur">Overlay</span>
       </button>
       <div class="sec-label" id="set-sec-learn">Learning</div>
       <button class="set-row" onclick="closeSettings();openDiscoveryLog();switchTab('rules')">
@@ -2056,13 +2074,39 @@
       if (host.children.length === 0) {
         host.innerHTML = `
           <div id="ar-scene-wrapper">
-            <a-scene embedded vr-mode-ui="enabled: false" renderer="alpha: true; colorManagement: true" style="background:transparent;width:100%;height:100%;">
+            <a-scene embedded vr-mode-ui="enabled: false" renderer="alpha: true; colorManagement: true" webxr="optionalFeatures: hit-test,bounded-floor; overlayElement: #ar-overlay" ar-hit-test="enabled: false; target: #ar-target" style="background:transparent;width:100%;height:100%;">
               <a-camera position="0 0 3" look-controls="enabled: false"></a-camera>
               <a-entity id="ar-model" position="0 0 0"></a-entity>
+              <a-entity id="ar-target" visible="false"></a-entity>
             </a-scene>
           </div>`;
       }
       arModel = document.getElementById('ar-model');
+      const sc = host.querySelector('a-scene');
+      if (sc && !sc._arBound) {
+        sc._arBound = true;
+        sc.addEventListener('exit-vr', onArSessionEnded);
+        sc.addEventListener('ar-hit-test-start', () => {
+          arPlaneFound = false;
+          setArStatus(currentLang === 'id' ? 'Mencari permukaan…' : 'Looking for a surface…',
+            currentLang === 'id' ? 'Gerakkan ponsel perlahan ke lantai atau meja yang bertekstur.' : 'Move the phone slowly over a floor or table with some texture.');
+          clearTimeout(arHitTimer);
+          arHitTimer = setTimeout(() => {
+            if (!arPlaneFound) setArStatus(currentLang === 'id' ? 'Belum menemukan permukaan' : 'No surface found yet',
+              currentLang === 'id' ? 'Pastikan cahaya cukup, permukaan tidak mengilap, dan ponsel digerakkan perlahan.' : 'Check the light, avoid glossy surfaces, and move the phone slowly.');
+          }, 8000);
+        });
+        sc.addEventListener('ar-hit-test-achieved', () => {
+          arPlaneFound = true;
+          clearTimeout(arHitTimer);
+          setArStatus(currentLang === 'id' ? 'Permukaan ditemukan' : 'Surface found',
+            currentLang === 'id' ? 'Ketuk layar untuk menaruh model di lingkaran.' : 'Tap the screen to place the model inside the ring.');
+        });
+        sc.addEventListener('ar-hit-test-select', () => {
+          setArStatus(currentLang === 'id' ? 'Model diletakkan' : 'Model placed',
+            currentLang === 'id' ? 'Ketuk lagi untuk memindahkan. Tutup AR untuk kembali ke scanner.' : 'Tap again to move it. Close AR to return to the scanner.');
+        });
+      }
     }
 
     async function startCamera() {
@@ -2127,6 +2171,150 @@
       document.getElementById('discoveryDetailPage').style.display = 'none';
     }
 
+    // ── AR mode: 'overlay' (default, unchanged) or 'markerless' (surface placement via WebXR) ──
+    let arMode = 'overlay';
+    try { arMode = localStorage.getItem('arMode') === 'markerless' ? 'markerless' : 'overlay'; } catch (e) {}
+    let arSessionActive = false;
+    let arPlaneFound = false;
+    let arSupported = null; // null = still checking, true/false after isSessionSupported
+    if (navigator.xr && navigator.xr.isSessionSupported) {
+      navigator.xr.isSessionSupported('immersive-ar')
+        .then(v => { arSupported = !!v; updateArModeUI(); })
+        .catch(() => { arSupported = false; updateArModeUI(); });
+    } else {
+      arSupported = false;
+    }
+
+    // Scale the loaded model to about 20 cm and stand it on the surface point.
+    function fitTargetModel(target) {
+      const THREE = AFRAME.THREE;
+      const mesh = target.getObject3D('mesh');
+      if (!mesh) return;
+      target.object3D.scale.set(1, 1, 1);
+      mesh.position.set(0, 0, 0);
+      mesh.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(mesh);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      mesh.position.set(-center.x, -box.min.y, -center.z);
+      target.object3D.scale.setScalar(0.2 / maxDim);
+    }
+    let arHitTimer = null;
+
+    function setArStatus(title, hint) {
+      const a = document.getElementById('ar-status'); if (a) a.textContent = title;
+      const h = document.getElementById('ar-hint'); if (h) h.textContent = hint || '';
+    }
+
+    function exitARSession() {
+      const sc = document.querySelector('#ar-scene-wrapper a-scene');
+      if (sc && typeof sc.exitAR === 'function') sc.exitAR();
+      else onArSessionEnded();
+    }
+
+    function updateArModeUI() {
+      const id = currentLang === 'id';
+      const t1 = document.getElementById('set-arm-t');
+      const d1 = document.getElementById('set-arm-d');
+      const c1 = document.getElementById('set-arm-cur');
+      if (t1) t1.textContent = id ? 'Mode AR' : 'AR mode';
+      const sup = arSupported === null ? '…'
+        : arSupported ? (id ? 'permukaan didukung' : 'surface supported')
+        : (id ? 'permukaan tidak didukung' : 'surface not supported');
+      if (d1) d1.textContent = (id ? 'Screen overlay atau markerless' : 'Screen overlay or markerless') + ' · ' + sup;
+      if (c1) c1.textContent = arMode === 'markerless' ? 'Markerless' : 'Overlay';
+    }
+
+    function toggleArMode() {
+      arMode = arMode === 'markerless' ? 'overlay' : 'markerless';
+      try { localStorage.setItem('arMode', arMode); } catch (e) {}
+      updateArModeUI();
+      const pb = document.getElementById('place-btn');
+      if (pb) pb.style.display = 'none';
+    }
+
+    function pauseCameraForAR() {
+      stopScanning();
+      if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+    }
+
+    // Called by A-Frame when an AR session ends (exit-vr). Restores the scanner.
+    function onArSessionEnded() {
+      arSessionActive = false;
+      const sc = document.querySelector('#ar-scene-wrapper a-scene');
+      const target = document.getElementById('ar-target');
+      if (sc) sc.setAttribute('ar-hit-test', 'enabled', false);
+      if (target) target.setAttribute('visible', false);
+      const ov = document.getElementById('ar-overlay'); if (ov) ov.style.display = 'none';
+      clearTimeout(arHitTimer);
+      const scannerOpen = document.getElementById('home-menu').classList.contains('hidden');
+      if (scannerOpen) startCamera();
+    }
+
+    // Must run directly from the button tap (WebXR needs a user gesture).
+    function startMarkerlessPlacement() {
+      const id = currentLang === 'id';
+      const sym = document.getElementById('info-symbol').textContent.toUpperCase();
+      const el = ELEMENTS[sym];
+      if (!el || !hasElementModel(sym)) {
+        showDetectToast(id ? 'Model 3D belum tersedia' : '3D model not available', sym);
+        return;
+      }
+      const sc = document.querySelector('#ar-scene-wrapper a-scene');
+      const target = document.getElementById('ar-target');
+      if (arSupported !== true) {
+        showDetectToast(id ? 'Markerless tidak didukung' : 'Markerless not supported',
+          id ? 'Perangkat ini tidak melaporkan dukungan AR permukaan. Gunakan Screen overlay.'
+             : 'This device does not report surface AR support. Use Screen overlay.');
+        return;
+      }
+      if (!sc || !target || !navigator.xr || typeof sc.enterAR !== 'function') {
+        showDetectToast(id ? 'Markerless tidak didukung' : 'Markerless not supported',
+          id ? 'Perangkat ini tidak mendukung AR permukaan. Gunakan Screen overlay.'
+             : 'This device does not support surface AR. Use Screen overlay.');
+        return;
+      }
+      if (arModel) arModel.innerHTML = '';   // no screen-overlay copy inside AR
+      target.setAttribute('visible', false);
+      target.setAttribute('scale', '1 1 1');
+      target.addEventListener('model-loaded', () => fitTargetModel(target), { once: true });
+      target.addEventListener('model-error', () => setArStatus(
+        id ? 'Model 3D gagal dimuat' : '3D model failed to load', el.model), { once: true });
+      target.setAttribute('gltf-model', el.model);
+      sc.setAttribute('ar-hit-test', 'enabled', true);
+      pauseCameraForAR();
+      arSessionActive = true;
+      arPlaneFound = false;
+      const ov = document.getElementById('ar-overlay');
+      if (ov) ov.style.display = 'flex';
+      document.getElementById('ar-title').textContent = 'AR · ' + (SYMBOL_BY_UPPER[sym] || sym) + ' · ' + getElementName(el);
+      setArStatus(id ? 'Membuka kamera AR…' : 'Opening AR camera…', '');
+      sc.enterAR().then(() => {
+        const xrSession = sc.renderer && sc.renderer.xr && sc.renderer.xr.getSession ? sc.renderer.xr.getSession() : null;
+        const feats = (xrSession && xrSession.enabledFeatures) || [];
+        if (feats.indexOf('hit-test') === -1) {
+          setArStatus(id ? 'Hit-test tidak aktif' : 'Hit-test not enabled',
+            id ? 'Perangkat/browser ini tidak memberi izin hit-test, sehingga permukaan tidak bisa dipilih. Gunakan Screen overlay.'
+               : 'This device/browser did not grant hit-test, so surfaces cannot be selected. Use Screen overlay.');
+          sc.setAttribute('ar-hit-test', 'enabled', false);
+        } else {
+          setArStatus(id ? 'Mencari permukaan…' : 'Looking for a surface…',
+            id ? 'Gerakkan ponsel perlahan ke lantai atau meja.' : 'Move the phone slowly over a floor or table.');
+        }
+      }).catch(err => {
+        arSessionActive = false;
+        sc.setAttribute('ar-hit-test', 'enabled', false);
+        if (ov) ov.style.display = 'none';
+        showDetectToast(id ? 'Gagal memulai AR' : 'AR failed to start',
+          String((err && err.message) || err).slice(0, 80));
+        startCamera();
+      });
+    }
+
     // ── Recognition & AR Visualization ──
     let lockedElement = null;
     let currentSymbol = null;
@@ -2188,10 +2376,17 @@
       document.getElementById('info-name').textContent   = getElementName(el);
       document.getElementById('info-number').textContent = el.number;
       document.getElementById('info-mass').textContent   = el.mass;
+      const pb = document.getElementById('place-btn');
+      if (pb) {
+        pb.style.display = arMode === 'markerless' ? 'block' : 'none';
+        pb.textContent = currentLang === 'id' ? '📍 Tempatkan di permukaan' : '📍 Place on surface';
+      }
       if (isNewElement) showElementDiscoveryToast(el, symbol);
       else showDetectToast(t('toastElementDetected'), symbol + ' — ' + getElementName(el));
 
-      if (arModel && !hasElementModel(symbol)) {
+      if (arMode === 'markerless') {
+        if (arModel) arModel.innerHTML = '';
+      } else if (arModel && !hasElementModel(symbol)) {
         arModel.innerHTML = '';
         showFallbackShape(symbol);
       } else if (arModel) {
@@ -2215,6 +2410,7 @@
       document.getElementById('fusion-result').classList.remove('show');
       document.getElementById('scan-frame').classList.remove('detected');
       hideDetectToast();
+      const pb = document.getElementById('place-btn'); if (pb) pb.style.display = 'none';
       const dt = document.getElementById('discovery-toast'); if (dt) dt.classList.remove('show');
       if (arModel) arModel.innerHTML = '';
       closeExplanation();
@@ -2855,6 +3051,7 @@
     }
 
     function openSettings() {
+      updateArModeUI();
       document.getElementById('settings-screen').classList.add('show');
       applyTheme();
     }
@@ -3789,9 +3986,21 @@
       if (loopActive) return;
       loopActive = true;
       statusEl.textContent = t('statusWarmup');
-      // Warm the worker up front so the first real frame isn't charged for it.
-      getOcrWorker().then(() => { statusEl.textContent = t('statusScanning'); })
-                    .catch(e => log('Worker init failed: ' + e.message, '#FF4444'));
+      // Make a stuck start visible instead of silent.
+      if (typeof Tesseract === 'undefined') {
+        statusEl.textContent = 'OCR belum termuat. Cek koneksi internet lalu muat ulang halaman.';
+        log('Tesseract is not loaded (CDN blocked or offline)', '#FF4444');
+      } else {
+        const warmTimer = setTimeout(() => {
+          if (!ocrWorker) {
+            statusEl.textContent = 'OCR masih memuat. Cek koneksi internet.';
+            log('OCR worker still loading after 20s', '#FFD93D');
+          }
+        }, 20000);
+        // Warm the worker up front so the first real frame isn't charged for it.
+        getOcrWorker().then(() => { clearTimeout(warmTimer); statusEl.textContent = t('statusScanning'); })
+                      .catch(e => { clearTimeout(warmTimer); log('Worker init failed: ' + e.message, '#FF4444'); });
+      }
       ocrTick();
     }
 
